@@ -1,41 +1,33 @@
-# Prerequisites
-*.d
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
 
-# Compiled Object files
-*.slo
-*.lo
+# Build artifacts
+build/
+bin/
+lib/
+*.so
+*.a
+*.out
+*.exe
+
+# C++
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
 *.pch
 
-# Linker files
-*.ilk
+# Nota
+*.n
 
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln
+*.vcxproj
+*.xcodeproj
+nbproject/

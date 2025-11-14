@@ -1,3 +1,8 @@
+# Nota-specific
+build/
+*.nota
+*.n
+
 # Prerequisites
 *.d
 

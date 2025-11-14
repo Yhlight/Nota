@@ -2,20 +2,20 @@
 
 This document tracks the progress of the Nota project.
 
-## Phase 1: Project Setup (In Progress)
+## Phase 1: Project Setup (Completed)
 
 - [x] Create initial directory structure (`src`, `tests`)
 - [x] Create `Nota.md` for language specification
 - [x] Create `RoadMap.md` for project progress tracking
 - [x] Create `.gitignore` to exclude build artifacts
-- [ ] Set up CMake build system
-- [ ] Create Python build script
-- [ ] Set up testing framework
+- [x] Set up CMake build system
+- [x] Create Python build script
+- [x] Set up testing framework
 
-## Phase 2: Lexer
+## Phase 2: Lexer (Completed)
 
-- [ ] Implement the lexer
-- [ ] Write tests for the lexer
+- [x] Implement the lexer
+- [x] Write tests for the lexer
 
 ## Phase 3: Parser
 

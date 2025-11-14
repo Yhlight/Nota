@@ -12,6 +12,9 @@ Token Lexer::nextToken() {
         case '=':
             advance();
             return makeToken(TokenType::ASSIGN, "=");
+        case ':':
+            advance();
+            return makeToken(TokenType::COLON, ":");
         case '"':
             return string();
         case '\0':
@@ -68,6 +71,8 @@ Token Lexer::identifier() {
         return makeToken(TokenType::LET, literal);
     } else if (literal == "mut") {
         return makeToken(TokenType::MUT, literal);
+    } else if (literal == "true" || literal == "false") {
+        return makeToken(TokenType::BOOL, literal);
     }
     return makeToken(TokenType::IDENTIFIER, literal);
 }

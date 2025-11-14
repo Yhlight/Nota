@@ -62,6 +62,14 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
 
     stmt->name = currentToken;
 
+    if (peekTokenIs(TokenType::COLON)) {
+        nextToken(); // consume identifier
+        nextToken(); // consume ':'
+        stmt->type = std::make_unique<Type>();
+        stmt->type->token = currentToken;
+        stmt->type->name = currentToken.literal;
+    }
+
     if (!expectPeek(TokenType::ASSIGN)) {
         return nullptr;
     }
@@ -82,7 +90,7 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
 
 std::unique_ptr<Expression> Parser::parseExpression(Precedence precedence) {
     // For now, we only support literals
-    if (currentToken.type == TokenType::INTEGER || currentToken.type == TokenType::FLOAT || currentToken.type == TokenType::STRING) {
+    if (currentToken.type == TokenType::INTEGER || currentToken.type == TokenType::FLOAT || currentToken.type == TokenType::STRING || currentToken.type == TokenType::BOOL) {
         auto literal = std::make_unique<ExpressionLiteral>();
         literal->token = currentToken;
         nextToken();

@@ -38,14 +38,30 @@ public:
 };
 
 
+class Type : public Node {
+public:
+    Token token;
+    std::string name;
+
+    std::string String() const override {
+        return name;
+    }
+};
+
+
 class LetStatement : public Statement {
 public:
     Token token; // The 'let' or 'mut' token
     Token name;
+    std::unique_ptr<Type> type;
     std::unique_ptr<Expression> value;
 
     std::string String() const override {
-        std::string out = token.literal + " " + name.literal + " = ";
+        std::string out = token.literal + " " + name.literal;
+        if (type) {
+            out += " : " + type->String();
+        }
+        out += " = ";
         if (value) {
             out += value->String();
         }

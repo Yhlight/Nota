@@ -7,6 +7,7 @@ enum class TokenType {
     // Keywords
     LET,
     MUT,
+    BOOL,
 
     // Identifiers and literals
     IDENTIFIER,
@@ -19,6 +20,7 @@ enum class TokenType {
 
     // Punctuation
     SEMICOLON, // Even though not used, it's good to have for error recovery
+    COLON,
 
     // End of file
     END_OF_FILE,

@@ -4,12 +4,12 @@ This document tracks the progress of the Nota programming language implementatio
 
 ## Phase 1: Project Setup and Core Language Features
 
-- [ ] Project structure setup (CMake, C++ source, tests)
-- [ ] Python build script
-- [ ] Initial lexer and parser implementation
-- [ ] Support for `let` and `mut` variable declarations
-- [ ] Support for basic data types: `int`, `float`, `bool`, `string`
-- [ ] Unit tests for core features
+- [x] Project structure setup (CMake, C++ source, tests)
+- [x] Python build script
+- [x] Initial lexer and parser implementation
+- [x] Support for `let` and `mut` variable declarations
+- [x] Support for basic data types: `int`, `float`, `bool`, `string`
+- [x] Unit tests for core features
 
 ## Phase 2: Control Flow and Functions
 

@@ -1,34 +1,42 @@
 #include "../src/parser.h"
 #include <iostream>
 #include <cassert>
+#include <vector>
 
 void testParseLetStatement() {
-    std::string input = "let x = 5\nmut y = 10.5\nlet z = \"hello\"";
-    Lexer l(input);
-    Parser p(l);
+    struct TestCase {
+        std::string input;
+        std::string expectedIdentifier;
+        std::string expectedType;
+        std::string expectedValue;
+    };
 
-    auto program = p.parseProgram();
+    std::vector<TestCase> tests = {
+        {"let x = 5", "x", "", "5"},
+        {"mut y = 10.5", "y", "", "10.5"},
+        {"let z = \"hello\"", "z", "", "hello"},
+        {"let a : int = 1", "a", "int", "1"},
+        {"let b : bool = true", "b", "bool", "true"}
+    };
 
-    assert(program != nullptr);
-    assert(program->statements.size() == 3);
+    for (const auto& test : tests) {
+        Lexer l(test.input);
+        Parser p(l);
+        auto program = p.parseProgram();
+        assert(program != nullptr);
+        assert(program->statements.size() == 1);
 
-    auto letStmt1 = dynamic_cast<LetStatement*>(program->statements[0].get());
-    assert(letStmt1 != nullptr);
-    assert(letStmt1->token.type == TokenType::LET);
-    assert(letStmt1->name.literal == "x");
-    assert(letStmt1->value->String() == "5");
+        auto stmt = dynamic_cast<LetStatement*>(program->statements[0].get());
+        assert(stmt != nullptr);
+        assert(stmt->name.literal == test.expectedIdentifier);
 
-    auto letStmt2 = dynamic_cast<LetStatement*>(program->statements[1].get());
-    assert(letStmt2 != nullptr);
-    assert(letStmt2->token.type == TokenType::MUT);
-    assert(letStmt2->name.literal == "y");
-    assert(letStmt2->value->String() == "10.5");
+        if (!test.expectedType.empty()) {
+            assert(stmt->type != nullptr);
+            assert(stmt->type->name == test.expectedType);
+        }
 
-    auto letStmt3 = dynamic_cast<LetStatement*>(program->statements[2].get());
-    assert(letStmt3 != nullptr);
-    assert(letStmt3->token.type == TokenType::LET);
-    assert(letStmt3->name.literal == "z");
-    assert(letStmt3->value->String() == "hello");
+        assert(stmt->value->String() == test.expectedValue);
+    }
 
 
     std::cout << "testParseLetStatement passed" << std::endl;

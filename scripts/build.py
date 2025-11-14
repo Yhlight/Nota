@@ -25,13 +25,17 @@ def main():
     # Build the project
     run_command("cmake --build .")
 
-    # Run the executable (optional)
-    if len(sys.argv) > 1 and sys.argv[1] == "run":
-        print("\\n--- Running Nota ---")
-        if sys.platform == "win32":
-            run_command(".\\Debug\\nota.exe")
-        else:
-            run_command("./nota")
+    # Run the executable or tests (optional)
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "run":
+            print("\\n--- Running Nota ---")
+            if sys.platform == "win32":
+                run_command(".\\Debug\\nota.exe")
+            else:
+                run_command("./nota")
+        elif sys.argv[1] == "test":
+            print("\\n--- Running Tests ---")
+            run_command("ctest")
 
 if __name__ == "__main__":
     main()

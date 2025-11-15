@@ -13,7 +13,11 @@ include_directories(
     ../src
 )
 
-add_executable(nota_tests main_test.cpp)
+add_executable(nota_tests
+    main_test.cpp
+    lexer_test.cpp
+    ../src/lexer.cpp
+)
 
 target_link_libraries(
     nota_tests

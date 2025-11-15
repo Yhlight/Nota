@@ -32,6 +32,7 @@ private:
     void visit(const ArrayTypeExpr& expr) override;
     void visit(const ArrayLiteralExpr& expr) override;
     void visit(const SubscriptExpr& expr) override;
+    void visit(const LambdaExpr& expr) override;
 
     Chunk chunk;
 };

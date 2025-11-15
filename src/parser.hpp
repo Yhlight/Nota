@@ -29,6 +29,7 @@ private:
     std::unique_ptr<Expr> unary();
     std::unique_ptr<Expr> call();
     std::unique_ptr<Expr> primary();
+    std::unique_ptr<Expr> lambda_expression();
     std::unique_ptr<Expr> finish_call(std::unique_ptr<Expr> callee);
     std::unique_ptr<Expr> finish_subscript(std::unique_ptr<Expr> callee);
 

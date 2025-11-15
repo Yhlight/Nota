@@ -378,3 +378,26 @@ TEST(ParserTest, ParsesSubscriptExpression) {
     ASSERT_NE(index, nullptr);
     EXPECT_EQ(index->value.lexeme, "0");
 }
+
+TEST(ParserTest, ParsesLambdaExpression) {
+    std::string source = "let add = (a: int, b: int) => a + b";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    LetStmt* let_stmt = dynamic_cast<LetStmt*>(statements[0].get());
+    ASSERT_NE(let_stmt, nullptr);
+    EXPECT_EQ(let_stmt->name.lexeme, "add");
+
+    LambdaExpr* lambda_expr = dynamic_cast<LambdaExpr*>(let_stmt->initializer.get());
+    ASSERT_NE(lambda_expr, nullptr);
+
+    ASSERT_EQ(lambda_expr->params.size(), 2);
+    EXPECT_EQ(lambda_expr->params[0].name.lexeme, "a");
+    EXPECT_EQ(lambda_expr->params[1].name.lexeme, "b");
+
+    BinaryExpr* body = dynamic_cast<BinaryExpr*>(lambda_expr->body.get());
+    ASSERT_NE(body, nullptr);
+}

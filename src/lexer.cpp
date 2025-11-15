@@ -79,9 +79,9 @@ Token Lexer::next_token() {
         case '"': return string();
 
         case '-':
-            return make_token(match('>') ? TokenType::ARROW : TokenType::MINUS);
+            return make_token(TokenType::MINUS);
         case '=':
-            return make_token(match('=') ? TokenType::EQUAL : TokenType::ASSIGN);
+            return make_token(match('>') ? TokenType::ARROW : (match('=') ? TokenType::EQUAL : TokenType::ASSIGN));
         case '!':
             return make_token(match('=') ? TokenType::NOT_EQUAL : TokenType::UNEXPECTED);
         case '<':

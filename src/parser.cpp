@@ -42,7 +42,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
 std::unique_ptr<Stmt> Parser::function(const std::string& kind) {
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
     consume(TokenType::LPAREN, "Expect '(' after " + kind + " name.");
-    std::vector<FunctionStmt::Param> parameters;
+    std::vector<Param> parameters;
     if (peek().type != TokenType::RPAREN) {
         do {
             Token param_name = consume(TokenType::IDENTIFIER, "Expect parameter name.");
@@ -282,6 +282,10 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<LiteralExpr>(tokens_[current_ - 1]);
     }
 
+    if (peek().type == TokenType::LPAREN && tokens_[current_ + 1].type == TokenType::IDENTIFIER && tokens_[current_ + 2].type == TokenType::COLON) {
+        return lambda_expression();
+    }
+
     if (match({TokenType::LPAREN})) {
         std::unique_ptr<Expr> expr = expression();
         consume(TokenType::RPAREN, "Expect ')' after expression.");
@@ -305,6 +309,26 @@ std::unique_ptr<Expr> Parser::primary() {
     }
 
     throw std::runtime_error("Expect expression.");
+}
+
+std::unique_ptr<Expr> Parser::lambda_expression() {
+    consume(TokenType::LPAREN, "Expect '(' before lambda parameters.");
+    std::vector<Param> parameters;
+    if (peek().type != TokenType::RPAREN) {
+        do {
+            Token param_name = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+            consume(TokenType::COLON, "Expect ':' after parameter name.");
+            std::unique_ptr<TypeExpr> param_type = type_expression();
+            parameters.push_back({param_name, std::move(param_type)});
+        } while (match({TokenType::COMMA}));
+    }
+    consume(TokenType::RPAREN, "Expect ')' after lambda parameters.");
+
+    consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
+
+    std::unique_ptr<Expr> body = expression();
+
+    return std::make_unique<LambdaExpr>(std::move(parameters), std::move(body));
 }
 
 std::unique_ptr<Expr> Parser::finish_call(std::unique_ptr<Expr> callee) {

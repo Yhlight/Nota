@@ -85,6 +85,7 @@ void Compiler::visit(const TypeExpr& expr) {
 void Compiler::visit(const ArrayTypeExpr& expr) {}
 void Compiler::visit(const ArrayLiteralExpr& expr) {}
 void Compiler::visit(const SubscriptExpr& expr) {}
+void Compiler::visit(const LambdaExpr& expr) {}
 
 void Compiler::visit(const VariableExpr& expr) {}
 void Compiler::visit(const AssignExpr& expr) {}

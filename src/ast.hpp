@@ -16,6 +16,25 @@ struct TypeExpr;
 struct ArrayTypeExpr;
 struct ArrayLiteralExpr;
 struct SubscriptExpr;
+struct LambdaExpr;
+
+// Forward declarations for Stmt nodes
+struct ExpressionStmt;
+struct LetStmt;
+struct MutStmt;
+struct BlockStmt;
+struct IfStmt;
+struct WhileStmt;
+struct ForStmt;
+struct ForEachStmt;
+struct DoWhileStmt;
+struct FunctionStmt;
+struct ReturnStmt;
+
+struct Param {
+    Token name;
+    std::unique_ptr<TypeExpr> type;
+};
 
 // Visitor interface for expressions
 class ExprVisitor {
@@ -32,6 +51,7 @@ public:
     virtual void visit(const ArrayTypeExpr& expr) = 0;
     virtual void visit(const ArrayLiteralExpr& expr) = 0;
     virtual void visit(const SubscriptExpr& expr) = 0;
+    virtual void visit(const LambdaExpr& expr) = 0;
 };
 
 // Base class for all expression nodes
@@ -169,19 +189,17 @@ struct SubscriptExpr : public Expr {
     const std::unique_ptr<Expr> index;
 };
 
+struct LambdaExpr : public Expr {
+    LambdaExpr(std::vector<Param> params, std::unique_ptr<Expr> body)
+        : params(std::move(params)), body(std::move(body)) {}
 
-// Forward declarations for the visitor pattern
-struct ExpressionStmt;
-struct LetStmt;
-struct MutStmt;
-struct BlockStmt;
-struct IfStmt;
-struct WhileStmt;
-struct ForStmt;
-struct ForEachStmt;
-struct DoWhileStmt;
-struct FunctionStmt;
-struct ReturnStmt;
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::vector<Param> params;
+    const std::unique_ptr<Expr> body;
+};
 
 // Visitor interface for statements
 class StmtVisitor {
@@ -307,11 +325,6 @@ struct DoWhileStmt : public Stmt {
 };
 
 struct FunctionStmt : public Stmt {
-    struct Param {
-        Token name;
-        std::unique_ptr<TypeExpr> type;
-    };
-
     FunctionStmt(Token name, std::vector<Param> params, std::unique_ptr<TypeExpr> return_type, std::vector<std::unique_ptr<Stmt>> body)
         : name(name), params(std::move(params)), return_type(std::move(return_type)), body(std::move(body)) {}
 

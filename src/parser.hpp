@@ -21,6 +21,7 @@ namespace nota {
 
     private:
         std::unique_ptr<Stmt> declaration();
+        std::unique_ptr<Stmt> function_declaration();
         std::unique_ptr<Stmt> var_declaration(bool is_mutable);
         std::unique_ptr<Stmt> statement();
         std::unique_ptr<Stmt> for_statement();

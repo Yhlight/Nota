@@ -85,7 +85,15 @@ public:
     }
 
     std::string visit(const FunctionStmt& stmt) override {
-        return "func"; // Simplified
+        std::string result = "func " + stmt.name.lexeme + "(";
+        for (size_t i = 0; i < stmt.params.size(); ++i) {
+            result += stmt.params[i].lexeme;
+            if (i < stmt.params.size() - 1) {
+                result += ", ";
+            }
+        }
+        result += ") " + stmt.body->accept(*this);
+        return result;
     }
 
     std::string visit(const ReturnStmt& stmt) override {
@@ -152,4 +160,18 @@ TEST(ParserTest, InvalidAssignment) {
     // The parser should detect the error and recover, resulting in no valid statements.
     auto statements = parser.parse();
     EXPECT_EQ(statements.size(), 0);
+}
+
+TEST(ParserTest, FunctionDeclaration) {
+    std::string source = "func my_func(a, b) a + b end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "func my_func(a, b) (+ a b);\n");
 }

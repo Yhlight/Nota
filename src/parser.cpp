@@ -17,9 +17,27 @@ namespace nota {
     }
 
     std::unique_ptr<Stmt> Parser::declaration() {
+        if (match({TokenType::FUNC})) return function_declaration();
         if (match({TokenType::LET})) return var_declaration(false);
         if (match({TokenType::MUT})) return var_declaration(true);
         return statement();
+    }
+
+    std::unique_ptr<Stmt> Parser::function_declaration() {
+        Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
+        consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
+        std::vector<Token> parameters;
+        if (!check(TokenType::RIGHT_PAREN)) {
+            do {
+                parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+
+        std::unique_ptr<Stmt> body = statement();
+        consume(TokenType::END, "Expect 'end' after function body.");
+
+        return std::make_unique<FunctionStmt>(name, std::move(parameters), std::move(body));
     }
 
     std::unique_ptr<Stmt> Parser::var_declaration(bool is_mutable) {

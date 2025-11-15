@@ -45,8 +45,34 @@ void Compiler::visit(const IfStmt& stmt) {}
 void Compiler::visit(const WhileStmt& stmt) {}
 void Compiler::visit(const FunctionStmt& stmt) {}
 void Compiler::visit(const ReturnStmt& stmt) {}
-void Compiler::visit(const BinaryExpr& expr) {}
-void Compiler::visit(const UnaryExpr& expr) {}
-void Compiler::visit(const GroupingExpr& expr) {}
+
+void Compiler::visit(const BinaryExpr& expr) {
+    expr.left->accept(*this);
+    expr.right->accept(*this);
+
+    switch (expr.op.type) {
+        case TokenType::PLUS:    chunk.write(OP_ADD, expr.op.line); break;
+        case TokenType::MINUS:   chunk.write(OP_SUBTRACT, expr.op.line); break;
+        case TokenType::STAR:    chunk.write(OP_MULTIPLY, expr.op.line); break;
+        case TokenType::SLASH:   chunk.write(OP_DIVIDE, expr.op.line); break;
+        default:
+            // Should not happen
+            break;
+    }
+}
+
+void Compiler::visit(const UnaryExpr& expr) {
+    expr.right->accept(*this);
+    switch (expr.op.type) {
+        case TokenType::MINUS:   chunk.write(OP_NEGATE, expr.op.line); break;
+        default:
+            // Should not happen
+            break;
+    }
+}
+
+void Compiler::visit(const GroupingExpr& expr) {
+    expr.expression->accept(*this);
+}
 void Compiler::visit(const VariableExpr& expr) {}
 void Compiler::visit(const CallExpr& expr) {}

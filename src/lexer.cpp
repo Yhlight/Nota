@@ -20,6 +20,7 @@ Lexer::Lexer(const std::string& source) : source(source) {
     keywords["var"] = TokenType::VAR;
     keywords["while"] = TokenType::WHILE;
     keywords["let"] = TokenType::LET;
+    keywords["mut"] = TokenType::MUT;
 }
 
 std::vector<Token> Lexer::scanTokens() {
@@ -130,6 +131,7 @@ void Lexer::scanToken() {
         case '-': addToken(TokenType::MINUS); break;
         case '+': addToken(TokenType::PLUS); break;
         case '*': addToken(TokenType::STAR); break;
+        case ';': addToken(TokenType::SEMICOLON); break;
         case '/':
             if (match('/')) {
                 // A comment goes until the end of the line.

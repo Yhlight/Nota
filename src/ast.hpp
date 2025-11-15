@@ -10,6 +10,9 @@ struct GroupingExpr;
 struct LiteralExpr;
 struct UnaryExpr;
 
+struct ExpressionStmt;
+struct VarStmt;
+
 using LiteralValue = std::variant<std::monostate, std::string, long long, double, bool>;
 
 class ExprVisitor {
@@ -68,5 +71,40 @@ struct UnaryExpr : Expr {
 
     void accept(ExprVisitor& visitor) override {
         visitor.visit(std::make_shared<UnaryExpr>(*this));
+    }
+};
+
+class StmtVisitor {
+public:
+    virtual ~StmtVisitor() = default;
+    virtual void visit(const std::shared_ptr<ExpressionStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
+};
+
+class Stmt {
+public:
+    virtual ~Stmt() = default;
+    virtual void accept(StmtVisitor& visitor) = 0;
+};
+
+struct ExpressionStmt : Stmt {
+    std::shared_ptr<Expr> expression;
+
+    ExpressionStmt(std::shared_ptr<Expr> expression) : expression(expression) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(std::make_shared<ExpressionStmt>(*this));
+    }
+};
+
+struct VarStmt : Stmt {
+    Token name;
+    std::shared_ptr<Expr> initializer;
+
+    VarStmt(Token name, std::shared_ptr<Expr> initializer)
+        : name(name), initializer(initializer) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(std::make_shared<VarStmt>(*this));
     }
 };

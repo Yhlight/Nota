@@ -18,10 +18,12 @@ add_executable(nota_tests
     lexer_test.cpp
     parser_test.cpp
     compiler_test.cpp
+    vm_test.cpp
     ../src/lexer.cpp
     ../src/parser.cpp
     ../src/vm/chunk.cpp
     ../src/vm/compiler.cpp
+    ../src/vm/vm.cpp
 )
 
 target_link_libraries(

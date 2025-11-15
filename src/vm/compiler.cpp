@@ -1,4 +1,5 @@
 #include "compiler.hpp"
+#include <stdexcept>
 
 namespace nota {
 
@@ -49,12 +50,15 @@ namespace nota {
     }
 
     std::any Compiler::visit(const VariableExpr& expr) {
-        // For now, we don't handle variables
+        uint8_t arg = identifierConstant(expr.name);
+        emitBytes((uint8_t)OpCode::OP_GET_GLOBAL, arg);
         return {};
     }
 
     std::any Compiler::visit(const AssignExpr& expr) {
-        // For now, we don't handle variables
+        expr.value->accept(*this);
+        uint8_t arg = identifierConstant(expr.name);
+        emitBytes((uint8_t)OpCode::OP_SET_GLOBAL, arg);
         return {};
     }
 
@@ -69,6 +73,8 @@ namespace nota {
         } else {
             emitByte((uint8_t)OpCode::OP_NIL);
         }
+        uint8_t arg = identifierConstant(stmt.name);
+        emitBytes((uint8_t)OpCode::OP_DEFINE_GLOBAL, arg);
     }
 
     void Compiler::visit(const BlockStmt& stmt) {
@@ -88,15 +94,22 @@ namespace nota {
 
     void Compiler::emitConstant(const LiteralValue& value) {
         size_t constant = chunk->addConstant(value);
-        if (constant > 255) {
-            // Handle error, too many constants
-            return;
+        if (constant > UINT8_MAX) {
+            throw std::runtime_error("Too many constants in one chunk.");
         }
         emitBytes((uint8_t)OpCode::OP_CONSTANT, (uint8_t)constant);
     }
 
     void Compiler::emitReturn() {
         emitByte((uint8_t)OpCode::OP_RETURN);
+    }
+
+    uint8_t Compiler::identifierConstant(const Token& name) {
+        size_t constant = chunk->addConstant(name.lexeme);
+        if (constant > UINT8_MAX) {
+            throw std::runtime_error("Too many constants in one chunk.");
+        }
+        return (uint8_t)constant;
     }
 
 } // namespace nota

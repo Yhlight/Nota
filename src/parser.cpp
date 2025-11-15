@@ -13,7 +13,10 @@ namespace nota {
     std::vector<std::unique_ptr<Stmt>> Parser::parse() {
         std::vector<std::unique_ptr<Stmt>> statements;
         while (!isAtEnd()) {
-            statements.push_back(declaration());
+            auto decl = declaration();
+            if (decl) {
+                statements.push_back(std::move(decl));
+            }
         }
         return statements;
     }

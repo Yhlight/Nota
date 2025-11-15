@@ -4,4 +4,5 @@ add_executable(nota
     parser.cpp
     vm/chunk.cpp
     vm/compiler.cpp
+    vm/vm.cpp
 )

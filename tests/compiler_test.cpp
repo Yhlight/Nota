@@ -46,7 +46,8 @@ TEST(CompilerTest, VariableDeclaration) {
     const auto& code = chunk->getCode();
     const auto& constants = chunk->getConstants();
 
-    ASSERT_EQ(code.size(), 3);
+    ASSERT_EQ(code.size(), 5);
     EXPECT_EQ(code[0], (uint8_t)OpCode::OP_CONSTANT);
-    EXPECT_EQ(code[2], (uint8_t)OpCode::OP_RETURN);
+    EXPECT_EQ(code[2], (uint8_t)OpCode::OP_DEFINE_GLOBAL);
+    EXPECT_EQ(code[4], (uint8_t)OpCode::OP_RETURN);
 }

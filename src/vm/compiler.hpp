@@ -30,6 +30,7 @@ namespace nota {
         void emitBytes(uint8_t byte1, uint8_t byte2);
         void emitReturn();
         void emitConstant(const LiteralValue& value);
+        uint8_t identifierConstant(const Token& name);
 
         std::unique_ptr<Chunk> chunk;
     };

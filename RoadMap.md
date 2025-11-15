@@ -6,8 +6,8 @@ This document outlines the development roadmap for the Nota programming language
 
 - [x] Project scaffolding (directories, build system)
 - [x] Lexer implementation
-- [>] Parser implementation (AST)
-- [ ] Bytecode definition
+- [x] Parser implementation (AST)
+- [>] Bytecode definition
 - [ ] Virtual Machine (VM) core
 - [ ] Basic REPL
 

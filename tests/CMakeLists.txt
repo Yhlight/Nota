@@ -2,7 +2,7 @@ enable_testing()
 
 add_subdirectory(lib/googletest)
 
-add_executable(nota_tests main.cpp lexer_test.cpp ../src/lexer.cpp)
+add_executable(nota_tests main.cpp lexer_test.cpp ../src/lexer.cpp parser_test.cpp ../src/parser.cpp)
 
 target_include_directories(nota_tests PRIVATE ../src)
 

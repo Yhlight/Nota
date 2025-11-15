@@ -44,6 +44,7 @@ void Compiler::visit(const BlockStmt& stmt) {}
 void Compiler::visit(const IfStmt& stmt) {}
 void Compiler::visit(const WhileStmt& stmt) {}
 void Compiler::visit(const ForStmt& stmt) {}
+void Compiler::visit(const ForEachStmt& stmt) {}
 void Compiler::visit(const FunctionStmt& stmt) {}
 void Compiler::visit(const ReturnStmt& stmt) {}
 

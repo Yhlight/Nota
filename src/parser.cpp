@@ -117,6 +117,18 @@ std::unique_ptr<Stmt> Parser::while_statement() {
 }
 
 std::unique_ptr<Stmt> Parser::for_statement() {
+    // A bit of a hacky way to check for for-each loop
+    // A for-each loop is `for <var> : <container>`
+    // A C-style for loop is `for <initializer>; <condition>; <increment>`
+    if (peek().type == TokenType::IDENTIFIER && tokens_[current_ + 1].type == TokenType::COLON) {
+        Token variable = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        consume(TokenType::COLON, "Expect ':' after variable name.");
+        std::unique_ptr<Expr> container = expression();
+        std::unique_ptr<Stmt> body = block();
+        consume(TokenType::END, "Expect 'end' after for loop.");
+        return std::make_unique<ForEachStmt>(variable, std::move(container), std::move(body));
+    }
+
     std::unique_ptr<Stmt> initializer;
     if (match({TokenType::LET})) {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");

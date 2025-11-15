@@ -214,6 +214,28 @@ TEST(ParserTest, ParsesForStatement) {
     ASSERT_EQ(body->statements.size(), 0);
 }
 
+TEST(ParserTest, ParsesForEachStatement) {
+    std::string source = "for i: my_array\n end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    ForEachStmt* for_each_stmt = dynamic_cast<ForEachStmt*>(statements[0].get());
+    ASSERT_NE(for_each_stmt, nullptr);
+
+    EXPECT_EQ(for_each_stmt->variable.lexeme, "i");
+
+    VariableExpr* container = dynamic_cast<VariableExpr*>(for_each_stmt->container.get());
+    ASSERT_NE(container, nullptr);
+    EXPECT_EQ(container->name.lexeme, "my_array");
+
+    BlockStmt* body = dynamic_cast<BlockStmt*>(for_each_stmt->body.get());
+    ASSERT_NE(body, nullptr);
+    ASSERT_EQ(body->statements.size(), 0);
+}
+
 TEST(ParserTest, ParsesFunctionDeclaration) {
     std::string source = "func my_func(a: int, b: int): int\nreturn a + b\nend";
     Lexer lexer(source);

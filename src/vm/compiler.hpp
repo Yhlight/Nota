@@ -16,6 +16,7 @@ private:
     void visit(const IfStmt& stmt) override;
     void visit(const WhileStmt& stmt) override;
     void visit(const ForStmt& stmt) override;
+    void visit(const ForEachStmt& stmt) override;
     void visit(const FunctionStmt& stmt) override;
     void visit(const ReturnStmt& stmt) override;
 

@@ -89,6 +89,9 @@ struct VariableExpr : public Expr {
 struct ExpressionStmt;
 struct LetStmt;
 struct MutStmt;
+struct BlockStmt;
+struct IfStmt;
+struct WhileStmt;
 
 // Visitor interface for statements
 class StmtVisitor {
@@ -97,6 +100,9 @@ public:
     virtual void visit(const ExpressionStmt& stmt) = 0;
     virtual void visit(const LetStmt& stmt) = 0;
     virtual void visit(const MutStmt& stmt) = 0;
+    virtual void visit(const BlockStmt& stmt) = 0;
+    virtual void visit(const IfStmt& stmt) = 0;
+    virtual void visit(const WhileStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -127,6 +133,42 @@ struct LetStmt : public Stmt {
 
     const Token name;
     const std::unique_ptr<Expr> initializer;
+};
+
+struct BlockStmt : public Stmt {
+    BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
+        : statements(std::move(statements)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::vector<std::unique_ptr<Stmt>> statements;
+};
+
+struct IfStmt : public Stmt {
+    IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> then_branch, std::unique_ptr<Stmt> else_branch)
+        : condition(std::move(condition)), then_branch(std::move(then_branch)), else_branch(std::move(else_branch)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> then_branch;
+    const std::unique_ptr<Stmt> else_branch;
+};
+
+struct WhileStmt : public Stmt {
+    WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+        : condition(std::move(condition)), body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> body;
 };
 
 struct MutStmt : public Stmt {

@@ -28,9 +28,47 @@ std::unique_ptr<Stmt> Parser::declaration() {
     return statement();
 }
 
+std::unique_ptr<Stmt> Parser::if_statement() {
+    std::unique_ptr<Expr> condition = expression();
+    std::unique_ptr<Stmt> then_branch = block();
+    std::unique_ptr<Stmt> else_branch = nullptr;
+    if (match({TokenType::ELSE})) {
+        // Handle 'else if' as a nested if statement
+        if (peek().type == TokenType::IF) {
+            advance(); // Consume the 'if'
+            else_branch = if_statement();
+        } else {
+            else_branch = block();
+        }
+    }
+    consume(TokenType::END, "Expect 'end' after if statement.");
+    return std::make_unique<IfStmt>(std::move(condition), std::move(then_branch), std::move(else_branch));
+}
+
 std::unique_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::IF})) {
+        return if_statement();
+    }
+    if (match({TokenType::WHILE})) {
+        return while_statement();
+    }
     std::unique_ptr<Expr> expr = expression();
     return std::make_unique<ExpressionStmt>(std::move(expr));
+}
+
+std::unique_ptr<Stmt> Parser::while_statement() {
+    std::unique_ptr<Expr> condition = expression();
+    std::unique_ptr<Stmt> body = block();
+    consume(TokenType::END, "Expect 'end' after while statement.");
+    return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<Stmt> Parser::block() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+    while (!is_at_end() && peek().type != TokenType::END && peek().type != TokenType::ELSE) {
+        statements.push_back(declaration());
+    }
+    return std::make_unique<BlockStmt>(std::move(statements));
 }
 
 std::unique_ptr<Expr> Parser::expression() {

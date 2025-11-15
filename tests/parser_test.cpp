@@ -77,3 +77,69 @@ TEST(ParserTest, ParsesBinaryExpression) {
     ASSERT_NE(right, nullptr);
     EXPECT_EQ(right->value.lexeme, "2");
 }
+
+TEST(ParserTest, ParsesIfStatement) {
+    std::string source = "if true\nlet x = 1\nend";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    IfStmt* if_stmt = dynamic_cast<IfStmt*>(statements[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    LiteralExpr* condition = dynamic_cast<LiteralExpr*>(if_stmt->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->value.type, TokenType::TRUE);
+
+    BlockStmt* then_branch = dynamic_cast<BlockStmt*>(if_stmt->then_branch.get());
+    ASSERT_NE(then_branch, nullptr);
+    ASSERT_EQ(then_branch->statements.size(), 1);
+
+    EXPECT_EQ(if_stmt->else_branch, nullptr);
+}
+
+TEST(ParserTest, ParsesIfElseStatement) {
+    std::string source = "if false\nlet x = 1\nelse\nlet y = 2\nend";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    IfStmt* if_stmt = dynamic_cast<IfStmt*>(statements[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    LiteralExpr* condition = dynamic_cast<LiteralExpr*>(if_stmt->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->value.type, TokenType::FALSE);
+
+    BlockStmt* then_branch = dynamic_cast<BlockStmt*>(if_stmt->then_branch.get());
+    ASSERT_NE(then_branch, nullptr);
+    ASSERT_EQ(then_branch->statements.size(), 1);
+
+    BlockStmt* else_branch = dynamic_cast<BlockStmt*>(if_stmt->else_branch.get());
+    ASSERT_NE(else_branch, nullptr);
+    ASSERT_EQ(else_branch->statements.size(), 1);
+}
+
+TEST(ParserTest, ParsesWhileStatement) {
+    std::string source = "while true\nlet x = 1\nend";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    WhileStmt* while_stmt = dynamic_cast<WhileStmt*>(statements[0].get());
+    ASSERT_NE(while_stmt, nullptr);
+
+    LiteralExpr* condition = dynamic_cast<LiteralExpr*>(while_stmt->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->value.type, TokenType::TRUE);
+
+    BlockStmt* body = dynamic_cast<BlockStmt*>(while_stmt->body.get());
+    ASSERT_NE(body, nullptr);
+    ASSERT_EQ(body->statements.size(), 1);
+}

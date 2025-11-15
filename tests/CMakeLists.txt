@@ -8,9 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory(lib/googletest)
 
 include_directories(${gtest_SOURCE_DIR}/include ${gmock_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 add_executable(nota_tests
     main.cpp
+    lexer_test.cpp
 )
 
-target_link_libraries(nota_tests gtest gtest_main)
+target_link_libraries(nota_tests gtest gtest_main nota_lib)

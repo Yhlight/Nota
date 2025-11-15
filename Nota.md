@@ -38,6 +38,17 @@ let g: function = add  // 函数
 let h: className = Person{}  // 类
 ```
 
+## 运算符
+Nota支持标准的运算符  
+
+```nota
++ - * / %
+== != > >= < <= !
+& | ^ ~ << >>
+= += -= *= /= %=
+&& ||
+```
+
 ## 选择结构
 Nota支持2种选择结构  
 if...else  
@@ -99,7 +110,7 @@ end
 ```
 
 ```nota
-for i : 容器
+for let/mut i : 容器  // 默认let，即不可变，可以不写，也可以显性写出来
 
 end
 ```

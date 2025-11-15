@@ -280,3 +280,59 @@ TEST(ParserTest, ParsesReturnStatement) {
     ASSERT_NE(value, nullptr);
     EXPECT_EQ(value->value.lexeme, "1");
 }
+
+TEST(ParserTest, ParsesArrayType) {
+    std::string source = "let x: int[] = [1, 2, 3]";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    LetStmt* let_stmt = dynamic_cast<LetStmt*>(statements[0].get());
+    ASSERT_NE(let_stmt, nullptr);
+
+    ArrayTypeExpr* array_type = dynamic_cast<ArrayTypeExpr*>(let_stmt->type.get());
+    ASSERT_NE(array_type, nullptr);
+    EXPECT_EQ(array_type->element_type->name.lexeme, "int");
+    EXPECT_EQ(array_type->size, nullptr);
+}
+
+TEST(ParserTest, ParsesArrayLiteral) {
+    std::string source = "[1, 2, 3]";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    ExpressionStmt* expr_stmt = dynamic_cast<ExpressionStmt*>(statements[0].get());
+    ASSERT_NE(expr_stmt, nullptr);
+
+    ArrayLiteralExpr* array_literal = dynamic_cast<ArrayLiteralExpr*>(expr_stmt->expression.get());
+    ASSERT_NE(array_literal, nullptr);
+    ASSERT_EQ(array_literal->elements.size(), 3);
+}
+
+TEST(ParserTest, ParsesSubscriptExpression) {
+    std::string source = "my_array[0]";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    ExpressionStmt* expr_stmt = dynamic_cast<ExpressionStmt*>(statements[0].get());
+    ASSERT_NE(expr_stmt, nullptr);
+
+    SubscriptExpr* subscript_expr = dynamic_cast<SubscriptExpr*>(expr_stmt->expression.get());
+    ASSERT_NE(subscript_expr, nullptr);
+
+    VariableExpr* callee = dynamic_cast<VariableExpr*>(subscript_expr->callee.get());
+    ASSERT_NE(callee, nullptr);
+    EXPECT_EQ(callee->name.lexeme, "my_array");
+
+    LiteralExpr* index = dynamic_cast<LiteralExpr*>(subscript_expr->index.get());
+    ASSERT_NE(index, nullptr);
+    EXPECT_EQ(index->value.lexeme, "0");
+}

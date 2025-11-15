@@ -26,8 +26,10 @@ private:
     std::unique_ptr<Expr> term();
     std::unique_ptr<Expr> factor();
     std::unique_ptr<Expr> unary();
+    std::unique_ptr<Expr> call();
     std::unique_ptr<Expr> primary();
     std::unique_ptr<Expr> finish_call(std::unique_ptr<Expr> callee);
+    std::unique_ptr<Expr> finish_subscript(std::unique_ptr<Expr> callee);
 
     bool match(const std::vector<TokenType>& types);
     Token consume(TokenType type, const std::string& message);

@@ -80,6 +80,10 @@ void Compiler::visit(const TypeExpr& expr) {
     // Types are handled during semantic analysis, not compilation to bytecode.
 }
 
+void Compiler::visit(const ArrayTypeExpr& expr) {}
+void Compiler::visit(const ArrayLiteralExpr& expr) {}
+void Compiler::visit(const SubscriptExpr& expr) {}
+
 void Compiler::visit(const VariableExpr& expr) {}
 void Compiler::visit(const AssignExpr& expr) {}
 void Compiler::visit(const CallExpr& expr) {}

@@ -13,6 +13,9 @@ struct VariableExpr;
 struct AssignExpr;
 struct CallExpr;
 struct TypeExpr;
+struct ArrayTypeExpr;
+struct ArrayLiteralExpr;
+struct SubscriptExpr;
 
 // Visitor interface for expressions
 class ExprVisitor {
@@ -26,6 +29,9 @@ public:
     virtual void visit(const AssignExpr& expr) = 0;
     virtual void visit(const CallExpr& expr) = 0;
     virtual void visit(const TypeExpr& expr) = 0;
+    virtual void visit(const ArrayTypeExpr& expr) = 0;
+    virtual void visit(const ArrayLiteralExpr& expr) = 0;
+    virtual void visit(const SubscriptExpr& expr) = 0;
 };
 
 // Base class for all expression nodes
@@ -125,6 +131,44 @@ struct TypeExpr : public Expr {
 
     const Token name;
 };
+
+struct ArrayTypeExpr : public TypeExpr {
+    ArrayTypeExpr(std::unique_ptr<TypeExpr> element_type, std::unique_ptr<Expr> size)
+        : TypeExpr(element_type->name), element_type(std::move(element_type)), size(std::move(size)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<TypeExpr> element_type;
+    const std::unique_ptr<Expr> size; // nullptr for dynamic arrays
+};
+
+struct ArrayLiteralExpr : public Expr {
+    ArrayLiteralExpr(Token bracket, std::vector<std::unique_ptr<Expr>> elements)
+        : bracket(bracket), elements(std::move(elements)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token bracket;
+    const std::vector<std::unique_ptr<Expr>> elements;
+};
+
+struct SubscriptExpr : public Expr {
+    SubscriptExpr(std::unique_ptr<Expr> callee, Token bracket, std::unique_ptr<Expr> index)
+        : callee(std::move(callee)), bracket(bracket), index(std::move(index)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Expr> callee;
+    const Token bracket;
+    const std::unique_ptr<Expr> index;
+};
+
 
 // Forward declarations for the visitor pattern
 struct ExpressionStmt;

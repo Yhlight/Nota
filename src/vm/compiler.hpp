@@ -27,6 +27,9 @@ private:
     void visit(const AssignExpr& expr) override;
     void visit(const CallExpr& expr) override;
     void visit(const TypeExpr& expr) override;
+    void visit(const ArrayTypeExpr& expr) override;
+    void visit(const ArrayLiteralExpr& expr) override;
+    void visit(const SubscriptExpr& expr) override;
 
     Chunk chunk;
 };

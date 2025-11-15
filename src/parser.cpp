@@ -175,7 +175,18 @@ std::unique_ptr<Expr> Parser::assignment() {
 
 std::unique_ptr<TypeExpr> Parser::type_expression() {
     Token type_name = consume(TokenType::IDENTIFIER, "Expect type name.");
-    return std::make_unique<TypeExpr>(type_name);
+    std::unique_ptr<TypeExpr> type = std::make_unique<TypeExpr>(type_name);
+
+    if (match({TokenType::LBRACKET})) {
+        std::unique_ptr<Expr> size = nullptr;
+        if (peek().type != TokenType::RBRACKET) {
+            size = expression();
+        }
+        consume(TokenType::RBRACKET, "Expect ']' after array size.");
+        return std::make_unique<ArrayTypeExpr>(std::move(type), std::move(size));
+    }
+
+    return type;
 }
 
 std::unique_ptr<Expr> Parser::equality() {
@@ -210,14 +221,10 @@ std::unique_ptr<Expr> Parser::term() {
 
 std::unique_ptr<Expr> Parser::factor() {
     std::unique_ptr<Expr> expr = unary();
-    while (match({TokenType::STAR, TokenType::SLASH, TokenType::LPAREN})) {
-        if (tokens_[current_ - 1].type == TokenType::LPAREN) {
-            expr = finish_call(std::move(expr));
-        } else {
-            Token op = tokens_[current_ - 1];
-            std::unique_ptr<Expr> right = unary();
-            expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
-        }
+    while (match({TokenType::STAR, TokenType::SLASH})) {
+        Token op = tokens_[current_ - 1];
+        std::unique_ptr<Expr> right = unary();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
     }
     return expr;
 }
@@ -228,7 +235,23 @@ std::unique_ptr<Expr> Parser::unary() {
         std::unique_ptr<Expr> right = unary();
         return std::make_unique<UnaryExpr>(op, std::move(right));
     }
-    return primary();
+    return call();
+}
+
+std::unique_ptr<Expr> Parser::call() {
+    std::unique_ptr<Expr> expr = primary();
+
+    while (true) {
+        if (match({TokenType::LPAREN})) {
+            expr = finish_call(std::move(expr));
+        } else if (match({TokenType::LBRACKET})) {
+            expr = finish_subscript(std::move(expr));
+        } else {
+            break;
+        }
+    }
+
+    return expr;
 }
 
 std::unique_ptr<Expr> Parser::primary() {
@@ -240,6 +263,18 @@ std::unique_ptr<Expr> Parser::primary() {
         std::unique_ptr<Expr> expr = expression();
         consume(TokenType::RPAREN, "Expect ')' after expression.");
         return std::make_unique<GroupingExpr>(std::move(expr));
+    }
+
+    if (match({TokenType::LBRACKET})) {
+        Token bracket = tokens_[current_ - 1];
+        std::vector<std::unique_ptr<Expr>> elements;
+        if (peek().type != TokenType::RBRACKET) {
+            do {
+                elements.push_back(expression());
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RBRACKET, "Expect ']' after array elements.");
+        return std::make_unique<ArrayLiteralExpr>(bracket, std::move(elements));
     }
 
     if (match({TokenType::IDENTIFIER})) {
@@ -258,6 +293,12 @@ std::unique_ptr<Expr> Parser::finish_call(std::unique_ptr<Expr> callee) {
     }
     Token paren = consume(TokenType::RPAREN, "Expect ')' after arguments.");
     return std::make_unique<CallExpr>(std::move(callee), paren, std::move(arguments));
+}
+
+std::unique_ptr<Expr> Parser::finish_subscript(std::unique_ptr<Expr> callee) {
+    std::unique_ptr<Expr> index = expression();
+    Token bracket = consume(TokenType::RBRACKET, "Expect ']' after index.");
+    return std::make_unique<SubscriptExpr>(std::move(callee), bracket, std::move(index));
 }
 
 

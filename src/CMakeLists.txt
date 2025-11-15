@@ -1,1 +1,1 @@
-add_executable(nota main.cpp)
+add_executable(nota main.cpp lexer.cpp)

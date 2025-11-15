@@ -16,6 +16,7 @@ private:
     std::unique_ptr<Stmt> if_statement();
     std::unique_ptr<Stmt> while_statement();
     std::unique_ptr<Stmt> for_statement();
+    std::unique_ptr<Stmt> do_while_statement();
     std::unique_ptr<Stmt> return_statement();
     std::unique_ptr<Stmt> block();
     std::unique_ptr<Expr> expression();

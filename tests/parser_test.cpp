@@ -188,6 +188,26 @@ TEST(ParserTest, ParsesWhileStatement) {
     ASSERT_EQ(body->statements.size(), 1);
 }
 
+TEST(ParserTest, ParsesDoWhileStatement) {
+    std::string source = "do\nlet x = 1\nwhile true end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    DoWhileStmt* do_while_stmt = dynamic_cast<DoWhileStmt*>(statements[0].get());
+    ASSERT_NE(do_while_stmt, nullptr);
+
+    BlockStmt* body = dynamic_cast<BlockStmt*>(do_while_stmt->body.get());
+    ASSERT_NE(body, nullptr);
+    ASSERT_EQ(body->statements.size(), 1);
+
+    LiteralExpr* condition = dynamic_cast<LiteralExpr*>(do_while_stmt->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->value.type, TokenType::TRUE);
+}
+
 TEST(ParserTest, ParsesForStatement) {
     std::string source = "for let i = 0; i < 10; i = i + 1\n end";
     Lexer lexer(source);

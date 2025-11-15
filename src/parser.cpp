@@ -93,6 +93,9 @@ std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::FOR})) {
         return for_statement();
     }
+    if (match({TokenType::DO})) {
+        return do_while_statement();
+    }
     if (match({TokenType::RETURN})) {
         return return_statement();
     }
@@ -114,6 +117,14 @@ std::unique_ptr<Stmt> Parser::while_statement() {
     std::unique_ptr<Stmt> body = block();
     consume(TokenType::END, "Expect 'end' after while statement.");
     return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<Stmt> Parser::do_while_statement() {
+    std::unique_ptr<Stmt> body = block();
+    consume(TokenType::WHILE, "Expect 'while' after do-while body.");
+    std::unique_ptr<Expr> condition = expression();
+    consume(TokenType::END, "Expect 'end' after do-while condition.");
+    return std::make_unique<DoWhileStmt>(std::move(body), std::move(condition));
 }
 
 std::unique_ptr<Stmt> Parser::for_statement() {
@@ -158,7 +169,7 @@ std::unique_ptr<Stmt> Parser::for_statement() {
 
 std::unique_ptr<Stmt> Parser::block() {
     std::vector<std::unique_ptr<Stmt>> statements;
-    while (!is_at_end() && peek().type != TokenType::END && peek().type != TokenType::ELSE) {
+    while (!is_at_end() && peek().type != TokenType::END && peek().type != TokenType::ELSE && peek().type != TokenType::WHILE) {
         statements.push_back(declaration());
     }
     return std::make_unique<BlockStmt>(std::move(statements));

@@ -179,6 +179,7 @@ struct IfStmt;
 struct WhileStmt;
 struct ForStmt;
 struct ForEachStmt;
+struct DoWhileStmt;
 struct FunctionStmt;
 struct ReturnStmt;
 
@@ -194,6 +195,7 @@ public:
     virtual void visit(const WhileStmt& stmt) = 0;
     virtual void visit(const ForStmt& stmt) = 0;
     virtual void visit(const ForEachStmt& stmt) = 0;
+    virtual void visit(const DoWhileStmt& stmt) = 0;
     virtual void visit(const FunctionStmt& stmt) = 0;
     virtual void visit(const ReturnStmt& stmt) = 0;
 };
@@ -290,6 +292,18 @@ struct ForEachStmt : public Stmt {
     const Token variable;
     const std::unique_ptr<Expr> container;
     const std::unique_ptr<Stmt> body;
+};
+
+struct DoWhileStmt : public Stmt {
+    DoWhileStmt(std::unique_ptr<Stmt> body, std::unique_ptr<Expr> condition)
+        : body(std::move(body)), condition(std::move(condition)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Stmt> body;
+    const std::unique_ptr<Expr> condition;
 };
 
 struct FunctionStmt : public Stmt {

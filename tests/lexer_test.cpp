@@ -76,7 +76,7 @@ TEST(LexerTest, IdentifiersAndKeywords) {
 
     std::vector<TokenType> expected_types = {
         TokenType::LET, TokenType::MUT, TokenType::IDENTIFIER,
-        TokenType::EQUAL, TokenType::NUMBER, TokenType::CLASS,
+        TokenType::EQUAL, TokenType::NUMBER, TokenType::SEMICOLON, TokenType::CLASS,
         TokenType::IDENTIFIER, TokenType::EOF_TOKEN
     };
 

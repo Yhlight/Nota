@@ -1,0 +1,155 @@
+#include <gtest/gtest.h>
+#include "../src/parser.hpp"
+#include "../src/ast.hpp"
+#include <iostream>
+
+using namespace nota;
+
+class AstPrinter : public ExprVisitor, public StmtVisitor {
+public:
+    std::string print(const std::vector<std::unique_ptr<Stmt>>& statements) {
+        std::string result;
+        for (const auto& stmt : statements) {
+            result += stmt->accept(*this) + "\n";
+        }
+        return result;
+    }
+
+    std::string visit(const BinaryExpr& expr) override {
+        return parenthesize(expr.op.lexeme, {expr.left.get(), expr.right.get()});
+    }
+
+    std::string visit(const GroupingExpr& expr) override {
+        return parenthesize("group", {expr.expression.get()});
+    }
+
+    std::string visit(const LiteralExpr& expr) override {
+        return expr.value;
+    }
+
+    std::string visit(const UnaryExpr& expr) override {
+        return parenthesize(expr.op.lexeme, {expr.right.get()});
+    }
+
+    std::string visit(const VariableExpr& expr) override {
+        return expr.name.lexeme;
+    }
+
+    std::string visit(const AssignExpr& expr) override {
+        return parenthesize("= " + expr.name.lexeme, {expr.value.get()});
+    }
+
+    std::string visit(const CallExpr& expr) override {
+        std::vector<Expr*> args;
+        for(const auto& arg : expr.arguments) {
+            args.push_back(arg.get());
+        }
+        return parenthesize("call " + expr.callee->accept(*this), args);
+    }
+
+    std::string visit(const LambdaExpr& expr) override {
+        return "lambda"; // Simplified
+    }
+
+    std::string visit(const ExpressionStmt& stmt) override {
+        return stmt.expression->accept(*this) + ";";
+    }
+
+    std::string visit(const VarStmt& stmt) override {
+        std::string type = stmt.is_mutable ? "mut" : "let";
+        if (stmt.initializer) {
+            return type + " " + stmt.name.lexeme + " = " + stmt.initializer->accept(*this) + ";";
+        }
+        return type + " " + stmt.name.lexeme + ";";
+    }
+
+    std::string visit(const BlockStmt& stmt) override {
+        std::string result = "{\n";
+        for (const auto& s : stmt.statements) {
+            result += s->accept(*this) + "\n";
+        }
+        result += "}";
+        return result;
+    }
+
+    std::string visit(const IfStmt& stmt) override {
+        return "if"; // Simplified
+    }
+
+    std::string visit(const WhileStmt& stmt) override {
+        return "while"; // Simplified
+    }
+
+    std::string visit(const ForStmt& stmt) override {
+        return "for"; // Simplified
+    }
+
+    std::string visit(const FunctionStmt& stmt) override {
+        return "func"; // Simplified
+    }
+
+    std::string visit(const ReturnStmt& stmt) override {
+        return "return"; // Simplified
+    }
+
+
+private:
+    std::string parenthesize(const std::string& name, const std::vector<Expr*>& exprs) {
+        std::string result = "(" + name;
+        for (const auto& expr : exprs) {
+            result += " " + expr->accept(*this);
+        }
+        result += ")";
+        return result;
+    }
+};
+
+TEST(ParserTest, VarDeclaration) {
+    std::string source = "let x = 10";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "let x = 10;\n");
+}
+
+TEST(ParserTest, FunctionCall) {
+    std::string source = "my_function(1, 2)";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "(call my_function 1 2);\n");
+}
+
+TEST(ParserTest, ForLoop) {
+    std::string source = "for let i = 0; i < 10; i = i + 1 i = i + 1 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    EXPECT_EQ(statements.size(), 1);
+    // More detailed AST verification would be needed for a real-world scenario.
+}
+
+TEST(ParserTest, InvalidAssignment) {
+    std::string source = "10 = x";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+
+    // The parser should detect the error and recover, resulting in no valid statements.
+    auto statements = parser.parse();
+    EXPECT_EQ(statements.size(), 0);
+}

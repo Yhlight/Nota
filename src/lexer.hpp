@@ -11,7 +11,7 @@ namespace nota {
         // Single-character tokens.
         LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
         LEFT_BRACKET, RIGHT_BRACKET,
-        COMMA, DOT, MINUS, PLUS, SLASH, STAR, PERCENT,
+        COMMA, DOT, MINUS, PLUS, SLASH, STAR, PERCENT, SEMICOLON,
 
         // One or two character tokens.
         BANG, BANG_EQUAL,

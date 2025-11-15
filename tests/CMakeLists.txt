@@ -13,6 +13,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src)
 add_executable(nota_tests
     main.cpp
     lexer_test.cpp
+    parser_test.cpp
 )
 
 target_link_libraries(nota_tests gtest gtest_main nota_lib)

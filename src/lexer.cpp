@@ -45,6 +45,7 @@ namespace nota {
             case ']': add_token(TokenType::RIGHT_BRACKET); break;
             case ',': add_token(TokenType::COMMA); break;
             case '.': add_token(TokenType::DOT); break;
+            case ';': add_token(TokenType::SEMICOLON); break;
             case '-':
                 add_token(match('=') ? TokenType::MINUS_EQUAL : TokenType::MINUS);
                 break;

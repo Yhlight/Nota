@@ -143,3 +143,57 @@ TEST(ParserTest, ParsesWhileStatement) {
     ASSERT_NE(body, nullptr);
     ASSERT_EQ(body->statements.size(), 1);
 }
+
+TEST(ParserTest, ParsesFunctionDeclaration) {
+    std::string source = "func my_func(a, b)\nreturn a + b\nend";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    FunctionStmt* func_stmt = dynamic_cast<FunctionStmt*>(statements[0].get());
+    ASSERT_NE(func_stmt, nullptr);
+    EXPECT_EQ(func_stmt->name.lexeme, "my_func");
+    ASSERT_EQ(func_stmt->params.size(), 2);
+    EXPECT_EQ(func_stmt->params[0].lexeme, "a");
+    EXPECT_EQ(func_stmt->params[1].lexeme, "b");
+    ASSERT_EQ(func_stmt->body.size(), 1);
+}
+
+TEST(ParserTest, ParsesCallExpression) {
+    std::string source = "my_func(1, 2)";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    ExpressionStmt* expr_stmt = dynamic_cast<ExpressionStmt*>(statements[0].get());
+    ASSERT_NE(expr_stmt, nullptr);
+
+    CallExpr* call_expr = dynamic_cast<CallExpr*>(expr_stmt->expression.get());
+    ASSERT_NE(call_expr, nullptr);
+
+    VariableExpr* callee = dynamic_cast<VariableExpr*>(call_expr->callee.get());
+    ASSERT_NE(callee, nullptr);
+    EXPECT_EQ(callee->name.lexeme, "my_func");
+
+    ASSERT_EQ(call_expr->arguments.size(), 2);
+}
+
+TEST(ParserTest, ParsesReturnStatement) {
+    std::string source = "return 1";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+    ReturnStmt* return_stmt = dynamic_cast<ReturnStmt*>(statements[0].get());
+    ASSERT_NE(return_stmt, nullptr);
+
+    LiteralExpr* value = dynamic_cast<LiteralExpr*>(return_stmt->value.get());
+    ASSERT_NE(value, nullptr);
+    EXPECT_EQ(value->value.lexeme, "1");
+}

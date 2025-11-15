@@ -10,6 +10,7 @@ struct UnaryExpr;
 struct LiteralExpr;
 struct GroupingExpr;
 struct VariableExpr;
+struct CallExpr;
 
 // Visitor interface for expressions
 class ExprVisitor {
@@ -20,6 +21,7 @@ public:
     virtual void visit(const LiteralExpr& expr) = 0;
     virtual void visit(const GroupingExpr& expr) = 0;
     virtual void visit(const VariableExpr& expr) = 0;
+    virtual void visit(const CallExpr& expr) = 0;
 };
 
 // Base class for all expression nodes
@@ -85,6 +87,19 @@ struct VariableExpr : public Expr {
     const Token name;
 };
 
+struct CallExpr : public Expr {
+    CallExpr(std::unique_ptr<Expr> callee, Token paren, std::vector<std::unique_ptr<Expr>> arguments)
+        : callee(std::move(callee)), paren(paren), arguments(std::move(arguments)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Expr> callee;
+    const Token paren; // For error reporting
+    const std::vector<std::unique_ptr<Expr>> arguments;
+};
+
 // Forward declarations for the visitor pattern
 struct ExpressionStmt;
 struct LetStmt;
@@ -92,6 +107,8 @@ struct MutStmt;
 struct BlockStmt;
 struct IfStmt;
 struct WhileStmt;
+struct FunctionStmt;
+struct ReturnStmt;
 
 // Visitor interface for statements
 class StmtVisitor {
@@ -103,6 +120,8 @@ public:
     virtual void visit(const BlockStmt& stmt) = 0;
     virtual void visit(const IfStmt& stmt) = 0;
     virtual void visit(const WhileStmt& stmt) = 0;
+    virtual void visit(const FunctionStmt& stmt) = 0;
+    virtual void visit(const ReturnStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -169,6 +188,31 @@ struct WhileStmt : public Stmt {
 
     const std::unique_ptr<Expr> condition;
     const std::unique_ptr<Stmt> body;
+};
+
+struct FunctionStmt : public Stmt {
+    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::unique_ptr<Stmt>> body)
+        : name(name), params(std::move(params)), body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token name;
+    const std::vector<Token> params;
+    const std::vector<std::unique_ptr<Stmt>> body;
+};
+
+struct ReturnStmt : public Stmt {
+    ReturnStmt(Token keyword, std::unique_ptr<Expr> value)
+        : keyword(keyword), value(std::move(value)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token keyword;
+    const std::unique_ptr<Expr> value;
 };
 
 struct MutStmt : public Stmt {

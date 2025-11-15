@@ -11,9 +11,11 @@ public:
 
 private:
     std::unique_ptr<Stmt> declaration();
+    std::unique_ptr<Stmt> function(const std::string& kind);
     std::unique_ptr<Stmt> statement();
     std::unique_ptr<Stmt> if_statement();
     std::unique_ptr<Stmt> while_statement();
+    std::unique_ptr<Stmt> return_statement();
     std::unique_ptr<Stmt> block();
     std::unique_ptr<Expr> expression();
     std::unique_ptr<Expr> equality();
@@ -22,6 +24,7 @@ private:
     std::unique_ptr<Expr> factor();
     std::unique_ptr<Expr> unary();
     std::unique_ptr<Expr> primary();
+    std::unique_ptr<Expr> finish_call(std::unique_ptr<Expr> callee);
 
     bool match(const std::vector<TokenType>& types);
     Token consume(TokenType type, const std::string& message);

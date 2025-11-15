@@ -14,15 +14,23 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
 std::unique_ptr<Stmt> Parser::declaration() {
     if (match({TokenType::LET})) {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        std::unique_ptr<TypeExpr> type = nullptr;
+        if (match({TokenType::COLON})) {
+            type = type_expression();
+        }
         consume(TokenType::ASSIGN, "Expect '=' after variable name.");
         std::unique_ptr<Expr> initializer = expression();
-        return std::make_unique<LetStmt>(name, std::move(initializer));
+        return std::make_unique<LetStmt>(name, std::move(type), std::move(initializer));
     }
     if (match({TokenType::MUT})) {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        std::unique_ptr<TypeExpr> type = nullptr;
+        if (match({TokenType::COLON})) {
+            type = type_expression();
+        }
         consume(TokenType::ASSIGN, "Expect '=' after variable name.");
         std::unique_ptr<Expr> initializer = expression();
-        return std::make_unique<MutStmt>(name, std::move(initializer));
+        return std::make_unique<MutStmt>(name, std::move(type), std::move(initializer));
     }
     if (match({TokenType::FUNC})) {
         return function("function");
@@ -34,13 +42,21 @@ std::unique_ptr<Stmt> Parser::declaration() {
 std::unique_ptr<Stmt> Parser::function(const std::string& kind) {
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
     consume(TokenType::LPAREN, "Expect '(' after " + kind + " name.");
-    std::vector<Token> parameters;
+    std::vector<FunctionStmt::Param> parameters;
     if (peek().type != TokenType::RPAREN) {
         do {
-            parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            Token param_name = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+            consume(TokenType::COLON, "Expect ':' after parameter name.");
+            std::unique_ptr<TypeExpr> param_type = type_expression();
+            parameters.push_back({param_name, std::move(param_type)});
         } while (match({TokenType::COMMA}));
     }
     consume(TokenType::RPAREN, "Expect ')' after parameters.");
+
+    std::unique_ptr<TypeExpr> return_type = nullptr;
+    if (match({TokenType::COLON})) {
+        return_type = type_expression();
+    }
 
     std::vector<std::unique_ptr<Stmt>> body;
     while (!is_at_end() && peek().type != TokenType::END) {
@@ -48,7 +64,7 @@ std::unique_ptr<Stmt> Parser::function(const std::string& kind) {
     }
 
     consume(TokenType::END, "Expect 'end' after " + kind + " body.");
-    return std::make_unique<FunctionStmt>(name, std::move(parameters), std::move(body));
+    return std::make_unique<FunctionStmt>(name, std::move(parameters), std::move(return_type), std::move(body));
 }
 
 std::unique_ptr<Stmt> Parser::if_statement() {
@@ -56,9 +72,8 @@ std::unique_ptr<Stmt> Parser::if_statement() {
     std::unique_ptr<Stmt> then_branch = block();
     std::unique_ptr<Stmt> else_branch = nullptr;
     if (match({TokenType::ELSE})) {
-        // Handle 'else if' as a nested if statement
         if (peek().type == TokenType::IF) {
-            advance(); // Consume the 'if'
+            advance();
             else_branch = if_statement();
         } else {
             else_branch = block();
@@ -74,6 +89,9 @@ std::unique_ptr<Stmt> Parser::statement() {
     }
     if (match({TokenType::WHILE})) {
         return while_statement();
+    }
+    if (match({TokenType::FOR})) {
+        return for_statement();
     }
     if (match({TokenType::RETURN})) {
         return return_statement();
@@ -98,6 +116,34 @@ std::unique_ptr<Stmt> Parser::while_statement() {
     return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
+std::unique_ptr<Stmt> Parser::for_statement() {
+    std::unique_ptr<Stmt> initializer;
+    if (match({TokenType::LET})) {
+        Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        std::unique_ptr<TypeExpr> type = nullptr;
+        if (match({TokenType::COLON})) {
+            type = type_expression();
+        }
+        consume(TokenType::ASSIGN, "Expect '=' after variable name.");
+        std::unique_ptr<Expr> init_expr = expression();
+        initializer = std::make_unique<LetStmt>(name, std::move(type), std::move(init_expr));
+    } else {
+        initializer = std::make_unique<ExpressionStmt>(expression());
+    }
+
+    consume(TokenType::SEMICOLON, "Expect ';' after for initializer.");
+
+    std::unique_ptr<Expr> condition = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after for condition.");
+
+    std::unique_ptr<Expr> increment = expression();
+
+    std::unique_ptr<Stmt> body = block();
+    consume(TokenType::END, "Expect 'end' after for loop.");
+
+    return std::make_unique<ForStmt>(std::move(initializer), std::move(condition), std::move(increment), std::move(body));
+}
+
 std::unique_ptr<Stmt> Parser::block() {
     std::vector<std::unique_ptr<Stmt>> statements;
     while (!is_at_end() && peek().type != TokenType::END && peek().type != TokenType::ELSE) {
@@ -107,7 +153,29 @@ std::unique_ptr<Stmt> Parser::block() {
 }
 
 std::unique_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
+}
+
+std::unique_ptr<Expr> Parser::assignment() {
+    std::unique_ptr<Expr> expr = equality();
+
+    if (match({TokenType::ASSIGN})) {
+        Token equals = tokens_[current_ - 1];
+        std::unique_ptr<Expr> value = assignment();
+
+        if (auto* var = dynamic_cast<VariableExpr*>(expr.get())) {
+            return std::make_unique<AssignExpr>(var->name, std::move(value));
+        }
+
+        throw std::runtime_error("Invalid assignment target.");
+    }
+
+    return expr;
+}
+
+std::unique_ptr<TypeExpr> Parser::type_expression() {
+    Token type_name = consume(TokenType::IDENTIFIER, "Expect type name.");
+    return std::make_unique<TypeExpr>(type_name);
 }
 
 std::unique_ptr<Expr> Parser::equality() {

@@ -1,4 +1,4 @@
-add_executable(nota_tests vm_test.cpp)
+add_executable(nota_tests vm_test.cpp parser_test.cpp)
 
 # Link against the nota library to get access to the lexer, parser, and compiler
 target_link_libraries(nota_tests nota_lib)

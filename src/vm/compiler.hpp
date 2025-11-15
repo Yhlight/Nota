@@ -15,6 +15,7 @@ private:
     void visit(const BlockStmt& stmt) override;
     void visit(const IfStmt& stmt) override;
     void visit(const WhileStmt& stmt) override;
+    void visit(const ForStmt& stmt) override;
     void visit(const FunctionStmt& stmt) override;
     void visit(const ReturnStmt& stmt) override;
 
@@ -23,7 +24,9 @@ private:
     void visit(const LiteralExpr& expr) override;
     void visit(const GroupingExpr& expr) override;
     void visit(const VariableExpr& expr) override;
+    void visit(const AssignExpr& expr) override;
     void visit(const CallExpr& expr) override;
+    void visit(const TypeExpr& expr) override;
 
     Chunk chunk;
 };

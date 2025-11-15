@@ -15,9 +15,12 @@ private:
     std::unique_ptr<Stmt> statement();
     std::unique_ptr<Stmt> if_statement();
     std::unique_ptr<Stmt> while_statement();
+    std::unique_ptr<Stmt> for_statement();
     std::unique_ptr<Stmt> return_statement();
     std::unique_ptr<Stmt> block();
     std::unique_ptr<Expr> expression();
+    std::unique_ptr<Expr> assignment();
+    std::unique_ptr<TypeExpr> type_expression();
     std::unique_ptr<Expr> equality();
     std::unique_ptr<Expr> comparison();
     std::unique_ptr<Expr> term();

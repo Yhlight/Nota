@@ -22,10 +22,6 @@ static const std::unordered_map<std::string, TokenType> keywords = {
     {"package", TokenType::PACKAGE},
     {"true", TokenType::TRUE},
     {"false", TokenType::FALSE},
-    {"int", TokenType::INT_TYPE},
-    {"float", TokenType::FLOAT_TYPE},
-    {"bool", TokenType::BOOL_TYPE},
-    {"string", TokenType::STRING_TYPE},
 };
 
 Lexer::Lexer(const std::string& source) : source_(source) {}
@@ -79,6 +75,7 @@ Token Lexer::next_token() {
         case '+': return make_token(TokenType::PLUS);
         case '*': return make_token(TokenType::STAR);
         case '/': return make_token(TokenType::SLASH);
+        case ';': return make_token(TokenType::SEMICOLON);
         case '"': return string();
 
         case '-':

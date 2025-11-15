@@ -1,6 +1,6 @@
-add_executable(nota_tests lexer_test.cpp)
+add_executable(nota_tests parser_test.cpp)
 
-# Link against the nota library to get access to the lexer
+# Link against the nota library to get access to the lexer and parser
 target_link_libraries(nota_tests nota_lib)
 target_link_libraries(nota_tests GTest::gtest_main)
 

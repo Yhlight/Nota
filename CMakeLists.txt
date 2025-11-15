@@ -9,7 +9,7 @@ enable_testing()
 add_subdirectory(third_party/googletest)
 
 # Create a library for the core Nota components
-add_library(nota_lib src/lexer.cpp src/parser.cpp)
+add_library(nota_lib src/lexer.cpp src/parser.cpp src/vm/chunk.cpp src/vm/debug.cpp src/vm/value.cpp src/vm/compiler.cpp src/vm/vm.cpp)
 
 # Create the main executable and link it against the library
 add_executable(nota src/main.cpp)

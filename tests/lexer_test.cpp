@@ -54,7 +54,7 @@ TEST(LexerTest, StringLiteral) {
 
     ASSERT_EQ(tokens.size(), 2);
     EXPECT_EQ(tokens[0].type, TokenType::STRING);
-    EXPECT_EQ(tokens[0].lexeme, source);
+    EXPECT_EQ(tokens[0].lexeme, "hello world");
 }
 
 TEST(LexerTest, NumberLiterals) {

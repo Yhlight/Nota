@@ -33,6 +33,7 @@ namespace nota {
 
         std::unique_ptr<Expr> expression();
         std::unique_ptr<Expr> assignment();
+        std::unique_ptr<Expr> lambda_expression();
         std::unique_ptr<Expr> logical_or();
         std::unique_ptr<Expr> logical_and();
         std::unique_ptr<Expr> equality();
@@ -46,11 +47,13 @@ namespace nota {
         Token consume(TokenType type, const std::string& message);
         bool match(const std::vector<TokenType>& types);
         bool check(TokenType type);
+        Token peek_next();
         Token advance();
         Token peek();
         Token previous();
         bool is_at_end();
         void synchronize();
+        bool is_lambda();
 
         std::vector<Token> tokens;
         int current = 0;

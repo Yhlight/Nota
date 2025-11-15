@@ -140,6 +140,9 @@ namespace nota {
 
     void Lexer::add_token(TokenType type, const std::string& literal) {
         std::string text = source.substr(start, current - start);
+        if (!literal.empty()) {
+            text = literal;
+        }
         tokens.push_back({type, text, line});
     }
 

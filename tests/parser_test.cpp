@@ -48,7 +48,15 @@ public:
     }
 
     std::string visit(const LambdaExpr& expr) override {
-        return "lambda"; // Simplified
+        std::string result = "lambda (";
+        for (size_t i = 0; i < expr.params.size(); ++i) {
+            result += expr.params[i].lexeme;
+            if (i < expr.params.size() - 1) {
+                result += ", ";
+            }
+        }
+        result += ") => " + expr.body->accept(*this);
+        return result;
     }
 
     std::string visit(const ExpressionStmt& stmt) override {
@@ -73,15 +81,32 @@ public:
     }
 
     std::string visit(const IfStmt& stmt) override {
-        return "if"; // Simplified
+        std::string result = "if " + stmt.condition->accept(*this) + " " + stmt.then_branch->accept(*this);
+        if (stmt.else_branch) {
+            result += " else " + stmt.else_branch->accept(*this);
+        }
+        return result;
     }
 
     std::string visit(const WhileStmt& stmt) override {
-        return "while"; // Simplified
+        return "while " + stmt.condition->accept(*this) + " " + stmt.body->accept(*this);
     }
 
     std::string visit(const ForStmt& stmt) override {
-        return "for"; // Simplified
+        std::string result = "for (";
+        if (stmt.initializer) {
+            result += stmt.initializer->accept(*this);
+        }
+        result += "; ";
+        if (stmt.condition) {
+            result += stmt.condition->accept(*this);
+        }
+        result += "; ";
+        if (stmt.increment) {
+            result += stmt.increment->accept(*this);
+        }
+        result += ") " + stmt.body->accept(*this);
+        return result;
     }
 
     std::string visit(const FunctionStmt& stmt) override {
@@ -148,7 +173,10 @@ TEST(ParserTest, ForLoop) {
     auto statements = parser.parse();
 
     EXPECT_EQ(statements.size(), 1);
-    // More detailed AST verification would be needed for a real-world scenario.
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+    EXPECT_EQ(result, "{\nlet i = 0;\nwhile (< i 10) {\n(= i (+ i 1));\n(= i (+ i 1));\n}\n}\n");
 }
 
 TEST(ParserTest, InvalidAssignment) {
@@ -174,4 +202,32 @@ TEST(ParserTest, FunctionDeclaration) {
 
     EXPECT_EQ(statements.size(), 1);
     EXPECT_EQ(result, "func my_func(a, b) (+ a b);\n");
+}
+
+TEST(ParserTest, LambdaExpression) {
+    std::string source = "let add = (a, b) => a + b";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "let add = lambda (a, b) => (+ a b);\n");
+}
+
+TEST(ParserTest, LambdaExpressionNoArgs) {
+    std::string source = "let get_42 = () => 42";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "let get_42 = lambda () => 42;\n");
 }

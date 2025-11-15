@@ -165,6 +165,21 @@ namespace nota {
         return expr;
     }
 
+    std::unique_ptr<Expr> Parser::lambda_expression() {
+        consume(TokenType::LEFT_PAREN, "Expect '(' before lambda parameters.");
+        std::vector<Token> parameters;
+        if (!check(TokenType::RIGHT_PAREN)) {
+            do {
+                parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+        consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
+        std::unique_ptr<Expr> body = expression();
+
+        return std::make_unique<LambdaExpr>(std::move(parameters), std::move(body));
+    }
+
     std::unique_ptr<Expr> Parser::logical_or() {
         std::unique_ptr<Expr> expr = logical_and();
         while (match({TokenType::OR})) {
@@ -255,6 +270,28 @@ namespace nota {
         return expr;
     }
 
+    bool Parser::is_lambda() {
+        if (peek().type != TokenType::LEFT_PAREN) return false;
+
+        // Look for '=>' to confirm it's a lambda
+        int lookahead = 1;
+        while (tokens[current + lookahead].type != TokenType::EOF_TOKEN) {
+            if (tokens[current + lookahead].type == TokenType::ARROW) {
+                return true;
+            }
+            if (tokens[current + lookahead].type == TokenType::RIGHT_PAREN) {
+                 // Check for arrow after the closing paren
+                if (tokens[current + lookahead + 1].type == TokenType::ARROW) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            lookahead++;
+        }
+        return false;
+    }
+
 
     std::unique_ptr<Expr> Parser::primary() {
         if (match({TokenType::FALSE})) return std::make_unique<LiteralExpr>("false");
@@ -264,6 +301,9 @@ namespace nota {
         }
         if (match({TokenType::IDENTIFIER})) {
             return std::make_unique<VariableExpr>(previous());
+        }
+        if (is_lambda()) {
+             return lambda_expression();
         }
         if (match({TokenType::LEFT_PAREN})) {
             std::unique_ptr<Expr> expr = expression();
@@ -314,6 +354,13 @@ namespace nota {
     bool Parser::check(TokenType type) {
         if (is_at_end()) return false;
         return peek().type == type;
+    }
+
+    Token Parser::peek_next() {
+        if (is_at_end() || tokens[current + 1].type == TokenType::EOF_TOKEN) {
+            return tokens[current];
+        }
+        return tokens[current + 1];
     }
 
     Token Parser::advance() {

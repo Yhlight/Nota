@@ -1,4 +1,5 @@
 add_executable(nota
     main.cpp
     lexer.cpp
+    parser.cpp
 )

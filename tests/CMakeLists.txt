@@ -16,7 +16,9 @@ include_directories(
 add_executable(nota_tests
     main_test.cpp
     lexer_test.cpp
+    parser_test.cpp
     ../src/lexer.cpp
+    ../src/parser.cpp
 )
 
 target_link_libraries(

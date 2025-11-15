@@ -5,8 +5,8 @@ This document outlines the development roadmap for the Nota programming language
 ## Phase 1: Project Setup and Core Components
 
 - [x] Project scaffolding (directories, build system)
-- [>] Lexer implementation
-- [ ] Parser implementation (AST)
+- [x] Lexer implementation
+- [>] Parser implementation (AST)
 - [ ] Bytecode definition
 - [ ] Virtual Machine (VM) core
 - [ ] Basic REPL

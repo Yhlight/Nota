@@ -4,8 +4,34 @@
 #include "Lexer.h"
 #include "AST/Stmt.h"
 #include <vector>
+#include <map>
 
 namespace nota {
+
+    class Parser;
+
+    typedef std::unique_ptr<ast::Expr> (Parser::*PrefixParseFn)();
+    typedef std::unique_ptr<ast::Expr> (Parser::*InfixParseFn)(std::unique_ptr<ast::Expr>);
+
+    enum Precedence {
+        PREC_NONE,
+        PREC_ASSIGNMENT,  // =
+        PREC_OR,          // or
+        PREC_AND,         // and
+        PREC_EQUALITY,    // == !=
+        PREC_COMPARISON,  // < > <= >=
+        PREC_TERM,        // + -
+        PREC_FACTOR,      // * /
+        PREC_UNARY,       // ! -
+        PREC_CALL,        // . ()
+        PREC_PRIMARY
+    };
+
+    struct ParseRule {
+        PrefixParseFn prefix;
+        InfixParseFn infix;
+        Precedence precedence;
+    };
 
     class Parser {
     public:
@@ -26,6 +52,19 @@ namespace nota {
         std::unique_ptr<ast::Stmt> var_declaration();
         std::unique_ptr<ast::Expr> expression();
         std::unique_ptr<ast::Expr> primary();
+
+        // Pratt parser methods
+        std::unique_ptr<ast::Expr> parse_precedence(Precedence precedence);
+        ParseRule& get_rule(TokenType type);
+
+        // Prefix parse functions
+        std::unique_ptr<ast::Expr> unary();
+        std::unique_ptr<ast::Expr> number();
+
+        // Infix parse functions
+        std::unique_ptr<ast::Expr> binary(std::unique_ptr<ast::Expr> left);
+
+        std::map<TokenType, ParseRule> rules;
     };
 
 } // namespace nota

@@ -11,6 +11,8 @@ namespace ast {
     class ExprVisitor {
     public:
         virtual R visit(class LiteralExpr& expr) = 0;
+        virtual R visit(class UnaryExpr& expr) = 0;
+        virtual R visit(class BinaryExpr& expr) = 0;
     };
 
     class Expr {
@@ -28,6 +30,33 @@ namespace ast {
         }
 
         Token value;
+    };
+
+    class UnaryExpr : public Expr {
+    public:
+        UnaryExpr(Token op, std::unique_ptr<Expr> right)
+            : op(op), right(std::move(right)) {}
+
+        void accept(ExprVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        Token op;
+        std::unique_ptr<Expr> right;
+    };
+
+    class BinaryExpr : public Expr {
+    public:
+        BinaryExpr(std::unique_ptr<Expr> left, Token op, std::unique_ptr<Expr> right)
+            : left(std::move(left)), op(op), right(std::move(right)) {}
+
+        void accept(ExprVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> left;
+        Token op;
+        std::unique_ptr<Expr> right;
     };
 
 } // namespace ast

@@ -33,6 +33,13 @@ namespace nota {
         return source[current];
     }
 
+    char Lexer::peek_next() {
+        if (current + 1 >= source.length()) {
+            return '\0';
+        }
+        return source[current + 1];
+    }
+
     char Lexer::advance() {
         char c = peek();
         if (c != '\0') {
@@ -79,7 +86,12 @@ namespace nota {
             case '[': return make_token(TokenType::LeftBracket, "[");
             case ']': return make_token(TokenType::RightBracket, "]");
             case ',': return make_token(TokenType::Comma, ",");
-            case '.': return make_token(TokenType::Dot, ".");
+            case '.':
+                if (isdigit(peek())) {
+                    while (isdigit(peek())) advance();
+                    return make_token(TokenType::Float, source.substr(start, current - start));
+                }
+                return make_token(TokenType::Dot, ".");
             case '-': return make_token(match('=') ? TokenType::MinusEqual : (match('-') ? TokenType::MinusMinus : TokenType::Minus), source.substr(start, current - start));
             case '+': return make_token(match('=') ? TokenType::PlusEqual : (match('+') ? TokenType::PlusPlus : TokenType::Plus), source.substr(start, current - start));
             case '*': return make_token(match('=') ? TokenType::StarEqual : TokenType::Star, source.substr(start, current - start));
@@ -125,7 +137,12 @@ namespace nota {
             default:
                 if (isdigit(c)) {
                     while (isdigit(peek())) advance();
-                    return make_token(TokenType::Number, source.substr(start, current - start));
+                    if (peek() == '.' && isdigit(peek_next())) {
+                        advance(); // consume '.'
+                        while (isdigit(peek())) advance();
+                        return make_token(TokenType::Float, source.substr(start, current - start));
+                    }
+                    return make_token(TokenType::Integer, source.substr(start, current - start));
                 }
                 if (isalpha(c) || c == '_') {
                     while (isalnum(peek()) || peek() == '_') advance();

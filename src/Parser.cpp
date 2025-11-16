@@ -4,7 +4,36 @@
 namespace nota {
 
     Parser::Parser(Lexer& lexer)
-        : lexer(lexer), current_token(lexer.next_token()) {}
+        : lexer(lexer) {
+
+        // Initialize the rules map
+        rules = {
+            {TokenType::LeftParen, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::RightParen, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::LeftBrace, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::RightBrace, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::Comma, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::Dot, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::Minus, {&Parser::unary, &Parser::binary, PREC_TERM}},
+            {TokenType::Plus, {nullptr, &Parser::binary, PREC_TERM}},
+            {TokenType::Slash, {nullptr, &Parser::binary, PREC_FACTOR}},
+            {TokenType::Star, {nullptr, &Parser::binary, PREC_FACTOR}},
+            {TokenType::Bang, {&Parser::unary, nullptr, PREC_NONE}},
+            {TokenType::BangEqual, {nullptr, &Parser::binary, PREC_EQUALITY}},
+            {TokenType::EqualEqual, {nullptr, &Parser::binary, PREC_EQUALITY}},
+            {TokenType::Greater, {nullptr, &Parser::binary, PREC_COMPARISON}},
+            {TokenType::GreaterEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
+            {TokenType::Less, {nullptr, &Parser::binary, PREC_COMPARISON}},
+            {TokenType::LessEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
+            {TokenType::Identifier, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::String, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::Integer, {&Parser::number, nullptr, PREC_NONE}},
+            {TokenType::Float, {&Parser::number, nullptr, PREC_NONE}},
+            {TokenType::Eof, {nullptr, nullptr, PREC_NONE}},
+        };
+
+        advance();
+    }
 
     void Parser::advance() {
         previous_token = current_token;
@@ -55,25 +84,62 @@ namespace nota {
         consume(TokenType::Identifier, "Expect variable name.");
         Token name = previous_token;
 
+        std::optional<Token> type;
+        if (match(TokenType::Colon)) {
+            consume(TokenType::Identifier, "Expect type name.");
+            type = previous_token;
+        }
+
         std::unique_ptr<ast::Expr> initializer = nullptr;
         if (match(TokenType::Equal)) {
             initializer = expression();
         }
 
         consume(TokenType::Newline, "Expect newline after variable declaration.");
-        return std::make_unique<ast::VarDeclStmt>(name, std::move(initializer));
+        return std::make_unique<ast::VarDeclStmt>(name, type, std::move(initializer));
     }
 
     std::unique_ptr<ast::Expr> Parser::expression() {
-        return primary();
+        return parse_precedence(PREC_ASSIGNMENT);
     }
 
-    std::unique_ptr<ast::Expr> Parser::primary() {
-        if (match(TokenType::Number)) {
-            return std::make_unique<ast::LiteralExpr>(previous_token);
+    std::unique_ptr<ast::Expr> Parser::parse_precedence(Precedence precedence) {
+        advance();
+        PrefixParseFn prefix_rule = get_rule(previous_token.type).prefix;
+        if (prefix_rule == nullptr) {
+            throw std::runtime_error("Expect expression.");
         }
-        // Other primary expressions will go here
-        return nullptr;
+
+        std::unique_ptr<ast::Expr> left_expr = (this->*prefix_rule)();
+
+        while (precedence <= get_rule(current_token.type).precedence) {
+            advance();
+            InfixParseFn infix_rule = get_rule(previous_token.type).infix;
+            left_expr = (this->*infix_rule)(std::move(left_expr));
+        }
+
+        return left_expr;
+    }
+
+    ParseRule& Parser::get_rule(TokenType type) {
+        return rules[type];
+    }
+
+    std::unique_ptr<ast::Expr> Parser::unary() {
+        Token op = previous_token;
+        std::unique_ptr<ast::Expr> right = parse_precedence(PREC_UNARY);
+        return std::make_unique<ast::UnaryExpr>(op, std::move(right));
+    }
+
+    std::unique_ptr<ast::Expr> Parser::number() {
+        return std::make_unique<ast::LiteralExpr>(previous_token);
+    }
+
+    std::unique_ptr<ast::Expr> Parser::binary(std::unique_ptr<ast::Expr> left) {
+        Token op = previous_token;
+        ParseRule& rule = get_rule(op.type);
+        std::unique_ptr<ast::Expr> right = parse_precedence((Precedence)(rule.precedence + 1));
+        return std::make_unique<ast::BinaryExpr>(std::move(left), op, std::move(right));
     }
 
 } // namespace nota

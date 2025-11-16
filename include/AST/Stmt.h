@@ -4,6 +4,7 @@
 #include "../Token.h"
 #include "Expr.h"
 #include <memory>
+#include <optional>
 
 namespace nota {
 namespace ast {
@@ -22,14 +23,15 @@ namespace ast {
 
     class VarDeclStmt : public Stmt {
     public:
-        VarDeclStmt(Token name, std::unique_ptr<Expr> initializer)
-            : name(name), initializer(std::move(initializer)) {}
+        VarDeclStmt(Token name, std::optional<Token> type, std::unique_ptr<Expr> initializer)
+            : name(name), type(type), initializer(std::move(initializer)) {}
 
         void accept(StmtVisitor<void>& visitor) override {
             visitor.visit(*this);
         }
 
         Token name;
+        std::optional<Token> type;
         std::unique_ptr<Expr> initializer;
     };
 

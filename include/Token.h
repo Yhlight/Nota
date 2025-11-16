@@ -20,7 +20,7 @@ namespace nota {
         Identifier,
 
         // Literals
-        Number, String,
+        Integer, Float, String,
 
         // Operators
         Plus, Minus, Star, Slash, Percent,

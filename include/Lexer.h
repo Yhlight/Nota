@@ -19,6 +19,7 @@ namespace nota {
         int column;
 
         char peek();
+        char peek_next();
         char advance();
         bool match(char expected);
         Token make_token(TokenType type, const std::string& lexeme);

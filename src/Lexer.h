@@ -18,6 +18,7 @@ enum class TokenType {
     Asterisk,
     Slash,
     Percent,
+    Equal,
 
     // Misc
     Unknown,

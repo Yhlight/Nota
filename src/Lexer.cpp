@@ -79,6 +79,7 @@ std::vector<Token> Lexer::tokenize() {
             case '*': tokens.push_back({TokenType::Asterisk, "*"}); break;
             case '/': tokens.push_back({TokenType::Slash, "/"}); break;
             case '%': tokens.push_back({TokenType::Percent, "%"}); break;
+            case '=': tokens.push_back({TokenType::Equal, "="}); break;
             default: tokens.push_back({TokenType::Unknown, std::string(1, current_char)}); break;
         }
         position++;

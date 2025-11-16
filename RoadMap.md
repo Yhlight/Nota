@@ -4,13 +4,13 @@
 
 - [x] Lexer
     - [x] Comments (single-line and multi-line)
+    - [x] Basic Data Types (int, float, bool)
+    - [x] Variable Declaration (let, mut)
+    - [x] Basic Operators (+, -, *, /, %)
 - [ ] Parser (LL(k) recursive descent)
 - [ ] Abstract Syntax Tree (AST)
 - [ ] Bytecode Generator
 - [ ] Virtual Machine (VM)
-- [ ] Basic Data Types (int, float, bool)
-- [ ] Variable Declaration (let, mut)
-- [ ] Basic Operators (+, -, *, /, %)
 
 ## Phase 2: Control Flow
 

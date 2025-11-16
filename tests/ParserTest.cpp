@@ -120,6 +120,27 @@ TEST(ParserTest, BinaryExpr) {
     EXPECT_EQ(right_binary->op.type, TokenType::Star);
 }
 
+TEST(ParserTest, LogicalExpr) {
+    std::string source = "let c = true && false || true\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+
+    ast::VarDeclStmt* var_decl = dynamic_cast<ast::VarDeclStmt*>(statements[0].get());
+    ASSERT_NE(var_decl, nullptr);
+
+    ast::BinaryExpr* or_expr = dynamic_cast<ast::BinaryExpr*>(var_decl->initializer.get());
+    ASSERT_NE(or_expr, nullptr);
+    EXPECT_EQ(or_expr->op.type, TokenType::PipePipe);
+
+    ast::BinaryExpr* and_expr = dynamic_cast<ast::BinaryExpr*>(or_expr->left.get());
+    ASSERT_NE(and_expr, nullptr);
+    EXPECT_EQ(and_expr->op.type, TokenType::AmpersandAmpersand);
+}
+
 TEST(ParserTest, IfStmt) {
     std::string source = "if (true)\n let x = 1\n end\n";
     Lexer lexer(source);
@@ -254,4 +275,26 @@ TEST(ParserTest, VariableInExpression) {
     auto* var_expr = dynamic_cast<ast::VariableExpr*>(binary_expr->left.get());
     ASSERT_NE(var_expr, nullptr);
     EXPECT_EQ(var_expr->name.lexeme, "x");
+}
+
+TEST(ParserTest, ForEachStmt) {
+    std::string source = "for i: array\n let x = 1\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    ASSERT_EQ(statements.size(), 1);
+
+    auto* for_each_stmt = dynamic_cast<ast::ForEachStmt*>(statements[0].get());
+    ASSERT_NE(for_each_stmt, nullptr);
+
+    EXPECT_EQ(for_each_stmt->variable.lexeme, "i");
+
+    auto* container = dynamic_cast<ast::VariableExpr*>(for_each_stmt->container.get());
+    ASSERT_NE(container, nullptr);
+    EXPECT_EQ(container->name.lexeme, "array");
+
+    auto* body = dynamic_cast<ast::BlockStmt*>(for_each_stmt->body.get());
+    ASSERT_NE(body, nullptr);
+    EXPECT_EQ(body->statements.size(), 1);
 }

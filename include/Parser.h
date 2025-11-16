@@ -53,6 +53,7 @@ namespace nota {
         std::unique_ptr<ast::Stmt> if_statement();
         std::unique_ptr<ast::Stmt> while_statement();
         std::unique_ptr<ast::Stmt> do_while_statement();
+        std::unique_ptr<ast::Stmt> for_each_statement();
         std::unique_ptr<ast::Stmt> expression_statement();
         std::unique_ptr<ast::Stmt> block();
         std::unique_ptr<ast::Expr> expression();

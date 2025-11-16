@@ -26,6 +26,8 @@ namespace nota {
             {TokenType::GreaterEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::Less, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::LessEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
+            {TokenType::AmpersandAmpersand, {nullptr, &Parser::binary, PREC_AND}},
+            {TokenType::PipePipe, {nullptr, &Parser::binary, PREC_OR}},
             {TokenType::Identifier, {&Parser::variable, nullptr, PREC_NONE}},
             {TokenType::String, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::Integer, {&Parser::literal, nullptr, PREC_NONE}},
@@ -82,6 +84,9 @@ namespace nota {
         }
         if (match(TokenType::Do)) {
             return do_while_statement();
+        }
+        if (match(TokenType::For)) {
+            return for_each_statement();
         }
 
         return expression_statement();
@@ -148,6 +153,28 @@ namespace nota {
         consume(TokenType::Newline, "Expect newline after do-while condition.");
 
         return std::make_unique<ast::DoWhileStmt>(std::move(body), std::move(condition));
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::for_each_statement() {
+        // Optional let/mut
+        if (match(TokenType::Let) || match(TokenType::Mut)) {
+            // Can be ignored for now, as we don't have semantic analysis
+        }
+
+        consume(TokenType::Identifier, "Expect variable name.");
+        Token variable = previous_token;
+
+        consume(TokenType::Colon, "Expect ':' after variable name.");
+
+        auto container = expression();
+        consume(TokenType::Newline, "Expect newline after for-each container.");
+
+        auto body = block();
+        consume(TokenType::End, "Expect 'end' after for-each block.");
+
+        if(current_token.type == TokenType::Newline) advance();
+
+        return std::make_unique<ast::ForEachStmt>(variable, std::move(container), std::move(body));
     }
 
     std::unique_ptr<ast::Stmt> Parser::expression_statement() {

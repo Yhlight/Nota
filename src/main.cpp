@@ -1,6 +1,6 @@
-#include <iostream>
+#include "Nota.h"
 
 int main() {
-    std::cout << "Nota Language" << std::endl;
+    initialize_nota_core();
     return 0;
 }

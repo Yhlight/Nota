@@ -1,6 +1,10 @@
-add_executable(nota_tests main.test.cpp)
+add_executable(nota_tests
+    main.test.cpp
+    Lexer.test.cpp
+)
 
-target_link_libraries(nota_tests PRIVATE gtest gtest_main)
+# Link against both the core library and GoogleTest
+target_link_libraries(nota_tests PRIVATE nota_core gtest gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(nota_tests)

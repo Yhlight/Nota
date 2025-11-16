@@ -5,7 +5,7 @@ using namespace nota;
 
 TEST(VMTest, WhileLoop) {
     VM vm;
-    InterpretResult result = vm.interpret("mut a = 0 while a < 10 end a = a + 1 end");
+    InterpretResult result = vm.interpret("mut a = 0 while a < 10 a = a + 1 end");
     EXPECT_EQ(result, InterpretResult::OK);
 }
 
@@ -39,4 +39,10 @@ TEST(VMTest, UndefinedVariable) {
     VM vm;
     InterpretResult result = vm.interpret("let a = b");
     EXPECT_EQ(result, InterpretResult::RUNTIME_ERROR);
+}
+
+TEST(VMTest, ForLoop) {
+    VM vm;
+    InterpretResult result = vm.interpret("mut a = 0 for mut i = 0; i < 10; i = i + 1 a = a + 1 end");
+    EXPECT_EQ(result, InterpretResult::OK);
 }

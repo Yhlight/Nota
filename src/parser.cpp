@@ -46,6 +46,7 @@ namespace nota {
         if (match({TokenType::IF})) return ifStatement();
         if (match({TokenType::WHILE})) return whileStatement();
         if (match({TokenType::DO})) return doWhileStatement();
+        if (match({TokenType::FOR})) return forStatement();
         if (match({TokenType::LEFT_BRACE})) {
             std::vector<std::unique_ptr<Stmt>> statements;
             while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
@@ -72,8 +73,8 @@ namespace nota {
 
     std::unique_ptr<Stmt> Parser::whileStatement() {
         std::unique_ptr<Expr> condition = expression();
-        consume(TokenType::END, "Expect 'end' after while condition.");
         std::unique_ptr<Stmt> body = statement();
+        consume(TokenType::END, "Expect 'end' after while body.");
         return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
     }
 
@@ -82,6 +83,58 @@ namespace nota {
         consume(TokenType::WHILE, "Expect 'while' after do-while body.");
         std::unique_ptr<Expr> condition = expression();
         return std::make_unique<DoWhileStmt>(std::move(body), std::move(condition));
+    }
+
+    std::unique_ptr<Stmt> Parser::forStatement() {
+        // for i = 0; i < 10; i++
+        std::unique_ptr<Stmt> initializer;
+        if (match({TokenType::SEMICOLON})) {
+            initializer = nullptr;
+        } else if (match({TokenType::LET})) {
+            initializer = varDeclaration(false);
+        } else if (match({TokenType::MUT})) {
+            initializer = varDeclaration(true);
+        } else {
+            initializer = expressionStatement();
+        }
+        consume(TokenType::SEMICOLON, "Expect ';' after loop initializer.");
+
+
+        std::unique_ptr<Expr> condition = nullptr;
+        if (!check(TokenType::SEMICOLON)) {
+            condition = expression();
+        }
+        consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+        std::unique_ptr<Expr> increment = nullptr;
+        if (!check(TokenType::END)) {
+            increment = expression();
+        }
+
+        std::unique_ptr<Stmt> body = statement();
+        consume(TokenType::END, "Expect 'end' after for body.");
+
+        if (increment) {
+            std::vector<std::unique_ptr<Stmt>> statements;
+            statements.push_back(std::move(body));
+            statements.push_back(std::make_unique<ExpressionStmt>(std::move(increment)));
+            body = std::make_unique<BlockStmt>(std::move(statements));
+        }
+
+        if (!condition) {
+            condition = std::make_unique<LiteralExpr>(true);
+        }
+
+        body = std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+
+        if (initializer) {
+            std::vector<std::unique_ptr<Stmt>> statements;
+            statements.push_back(std::move(initializer));
+            statements.push_back(std::move(body));
+            body = std::make_unique<BlockStmt>(std::move(statements));
+        }
+
+        return body;
     }
 
     std::unique_ptr<Stmt> Parser::expressionStatement() {

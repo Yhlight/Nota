@@ -17,7 +17,7 @@ This document outlines the development roadmap for the Nota programming language
 - [x] Data types (int, float, bool, string)
 - [x] Operators
 - [x] Control flow (if/else, match)
-- [>] Loops (while, for, for-each, do-while)
+- [x] Loops (while, for, for-each, do-while)
 - [ ] Functions
 - [ ] Lambda expressions
 - [ ] Classes

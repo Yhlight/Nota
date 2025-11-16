@@ -26,27 +26,41 @@ namespace nota {
     std::unique_ptr<Stmt> Parser::function_declaration() {
         Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
         consume(TokenType::LEFT_PAREN, "Expect '(' after function name.");
-        std::vector<Token> parameters;
+        std::vector<Param> parameters;
         if (!check(TokenType::RIGHT_PAREN)) {
             do {
-                parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+                Token param_name = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                std::unique_ptr<TypeExpr> param_type = nullptr;
+                if (match({TokenType::COLON})) {
+                    param_type = type();
+                }
+                parameters.push_back({param_name, std::move(param_type)});
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
 
+        std::unique_ptr<TypeExpr> return_type = nullptr;
+        if (match({TokenType::COLON})) {
+            return_type = type();
+        }
+
         std::unique_ptr<Stmt> body = statement();
         consume(TokenType::END, "Expect 'end' after function body.");
 
-        return std::make_unique<FunctionStmt>(name, std::move(parameters), std::move(body));
+        return std::make_unique<FunctionStmt>(name, std::move(parameters), std::move(body), std::move(return_type));
     }
 
     std::unique_ptr<Stmt> Parser::var_declaration(bool is_mutable) {
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        std::unique_ptr<TypeExpr> type_expr = nullptr;
+        if (match({TokenType::COLON})) {
+            type_expr = type();
+        }
         std::unique_ptr<Expr> initializer = nullptr;
         if (match({TokenType::EQUAL})) {
             initializer = expression();
         }
-        return std::make_unique<VarStmt>(name, std::move(initializer), is_mutable);
+        return std::make_unique<VarStmt>(name, std::move(type_expr), std::move(initializer), is_mutable);
     }
 
     std::unique_ptr<Stmt> Parser::statement() {
@@ -176,17 +190,22 @@ namespace nota {
 
     std::unique_ptr<Expr> Parser::lambda_expression() {
         consume(TokenType::LEFT_PAREN, "Expect '(' before lambda parameters.");
-        std::vector<Token> parameters;
+        std::vector<Param> parameters;
         if (!check(TokenType::RIGHT_PAREN)) {
             do {
-                parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+                Token param_name = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                std::unique_ptr<TypeExpr> param_type = nullptr;
+                if (match({TokenType::COLON})) {
+                    param_type = type();
+                }
+                parameters.push_back({param_name, std::move(param_type)});
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
         consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
         std::unique_ptr<Expr> body = expression();
 
-        return std::make_unique<LambdaExpr>(std::move(parameters), std::move(body));
+        return std::make_unique<LambdaExpr>(std::move(parameters), std::move(body), nullptr);
     }
 
     std::unique_ptr<Expr> Parser::logical_or() {
@@ -321,6 +340,11 @@ namespace nota {
         }
 
         throw ParseError("Expect expression.");
+    }
+
+    std::unique_ptr<TypeExpr> Parser::type() {
+        Token name = consume(TokenType::IDENTIFIER, "Expect type name.");
+        return std::make_unique<TypeExpr>(name);
     }
 
     Token Parser::consume(TokenType type, const std::string& message) {

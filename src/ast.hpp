@@ -17,6 +17,7 @@ struct VariableExpr;
 struct AssignExpr;
 struct CallExpr;
 struct LambdaExpr;
+struct TypeExpr;
 
 // Visitor for Expressions
 struct ExprVisitor {
@@ -28,6 +29,7 @@ struct ExprVisitor {
     virtual std::string visit(const AssignExpr& expr) = 0;
     virtual std::string visit(const CallExpr& expr) = 0;
     virtual std::string visit(const LambdaExpr& expr) = 0;
+    virtual std::string visit(const TypeExpr& expr) = 0;
     virtual ~ExprVisitor() = default;
 };
 
@@ -69,6 +71,14 @@ struct Stmt {
 };
 
 // Concrete Expression Nodes
+struct TypeExpr : Expr {
+    Token name;
+
+    TypeExpr(Token name) : name(name) {}
+
+    std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
 struct BinaryExpr : Expr {
     std::unique_ptr<Expr> left;
     Token op;
@@ -136,12 +146,18 @@ struct CallExpr : Expr {
     std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
 };
 
-struct LambdaExpr : Expr {
-    std::vector<Token> params;
-    std::unique_ptr<Expr> body;
+struct Param {
+    Token name;
+    std::unique_ptr<TypeExpr> type;
+};
 
-    LambdaExpr(std::vector<Token> params, std::unique_ptr<Expr> body)
-        : params(std::move(params)), body(std::move(body)) {}
+struct LambdaExpr : Expr {
+    std::vector<Param> params;
+    std::unique_ptr<Expr> body;
+    std::unique_ptr<TypeExpr> return_type;
+
+    LambdaExpr(std::vector<Param> params, std::unique_ptr<Expr> body, std::unique_ptr<TypeExpr> return_type)
+        : params(std::move(params)), body(std::move(body)), return_type(std::move(return_type)) {}
 
     std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
 };
@@ -157,11 +173,12 @@ struct ExpressionStmt : Stmt {
 
 struct VarStmt : Stmt {
     Token name;
+    std::unique_ptr<TypeExpr> type;
     std::unique_ptr<Expr> initializer;
     bool is_mutable;
 
-    VarStmt(Token name, std::unique_ptr<Expr> initializer, bool is_mutable)
-        : name(name), initializer(std::move(initializer)), is_mutable(is_mutable) {}
+    VarStmt(Token name, std::unique_ptr<TypeExpr> type, std::unique_ptr<Expr> initializer, bool is_mutable)
+        : name(name), type(std::move(type)), initializer(std::move(initializer)), is_mutable(is_mutable) {}
 
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
 };
@@ -197,11 +214,12 @@ struct WhileStmt : Stmt {
 
 struct FunctionStmt : Stmt {
     Token name;
-    std::vector<Token> params;
+    std::vector<Param> params;
     std::unique_ptr<Stmt> body;
+    std::unique_ptr<TypeExpr> return_type;
 
-    FunctionStmt(Token name, std::vector<Token> params, std::unique_ptr<Stmt> body)
-        : name(name), params(std::move(params)), body(std::move(body)) {}
+    FunctionStmt(Token name, std::vector<Param> params, std::unique_ptr<Stmt> body, std::unique_ptr<TypeExpr> return_type)
+        : name(name), params(std::move(params)), body(std::move(body)), return_type(std::move(return_type)) {}
 
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
 };

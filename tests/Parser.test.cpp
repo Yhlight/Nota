@@ -4,7 +4,7 @@
 #include "AstPrinter.h"
 
 TEST(ParserTest, ParsesVarDeclaration) {
-    std::string source = "var a = 10;";
+    std::string source = "var a = 10\n";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 
@@ -19,7 +19,7 @@ TEST(ParserTest, ParsesVarDeclaration) {
 }
 
 TEST(ParserTest, ParsesLetDeclaration) {
-    std::string source = "let b = 20;";
+    std::string source = "let b = 20\n";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 
@@ -34,7 +34,7 @@ TEST(ParserTest, ParsesLetDeclaration) {
 }
 
 TEST(ParserTest, ParsesMutDeclaration) {
-    std::string source = "mut c = 30;";
+    std::string source = "mut c = 30\n";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 
@@ -49,7 +49,7 @@ TEST(ParserTest, ParsesMutDeclaration) {
 }
 
 TEST(ParserTest, ParsesPrintStatement) {
-    std::string source = "print 1 + 2;";
+    std::string source = "print 1 + 2\n";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 
@@ -64,7 +64,7 @@ TEST(ParserTest, ParsesPrintStatement) {
 }
 
 TEST(ParserTest, ParsesExpressionStatement) {
-    std::string source = "1 * 2;";
+    std::string source = "1 * 2\n";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 

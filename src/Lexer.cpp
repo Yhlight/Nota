@@ -23,6 +23,7 @@ void initialize_keywords() {
     keywords["while"] = TokenType::WHILE;
     keywords["let"] = TokenType::LET;
     keywords["mut"] = TokenType::MUT;
+    keywords["end"] = TokenType::END;
 }
 
 Lexer::Lexer(const std::string& source) : source(source) {

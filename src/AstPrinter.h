@@ -19,7 +19,9 @@ public:
     std::any visitVariableExpr(const Variable& expr) override;
 
     // Statement visitors
+    std::any visitBlockStmt(const Block& stmt) override;
     std::any visitExpressionStmt(const Expression& stmt) override;
+    std::any visitIfStmt(const If& stmt) override;
     std::any visitPrintStmt(const Print& stmt) override;
     std::any visitVarStmt(const Var& stmt) override;
 
@@ -27,6 +29,7 @@ public:
 private:
     std::string parenthesize(const std::string& name, const std::vector<const Expr*>& exprs);
     std::string parenthesize(const std::string& name, const std::vector<const Stmt*>& stmts);
+    std::string parenthesize(const std::string& name, const std::vector<const Expr*>& exprs, const std::vector<const Stmt*>& stmts);
 
 };
 

@@ -27,6 +27,20 @@ void Interpreter::execute(const Stmt& stmt) {
     stmt.accept(*this);
 }
 
+void Interpreter::executeBlock(const std::vector<std::unique_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment) {
+    std::shared_ptr<Environment> previous = this->environment;
+    try {
+        this->environment = environment;
+        for (const auto& statement : statements) {
+            execute(*statement);
+        }
+    } catch (...) {
+        this->environment = previous;
+        throw;
+    }
+    this->environment = previous;
+}
+
 
 std::any Interpreter::visitLiteralExpr(const Literal& expr) {
     return expr.value;
@@ -178,5 +192,19 @@ std::any Interpreter::visitVarStmt(const Var& stmt) {
     }
 
     environment->define(stmt.name.lexeme, value);
+    return {};
+}
+
+std::any Interpreter::visitBlockStmt(const Block& stmt) {
+    executeBlock(stmt.statements, std::make_shared<Environment>(environment));
+    return {};
+}
+
+std::any Interpreter::visitIfStmt(const If& stmt) {
+    if (isTruthy(evaluate(*stmt.condition))) {
+        execute(*stmt.thenBranch);
+    } else if (stmt.elseBranch != nullptr) {
+        execute(*stmt.elseBranch);
+    }
     return {};
 }

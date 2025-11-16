@@ -18,7 +18,6 @@ std::unique_ptr<Stmt> Parser::declaration() {
             if (match({TokenType::EQUAL})) {
                 initializer = expression();
             }
-            consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
             return std::make_unique<Var>(name, std::move(initializer));
         }
         return statement();
@@ -29,19 +28,53 @@ std::unique_ptr<Stmt> Parser::declaration() {
 }
 
 std::unique_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::IF})) return ifStatement();
     if (match({TokenType::PRINT})) return printStatement();
+    if (check(TokenType::LEFT_BRACE)) { // C-style blocks are not supported, but let's be ready
+        return std::make_unique<Block>(block());
+    }
     return expressionStatement();
 }
 
+std::unique_ptr<Stmt> Parser::ifStatement() {
+    std::unique_ptr<Expr> condition = expression();
+
+    std::unique_ptr<Stmt> thenBranch = std::make_unique<Block>(block());
+    std::unique_ptr<Stmt> elseBranch = nullptr;
+
+    if (match({TokenType::ELSE})) {
+        if (match({TokenType::IF})) {
+            elseBranch = ifStatement();
+        } else {
+            elseBranch = std::make_unique<Block>(block());
+        }
+    }
+
+    if (previous().type != TokenType::END) {
+        consume(TokenType::END, "Expect 'end' after if statement.");
+    }
+
+    return std::make_unique<If>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
+}
+
+std::vector<std::unique_ptr<Stmt>> Parser::block() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+
+    while (!check(TokenType::END) && !check(TokenType::ELSE) && !check(TokenType::IF) && !isAtEnd()) {
+        statements.push_back(declaration());
+    }
+
+    return statements;
+}
+
+
 std::unique_ptr<Stmt> Parser::printStatement() {
     std::unique_ptr<Expr> value = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after value.");
     return std::make_unique<Print>(std::move(value));
 }
 
 std::unique_ptr<Stmt> Parser::expressionStatement() {
     std::unique_ptr<Expr> expr = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after expression.");
     return std::make_unique<Expression>(std::move(expr));
 }
 

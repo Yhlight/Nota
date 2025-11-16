@@ -47,9 +47,25 @@ std::any AstPrinter::visitVariableExpr(const Variable& expr) {
     return expr.name.lexeme;
 }
 
+std::any AstPrinter::visitBlockStmt(const Block& stmt) {
+    std::vector<const Stmt*> stmts;
+    for(const auto& s : stmt.statements) {
+        stmts.push_back(s.get());
+    }
+    return parenthesize("block", stmts);
+}
+
 std::any AstPrinter::visitExpressionStmt(const Expression& stmt) {
     return parenthesize(";", std::vector<const Expr*>{stmt.expression.get()});
 }
+
+std::any AstPrinter::visitIfStmt(const If& stmt) {
+    if (stmt.elseBranch != nullptr) {
+        return parenthesize("if-else", std::vector<const Expr*>{stmt.condition.get()}, std::vector<const Stmt*>{stmt.thenBranch.get(), stmt.elseBranch.get()});
+    }
+    return parenthesize("if", std::vector<const Expr*>{stmt.condition.get()}, std::vector<const Stmt*>{stmt.thenBranch.get()});
+}
+
 
 std::any AstPrinter::visitPrintStmt(const Print& stmt) {
     return parenthesize("print", std::vector<const Expr*>{stmt.expression.get()});
@@ -77,6 +93,21 @@ std::string AstPrinter::parenthesize(const std::string& name, const std::vector<
 std::string AstPrinter::parenthesize(const std::string& name, const std::vector<const Stmt*>& stmts) {
     std::stringstream ss;
     ss << "(" << name;
+    for (const auto& stmt : stmts) {
+        ss << " ";
+        ss << std::any_cast<std::string>(stmt->accept(*this));
+    }
+    ss << ")";
+    return ss.str();
+}
+
+std::string AstPrinter::parenthesize(const std::string& name, const std::vector<const Expr*>& exprs, const std::vector<const Stmt*>& stmts) {
+    std::stringstream ss;
+    ss << "(" << name;
+    for (const auto& expr : exprs) {
+        ss << " ";
+        ss << std::any_cast<std::string>(expr->accept(*this));
+    }
     for (const auto& stmt : stmts) {
         ss << " ";
         ss << std::any_cast<std::string>(stmt->accept(*this));

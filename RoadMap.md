@@ -10,7 +10,7 @@ This document tracks the development progress of the Nota programming language.
 - [x] Basic variable declarations (`let`, `mut`)
 - [x] Basic data types (`int`, `float`, `bool`, `string`)
 - [x] Basic operators (`+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `<`, `>=`, `<=`)
-- [ ] Basic control flow (`if`/`else`)
+- [x] Basic control flow (`if`/`else`)
 - [x] Comments (`//`, `/* */`)
 
 ## Phase 2: Advanced Language Features

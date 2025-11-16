@@ -21,7 +21,9 @@ public:
     std::any visitVariableExpr(const Variable& expr) override;
 
     // Statement visitors
+    std::any visitBlockStmt(const Block& stmt) override;
     std::any visitExpressionStmt(const Expression& stmt) override;
+    std::any visitIfStmt(const If& stmt) override;
     std::any visitPrintStmt(const Print& stmt) override;
     std::any visitVarStmt(const Var& stmt) override;
 
@@ -30,6 +32,8 @@ private:
 
     std::any evaluate(const Expr& expr);
     void execute(const Stmt& stmt);
+    void executeBlock(const std::vector<std::unique_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment);
+
 
     bool isTruthy(const std::any& object);
     bool isEqual(const std::any& a, const std::any& b);

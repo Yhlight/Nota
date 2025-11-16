@@ -17,6 +17,11 @@ namespace nota {
         int current;
         int line;
         int column;
+
+        char peek();
+        char advance();
+        bool match(char expected);
+        Token make_token(TokenType type, const std::string& lexeme);
     };
 
 } // namespace nota

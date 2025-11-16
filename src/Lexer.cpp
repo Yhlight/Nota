@@ -7,116 +7,138 @@ namespace nota {
     static std::map<std::string, TokenType> keywords = {
         {"let", TokenType::Let},
         {"mut", TokenType::Mut},
+        {"if", TokenType::If},
+        {"else", TokenType::Else},
+        {"match", TokenType::Match},
+        {"while", TokenType::While},
+        {"for", TokenType::For},
+        {"do", TokenType::Do},
+        {"func", TokenType::Func},
+        {"class", TokenType::Class},
+        {"import", TokenType::Import},
+        {"as", TokenType::As},
+        {"package", TokenType::Package},
+        {"return", TokenType::Return},
+        {"true", TokenType::True},
+        {"false", TokenType::False},
     };
 
     Lexer::Lexer(const std::string& source)
         : source(source), current(0), line(1), column(1) {}
 
-    Token Lexer::next_token() {
-        // Skip whitespace (but not newlines)
-        while (current < source.length() && (source[current] == ' ' || source[current] == '\r' || source[current] == '\t')) {
-            current++;
-            column++;
-        }
-
+    char Lexer::peek() {
         if (current >= source.length()) {
-            return {TokenType::Eof, "", line, column};
+            return '\0';
         }
+        return source[current];
+    }
 
-        char c = source[current];
-
-        // Newline
-        if (c == '\n') {
-            int start_line = line;
+    char Lexer::advance() {
+        char c = peek();
+        if (c != '\0') {
             current++;
-            line++;
-            column = 1;
-            return {TokenType::Newline, "\\n", start_line, 1};
-        }
-
-        // Single-line comments
-        if (c == '/' && current + 1 < source.length() && source[current + 1] == '/') {
-            int start_col = column;
-            int start = current;
-            while (current < source.length() && source[current] != '\n') {
-                current++;
+            if (c == '\n') {
+                line++;
+                column = 1;
+            } else {
                 column++;
             }
-            return {TokenType::Comment, source.substr(start, current - start), line, start_col};
+        }
+        return c;
+    }
+
+    bool Lexer::match(char expected) {
+        if (peek() == expected) {
+            advance();
+            return true;
+        }
+        return false;
+    }
+
+    Token Lexer::make_token(TokenType type, const std::string& lexeme) {
+         return {type, lexeme, line, column - (int)lexeme.length()};
+    }
+
+    Token Lexer::next_token() {
+        while (peek() == ' ' || peek() == '\r' || peek() == '\t') {
+            advance();
         }
 
-        // Multi-line comments
-        if (c == '/' && current + 1 < source.length() && source[current + 1] == '*') {
-            int start_col = column;
-            int start_line = line;
-            int start = current;
-            current += 2; // Skip '/*'
-            column += 2;
-            while (current + 1 < source.length() && (source[current] != '*' || source[current + 1] != '/')) {
-                if (source[current] == '\n') {
-                    line++;
-                    column = 1;
+        int start = current;
+        char c = advance();
+
+        if (c == '\0') return make_token(TokenType::Eof, "");
+        if (c == '\n') return make_token(TokenType::Newline, "\\n");
+
+        switch (c) {
+            // Single-character tokens
+            case '(': return make_token(TokenType::LeftParen, "(");
+            case ')': return make_token(TokenType::RightParen, ")");
+            case '{': return make_token(TokenType::LeftBrace, "{");
+            case '}': return make_token(TokenType::RightBrace, "}");
+            case '[': return make_token(TokenType::LeftBracket, "[");
+            case ']': return make_token(TokenType::RightBracket, "]");
+            case ',': return make_token(TokenType::Comma, ",");
+            case '.': return make_token(TokenType::Dot, ".");
+            case '-': return make_token(match('=') ? TokenType::MinusEqual : (match('-') ? TokenType::MinusMinus : TokenType::Minus), source.substr(start, current - start));
+            case '+': return make_token(match('=') ? TokenType::PlusEqual : (match('+') ? TokenType::PlusPlus : TokenType::Plus), source.substr(start, current - start));
+            case '*': return make_token(match('=') ? TokenType::StarEqual : TokenType::Star, source.substr(start, current - start));
+            case '%': return make_token(match('=') ? TokenType::PercentEqual : TokenType::Percent, source.substr(start, current - start));
+            case '&': return make_token(match('&') ? TokenType::AmpersandAmpersand : TokenType::Ampersand, source.substr(start, current - start));
+            case '|': return make_token(match('|') ? TokenType::PipePipe : TokenType::Pipe, source.substr(start, current - start));
+            case '^': return make_token(TokenType::Caret, "^");
+            case '~': return make_token(TokenType::Tilde, "~");
+            case ':': return make_token(TokenType::Colon, ":");
+
+            // One or two character tokens
+            case '!': return make_token(match('=') ? TokenType::BangEqual : TokenType::Bang, source.substr(start, current - start));
+            case '=': return make_token(match('=') ? TokenType::EqualEqual : TokenType::Equal, source.substr(start, current - start));
+            case '<': return make_token(match('<') ? TokenType::LessLess : (match('=') ? TokenType::LessEqual : TokenType::Less), source.substr(start, current - start));
+            case '>': return make_token(match('>') ? TokenType::GreaterGreater : (match('=') ? TokenType::GreaterEqual : TokenType::Greater), source.substr(start, current - start));
+
+            // Comments and slash
+            case '/':
+                if (match('/')) {
+                    while (peek() != '\n' && peek() != '\0') advance();
+                    return make_token(TokenType::Comment, source.substr(start, current - start));
+                } else if (match('*')) {
+                    while (peek() != '*' && peek() != '\0') {
+                        if (peek() == '\n') advance();
+                        else advance();
+                    }
+                    if(peek() != '\0') advance(); // Consume '*'
+                    if(peek() != '\0') advance(); // Consume '/'
+                    return make_token(TokenType::Comment, source.substr(start, current - start));
                 } else {
-                    column++;
+                    return make_token(match('=') ? TokenType::SlashEqual : TokenType::Slash, source.substr(start, current - start));
                 }
-                current++;
+
+            // String literals
+            case '"': {
+                while (peek() != '"' && peek() != '\0') {
+                    advance();
+                }
+                advance(); // Closing quote
+                return make_token(TokenType::String, source.substr(start, current - start));
             }
-             if (current + 1 < source.length()) {
-                current += 2; // Skip '*/'
-                column += 2;
-            }
-            return {TokenType::Comment, source.substr(start, current - start), start_line, start_col};
+
+            default:
+                if (isdigit(c)) {
+                    while (isdigit(peek())) advance();
+                    return make_token(TokenType::Number, source.substr(start, current - start));
+                }
+                if (isalpha(c) || c == '_') {
+                    while (isalnum(peek()) || peek() == '_') advance();
+                    std::string lexeme = source.substr(start, current - start);
+                    auto it = keywords.find(lexeme);
+                    if (it != keywords.end()) {
+                        return make_token(it->second, lexeme);
+                    }
+                    return make_token(TokenType::Identifier, lexeme);
+                }
         }
 
-        // Plus operator
-        if (c == '+') {
-            int start_col = column;
-            current++;
-            column++;
-            return {TokenType::Plus, "+", line, start_col};
-        }
-
-        // Equal operator
-        if (c == '=') {
-            int start_col = column;
-            current++;
-            column++;
-            return {TokenType::Equal, "=", line, start_col};
-        }
-
-        // Numbers
-        if (isdigit(c)) {
-            int start_col = column;
-            int start = current;
-            while (current < source.length() && isdigit(source[current])) {
-                current++;
-                column++;
-            }
-            return {TokenType::Number, source.substr(start, current - start), line, start_col};
-        }
-
-        // Identifiers and keywords
-        if (isalpha(c) || c == '_') {
-            int start_col = column;
-            int start = current;
-            while (current < source.length() && (isalnum(source[current]) || source[current] == '_')) {
-                current++;
-                column++;
-            }
-            std::string lexeme = source.substr(start, current - start);
-            auto it = keywords.find(lexeme);
-            if (it != keywords.end()) {
-                return {it->second, lexeme, line, start_col};
-            }
-            return {TokenType::Identifier, lexeme, line, start_col};
-        }
-
-
-        // If we don't recognize the character, we'll just advance for now.
-        // This is not robust, but it will work for the current tests.
-        current++;
-        column++;
-        return {TokenType::Eof, "", line, column};
+        return make_token(TokenType::Eof, "");
     }
 
 } // namespace nota

@@ -13,21 +13,27 @@ namespace nota {
         Comment,
 
         // Keywords
-        Let,
-        Mut,
+        Let, Mut, If, Else, Match, While, For, Do, Func, Class, Import, As, Package,
+        Return, True, False,
 
         // Identifiers
         Identifier,
 
         // Literals
-        Number,
+        Number, String,
 
         // Operators
-        Plus,
-        Equal,
+        Plus, Minus, Star, Slash, Percent,
+        Equal, EqualEqual, Bang, BangEqual,
+        Greater, GreaterEqual, Less, LessEqual,
+        Ampersand, Pipe, Caret, Tilde, LessLess, GreaterGreater,
+        PlusEqual, MinusEqual, StarEqual, SlashEqual, PercentEqual,
+        AmpersandAmpersand, PipePipe,
+        PlusPlus, MinusMinus,
 
         // Punctuation
-        Newline,
+        Newline, Colon, LeftParen, RightParen, LeftBrace, RightBrace,
+        LeftBracket, RightBracket, Comma, Dot,
 
         // Etc...
     };

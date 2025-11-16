@@ -16,6 +16,19 @@ namespace nota {
         Let,
         Mut,
 
+        // Identifiers
+        Identifier,
+
+        // Literals
+        Number,
+
+        // Operators
+        Plus,
+        Equal,
+
+        // Punctuation
+        Newline,
+
         // Etc...
     };
 

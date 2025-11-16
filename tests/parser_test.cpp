@@ -183,3 +183,17 @@ TEST(ParserTest, FunctionDeclarationWithType) {
     EXPECT_EQ(statements.size(), 1);
     EXPECT_EQ(result, "func add(a: int, b: int): int (+ a b);\n");
 }
+
+TEST(ParserTest, DoWhileLoop) {
+    std::string source = "do x = x + 1 while x < 10";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "do (= x (+ x 1)); while (< x 10)\n");
+}

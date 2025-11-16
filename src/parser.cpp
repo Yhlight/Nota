@@ -151,7 +151,6 @@ namespace nota {
         std::unique_ptr<Stmt> body = statement();
         consume(TokenType::WHILE, "Expect 'while' after do-while body.");
         std::unique_ptr<Expr> condition = expression();
-        consume(TokenType::END, "Expect 'end' after do-while condition.");
         return std::make_unique<DoWhileStmt>(std::move(condition), std::move(body));
     }
 

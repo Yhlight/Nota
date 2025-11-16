@@ -2,7 +2,8 @@
 
 ## Phase 1: Core Language Features
 
-- [ ] Lexer
+- [x] Lexer
+    - [x] Comments (single-line and multi-line)
 - [ ] Parser (LL(k) recursive descent)
 - [ ] Abstract Syntax Tree (AST)
 - [ ] Bytecode Generator
@@ -10,7 +11,6 @@
 - [ ] Basic Data Types (int, float, bool)
 - [ ] Variable Declaration (let, mut)
 - [ ] Basic Operators (+, -, *, /, %)
-- [ ] Comments (single-line and multi-line)
 
 ## Phase 2: Control Flow
 

@@ -4,14 +4,32 @@
 #include <vector>
 
 enum class TokenType {
-    Comment,
+    // Keywords
+    Let,
+    Mut,
+
+    // Literals
+    Identifier,
+    Number,
+
+    // Operators
+    Plus,
+    Minus,
+    Asterisk,
+    Slash,
+    Percent,
+
+    // Misc
     Unknown,
-    // Placeholder
 };
 
 struct Token {
     TokenType type;
     std::string text;
+
+    bool operator==(const Token& other) const {
+        return type == other.type && text == other.text;
+    }
 };
 
 class Lexer {

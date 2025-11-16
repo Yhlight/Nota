@@ -103,3 +103,70 @@ TEST(ParserTest, IfStatement) {
     ASSERT_NE(var_decl, nullptr);
     ASSERT_EQ(var_decl->name.text, "x");
 }
+
+TEST(ParserTest, IfElseStatement) {
+    std::string source = "if 1 < 2 let x = 1 else let y = 2 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Program program = parser.parse();
+
+    ASSERT_EQ(program.size(), 1);
+
+    auto* if_stmt = dynamic_cast<IfStmt*>(program[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    auto* then_block = dynamic_cast<BlockStmt*>(if_stmt->then_branch.get());
+    ASSERT_NE(then_block, nullptr);
+    ASSERT_EQ(then_block->statements.size(), 1);
+
+    auto* else_block = dynamic_cast<BlockStmt*>(if_stmt->else_branch.get());
+    ASSERT_NE(else_block, nullptr);
+    ASSERT_EQ(else_block->statements.size(), 1);
+}
+
+TEST(ParserTest, IfElseIfElseStatement) {
+    std::string source = "if 1 < 2 let x = 1 else if 2 < 3 let y = 2 else let z = 3 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Program program = parser.parse();
+
+    ASSERT_EQ(program.size(), 1);
+
+    auto* if_stmt = dynamic_cast<IfStmt*>(program[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    // Check the 'else if' part, which is a nested IfStmt in the else branch
+    auto* else_if_stmt = dynamic_cast<IfStmt*>(if_stmt->else_branch.get());
+    ASSERT_NE(else_if_stmt, nullptr);
+
+    // Check the final 'else' part
+    auto* final_else_block = dynamic_cast<BlockStmt*>(else_if_stmt->else_branch.get());
+    ASSERT_NE(final_else_block, nullptr);
+    ASSERT_EQ(final_else_block->statements.size(), 1);
+}
+
+TEST(ParserTest, NestedIfStatement) {
+    std::string source = "if 1 < 2 if 2 < 3 let x = 1 end let y = 2 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Program program = parser.parse();
+
+    ASSERT_EQ(program.size(), 1);
+
+    auto* outer_if = dynamic_cast<IfStmt*>(program[0].get());
+    ASSERT_NE(outer_if, nullptr);
+
+    auto* outer_block = dynamic_cast<BlockStmt*>(outer_if->then_branch.get());
+    ASSERT_NE(outer_block, nullptr);
+    ASSERT_EQ(outer_block->statements.size(), 2);
+
+    auto* inner_if = dynamic_cast<IfStmt*>(outer_block->statements[0].get());
+    ASSERT_NE(inner_if, nullptr);
+
+    auto* inner_block = dynamic_cast<BlockStmt*>(inner_if->then_branch.get());
+    ASSERT_NE(inner_block, nullptr);
+    ASSERT_EQ(inner_block->statements.size(), 1);
+}

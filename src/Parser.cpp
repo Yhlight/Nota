@@ -41,6 +41,16 @@ bool Parser::is_at_end() const {
     return position >= tokens.size();
 }
 
+Token Parser::consume(TokenType type, const std::string& message) {
+    if (peek().type == type) {
+        return advance();
+    }
+    // For now, we'll just return an empty token on error.
+    // A more robust implementation would throw an exception.
+    return {TokenType::Unknown, ""};
+}
+
+
 // Parsing methods
 
 std::unique_ptr<Stmt> Parser::parse_statement() {
@@ -57,17 +67,10 @@ std::unique_ptr<Stmt> Parser::parse_statement() {
 std::unique_ptr<Stmt> Parser::parse_let_statement() {
     advance(); // Consume 'let'
 
-    if (peek().type != TokenType::Identifier) {
-        // Error handling: expected an identifier
-        return nullptr;
-    }
-    Token name = advance();
+    Token name = consume(TokenType::Identifier, "Expected identifier.");
+    if (name.type == TokenType::Unknown) return nullptr;
 
-    if (peek().type != TokenType::Equal) {
-        // Error handling: expected an '='
-        return nullptr;
-    }
-    advance(); // Consume '='
+    if (consume(TokenType::Equal, "Expected '='.").type == TokenType::Unknown) return nullptr;
 
     std::unique_ptr<Expr> initializer = parse_expression();
     if (!initializer) {
@@ -78,7 +81,7 @@ std::unique_ptr<Stmt> Parser::parse_let_statement() {
     return std::make_unique<VarDeclStmt>(name, std::move(initializer));
 }
 
-std::unique_ptr<Stmt> Parser::parse_if_statement() {
+std::unique_ptr<Stmt> Parser::parse_if_statement(bool is_else_if) {
     advance(); // Consume 'if'
 
     std::unique_ptr<Expr> condition = parse_expression();
@@ -96,12 +99,21 @@ std::unique_ptr<Stmt> Parser::parse_if_statement() {
     std::unique_ptr<Stmt> else_branch = nullptr;
     if (peek().type == TokenType::Else) {
         advance(); // Consume 'else'
-        else_branch = parse_block_statement();
-        if (!else_branch) {
-            // Error handling: expected a block
+        if (peek().type == TokenType::If) {
+            // This is an 'else if'
+            else_branch = parse_if_statement(true);
+        } else {
+            // This is a simple 'else'
+            else_branch = parse_block_statement();
+        }
+    }
+
+    if (!is_else_if) {
+        if (consume(TokenType::End, "Expected 'end' after if statement.").type == TokenType::Unknown) {
             return nullptr;
         }
     }
+
 
     return std::make_unique<IfStmt>(std::move(condition), std::move(then_branch),
                                       std::move(else_branch));
@@ -113,15 +125,9 @@ std::unique_ptr<Stmt> Parser::parse_block_statement() {
         statements.push_back(parse_statement());
     }
 
-    if (peek().type == TokenType::End) {
-        advance(); // Consume 'end'
-    } else {
-        // Error handling: expected 'end'
-        return nullptr;
-    }
-
     return std::make_unique<BlockStmt>(std::move(statements));
 }
+
 
 std::unique_ptr<Expr> Parser::parse_primary_expression() {
     if (peek().type == TokenType::Number) {
@@ -160,10 +166,9 @@ Program Parser::parse() {
         if (stmt) {
             program.push_back(std::move(stmt));
         } else {
-            // For now, skip tokens that don't form a valid statement
-            if (!is_at_end()) {
-                advance();
-            }
+            // If we can't parse a statement, we're probably at the end
+            // of the file or encountered an error. For now, just stop.
+            break;
         }
     }
     return program;

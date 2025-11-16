@@ -12,6 +12,7 @@ public:
     std::string print(const Stmt& stmt);
 
     // Expression visitors
+    std::any visitAssignExpr(const Assign& expr) override;
     std::any visitBinaryExpr(const Binary& expr) override;
     std::any visitGroupingExpr(const Grouping& expr) override;
     std::any visitLiteralExpr(const Literal& expr) override;
@@ -24,6 +25,7 @@ public:
     std::any visitIfStmt(const If& stmt) override;
     std::any visitPrintStmt(const Print& stmt) override;
     std::any visitVarStmt(const Var& stmt) override;
+    std::any visitWhileStmt(const While& stmt) override;
 
 
 private:

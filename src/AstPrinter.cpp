@@ -47,6 +47,10 @@ std::any AstPrinter::visitVariableExpr(const Variable& expr) {
     return expr.name.lexeme;
 }
 
+std::any AstPrinter::visitAssignExpr(const Assign& expr) {
+    return parenthesize("= " + expr.name.lexeme, std::vector<const Expr*>{expr.value.get()});
+}
+
 std::any AstPrinter::visitBlockStmt(const Block& stmt) {
     std::vector<const Stmt*> stmts;
     for(const auto& s : stmt.statements) {
@@ -76,6 +80,10 @@ std::any AstPrinter::visitVarStmt(const Var& stmt) {
         return parenthesize("var " + stmt.name.lexeme, std::vector<const Expr*>{stmt.initializer.get()});
     }
     return parenthesize("var " + stmt.name.lexeme, std::vector<const Expr*>{});
+}
+
+std::any AstPrinter::visitWhileStmt(const While& stmt) {
+    return parenthesize("while", std::vector<const Expr*>{stmt.condition.get()}, std::vector<const Stmt*>{stmt.body.get()});
 }
 
 

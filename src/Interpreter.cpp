@@ -69,6 +69,12 @@ std::any Interpreter::visitVariableExpr(const Variable& expr) {
     return environment->get(expr.name);
 }
 
+std::any Interpreter::visitAssignExpr(const Assign& expr) {
+    std::any value = evaluate(*expr.value);
+    environment->assign(expr.name, value);
+    return value;
+}
+
 
 std::any Interpreter::visitBinaryExpr(const Binary& expr) {
     std::any left = evaluate(*expr.left);
@@ -192,6 +198,13 @@ std::any Interpreter::visitVarStmt(const Var& stmt) {
     }
 
     environment->define(stmt.name.lexeme, value);
+    return {};
+}
+
+std::any Interpreter::visitWhileStmt(const While& stmt) {
+    while (isTruthy(evaluate(*stmt.condition))) {
+        execute(*stmt.body);
+    }
     return {};
 }
 

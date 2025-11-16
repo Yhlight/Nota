@@ -12,6 +12,7 @@ class Expression;
 class If;
 class Print;
 class Var;
+class While;
 
 template <typename R>
 class StmtVisitor {
@@ -21,6 +22,7 @@ public:
     virtual R visitIfStmt(const If& stmt) = 0;
     virtual R visitPrintStmt(const Print& stmt) = 0;
     virtual R visitVarStmt(const Var& stmt) = 0;
+    virtual R visitWhileStmt(const While& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -94,6 +96,20 @@ public:
 
     const Token name;
     const std::unique_ptr<Expr> initializer;
+};
+
+class While : public Stmt {
+public:
+    While(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body) :
+        condition(std::move(condition)),
+        body(std::move(body)) {}
+
+    std::any accept(StmtVisitor<std::any>& visitor) const override {
+        return visitor.visitWhileStmt(*this);
+    }
+
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> body;
 };
 
 #endif // STMT_H

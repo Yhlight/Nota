@@ -74,6 +74,7 @@ if __name__ == "__main__":
     output_dir = sys.argv[1]
 
     expr_types = {
+        "Assign": "Token name, std::unique_ptr<Expr> value",
         "Binary": "std::unique_ptr<Expr> left, Token op, std::unique_ptr<Expr> right",
         "Grouping": "std::unique_ptr<Expr> expression",
         "Literal": "std::any value",
@@ -87,6 +88,7 @@ if __name__ == "__main__":
         "Expression": "std::unique_ptr<Expr> expression",
         "If": "std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> thenBranch, std::unique_ptr<Stmt> elseBranch",
         "Print": "std::unique_ptr<Expr> expression",
-        "Var": "Token name, std::unique_ptr<Expr> initializer"
+        "Var": "Token name, std::unique_ptr<Expr> initializer",
+        "While": "std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body"
     }
     define_ast(output_dir, "Stmt", stmt_types, ['"Token.h"', '"Expr.h"'])

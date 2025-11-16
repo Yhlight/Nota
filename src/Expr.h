@@ -6,6 +6,7 @@
 #include <vector>
 #include <any>
 
+class Assign;
 class Binary;
 class Grouping;
 class Literal;
@@ -15,6 +16,7 @@ class Variable;
 template <typename R>
 class ExprVisitor {
 public:
+    virtual R visitAssignExpr(const Assign& expr) = 0;
     virtual R visitBinaryExpr(const Binary& expr) = 0;
     virtual R visitGroupingExpr(const Grouping& expr) = 0;
     virtual R visitLiteralExpr(const Literal& expr) = 0;
@@ -27,6 +29,20 @@ class Expr {
 public:
     virtual ~Expr() = default;
     virtual std::any accept(ExprVisitor<std::any>& visitor) const = 0;
+};
+
+class Assign : public Expr {
+public:
+    Assign(Token name, std::unique_ptr<Expr> value) :
+        name(std::move(name)),
+        value(std::move(value)) {}
+
+    std::any accept(ExprVisitor<std::any>& visitor) const override {
+        return visitor.visitAssignExpr(*this);
+    }
+
+    const Token name;
+    const std::unique_ptr<Expr> value;
 };
 
 class Binary : public Expr {

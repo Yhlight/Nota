@@ -29,6 +29,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
 std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::IF})) return ifStatement();
+    if (match({TokenType::WHILE})) return whileStatement();
     if (match({TokenType::PRINT})) return printStatement();
     if (check(TokenType::LEFT_BRACE)) { // C-style blocks are not supported, but let's be ready
         return std::make_unique<Block>(block());
@@ -57,6 +58,14 @@ std::unique_ptr<Stmt> Parser::ifStatement() {
     return std::make_unique<If>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
 }
 
+std::unique_ptr<Stmt> Parser::whileStatement() {
+    std::unique_ptr<Expr> condition = expression();
+    std::unique_ptr<Stmt> body = std::make_unique<Block>(block());
+    consume(TokenType::END, "Expect 'end' after while loop.");
+    return std::make_unique<While>(std::move(condition), std::move(body));
+}
+
+
 std::vector<std::unique_ptr<Stmt>> Parser::block() {
     std::vector<std::unique_ptr<Stmt>> statements;
 
@@ -80,8 +89,27 @@ std::unique_ptr<Stmt> Parser::expressionStatement() {
 
 
 std::unique_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
 }
+
+std::unique_ptr<Expr> Parser::assignment() {
+    std::unique_ptr<Expr> expr = equality();
+
+    if (match({TokenType::EQUAL})) {
+        Token equals = previous();
+        std::unique_ptr<Expr> value = assignment();
+
+        if (dynamic_cast<Variable*>(expr.get())) {
+            Token name = static_cast<Variable*>(expr.get())->name;
+            return std::make_unique<Assign>(name, std::move(value));
+        }
+
+        error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
+}
+
 
 std::unique_ptr<Expr> Parser::equality() {
     std::unique_ptr<Expr> expr = comparison();

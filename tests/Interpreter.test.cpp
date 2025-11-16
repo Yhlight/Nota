@@ -120,3 +120,31 @@ TEST_F(InterpreterTest, HandlesBlockScoping) {
 
     EXPECT_EQ(getOutput(), "2\n1\n");
 }
+
+TEST_F(InterpreterTest, HandlesAssignment) {
+    std::string source = "var a = 1\n a = 2\n print a\n";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scanTokens();
+
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    Interpreter interpreter;
+    interpreter.interpret(statements);
+
+    EXPECT_EQ(getOutput(), "2\n");
+}
+
+TEST_F(InterpreterTest, HandlesWhileLoop) {
+    std::string source = "var i = 0\n while i < 3\n print i\n i = i + 1\n end\n";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scanTokens();
+
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    Interpreter interpreter;
+    interpreter.interpret(statements);
+
+    EXPECT_EQ(getOutput(), "0\n1\n2\n");
+}

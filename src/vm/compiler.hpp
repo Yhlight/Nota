@@ -24,10 +24,13 @@ namespace nota {
         void visit(const ExpressionStmt& stmt) override;
         void visit(const VarDeclStmt& stmt) override;
         void visit(const BlockStmt& stmt) override;
+        void visit(const IfStmt& stmt) override;
 
     private:
         void emitByte(uint8_t byte);
         void emitBytes(uint8_t byte1, uint8_t byte2);
+        size_t emitJump(uint8_t instruction);
+        void patchJump(size_t offset);
         void emitReturn();
         void emitConstant(const LiteralValue& value);
         uint8_t identifierConstant(const Token& name);

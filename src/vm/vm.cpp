@@ -60,6 +60,7 @@ namespace nota {
 
     InterpretResult VM::run() {
         #define READ_BYTE() (*ip++)
+        #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
         #define READ_CONSTANT() (chunk->getConstants()[READ_BYTE()])
         #define READ_STRING() (std::get<std::string>(READ_CONSTANT()))
         #define BINARY_OP(valueType, op) \
@@ -110,6 +111,16 @@ namespace nota {
                     it->second = peek(0);
                     break;
                 }
+                case OpCode::OP_JUMP_IF_FALSE: {
+                    uint16_t offset = READ_SHORT();
+                    if (isFalsey(peek(0))) ip += offset;
+                    break;
+                }
+                case OpCode::OP_JUMP: {
+                    uint16_t offset = READ_SHORT();
+                    ip += offset;
+                    break;
+                }
                 case OpCode::OP_NEGATE: {
                     if (!std::holds_alternative<double>(peek(0))) {
                         std::cerr << "Operand must be a number." << std::endl;
@@ -137,6 +148,7 @@ namespace nota {
             }
         }
         #undef READ_BYTE
+        #undef READ_SHORT
         #undef READ_CONSTANT
         #undef READ_STRING
         #undef BINARY_OP

@@ -22,6 +22,7 @@ struct Stmt;
 struct ExpressionStmt;
 struct VarDeclStmt;
 struct BlockStmt;
+struct IfStmt;
 
 // Visitor for Expressions
 struct ExprVisitor {
@@ -46,6 +47,7 @@ struct StmtVisitor {
     virtual void visit(const ExpressionStmt& stmt) = 0;
     virtual void visit(const VarDeclStmt& stmt) = 0;
     virtual void visit(const BlockStmt& stmt) = 0;
+    virtual void visit(const IfStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -160,6 +162,19 @@ struct BlockStmt : Stmt {
     }
 
     const std::vector<std::unique_ptr<Stmt>> statements;
+};
+
+struct IfStmt : Stmt {
+    IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> thenBranch, std::unique_ptr<Stmt> elseBranch)
+        : condition(std::move(condition)), thenBranch(std::move(thenBranch)), elseBranch(std::move(elseBranch)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> thenBranch;
+    const std::unique_ptr<Stmt> elseBranch;
 };
 
 } // namespace nota

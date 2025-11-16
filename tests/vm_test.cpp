@@ -3,6 +3,18 @@
 
 using namespace nota;
 
+TEST(VMTest, IfStatement) {
+    VM vm;
+    InterpretResult result = vm.interpret("let a = 10 if a > 5 end a = 20 end");
+    EXPECT_EQ(result, InterpretResult::OK);
+}
+
+TEST(VMTest, IfElseStatement) {
+    VM vm;
+    InterpretResult result = vm.interpret("let a = 10 if a > 15 end a = 20 else a = 30 end");
+    EXPECT_EQ(result, InterpretResult::OK);
+}
+
 TEST(VMTest, GlobalVariable) {
     VM vm;
     InterpretResult result = vm.interpret("let a = 10");

@@ -7,6 +7,11 @@ namespace nota {
         lines.push_back(line);
     }
 
+    void Chunk::patch(size_t offset, uint16_t value) {
+        code[offset] = (value >> 8) & 0xff;
+        code[offset + 1] = value & 0xff;
+    }
+
     size_t Chunk::addConstant(const LiteralValue& value) {
         constants.push_back(value);
         return constants.size() - 1;

@@ -83,6 +83,20 @@ namespace nota {
         }
     }
 
+    void Compiler::visit(const IfStmt& stmt) {
+        stmt.condition->accept(*this);
+        size_t thenJump = emitJump((uint8_t)OpCode::OP_JUMP_IF_FALSE);
+
+        stmt.thenBranch->accept(*this);
+        size_t elseJump = emitJump((uint8_t)OpCode::OP_JUMP);
+
+        patchJump(thenJump);
+        if (stmt.elseBranch) {
+            stmt.elseBranch->accept(*this);
+        }
+        patchJump(elseJump);
+    }
+
     void Compiler::emitByte(uint8_t byte) {
         chunk->write(byte, 0); // Placeholder line number
     }
@@ -90,6 +104,21 @@ namespace nota {
     void Compiler::emitBytes(uint8_t byte1, uint8_t byte2) {
         emitByte(byte1);
         emitByte(byte2);
+    }
+
+    size_t Compiler::emitJump(uint8_t instruction) {
+        emitByte(instruction);
+        emitByte(0xff);
+        emitByte(0xff);
+        return chunk->getCode().size() - 2;
+    }
+
+    void Compiler::patchJump(size_t offset) {
+        size_t jump = chunk->getCode().size() - offset - 2;
+        if (jump > UINT16_MAX) {
+            throw std::runtime_error("Too much code to jump over.");
+        }
+        chunk->patch(offset, (uint16_t)jump);
     }
 
     void Compiler::emitConstant(const LiteralValue& value) {

@@ -1,5 +1,6 @@
 #include "parser.hpp"
 #include <stdexcept>
+#include <vector>
 
 namespace nota {
 
@@ -42,7 +43,29 @@ namespace nota {
     }
 
     std::unique_ptr<Stmt> Parser::statement() {
+        if (match({TokenType::IF})) return ifStatement();
+        if (match({TokenType::LEFT_BRACE})) {
+            std::vector<std::unique_ptr<Stmt>> statements;
+            while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+                statements.push_back(declaration());
+            }
+            consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
+            return std::make_unique<BlockStmt>(std::move(statements));
+        }
         return expressionStatement();
+    }
+
+    std::unique_ptr<Stmt> Parser::ifStatement() {
+        std::unique_ptr<Expr> condition = expression();
+        consume(TokenType::END, "Expect 'end' after if condition.");
+
+        std::unique_ptr<Stmt> thenBranch = statement();
+        std::unique_ptr<Stmt> elseBranch = nullptr;
+        if (match({TokenType::ELSE})) {
+            elseBranch = statement();
+        }
+
+        return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
     }
 
     std::unique_ptr<Stmt> Parser::expressionStatement() {

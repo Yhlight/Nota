@@ -8,15 +8,15 @@ This document outlines the development roadmap for the Nota programming language
 - [x] Lexer implementation
 - [x] Parser implementation (AST)
 - [x] Bytecode definition
-- [>] Virtual Machine (VM) core
+- [x] Virtual Machine (VM) core
 - [ ] Basic REPL
 
 ## Phase 2: Language Features
 
-- [ ] Variables (let, mut)
-- [ ] Data types (int, float, bool, string)
-- [ ] Operators
-- [ ] Control flow (if/else, match)
+- [x] Variables (let, mut)
+- [x] Data types (int, float, bool, string)
+- [x] Operators
+- [>] Control flow (if/else, match)
 - [ ] Loops (while, for, for-each, do-while)
 - [ ] Functions
 - [ ] Lambda expressions

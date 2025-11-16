@@ -14,6 +14,8 @@ namespace nota {
         OP_DEFINE_GLOBAL,
         OP_GET_GLOBAL,
         OP_SET_GLOBAL,
+        OP_JUMP_IF_FALSE,
+        OP_JUMP,
         OP_NEGATE,
         OP_ADD,
         OP_SUBTRACT,
@@ -31,6 +33,7 @@ namespace nota {
     class Chunk {
     public:
         void write(uint8_t byte, int line);
+        void patch(size_t offset, uint16_t value);
         size_t addConstant(const LiteralValue& value);
 
         const std::vector<uint8_t>& getCode() const { return code; }

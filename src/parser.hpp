@@ -17,6 +17,7 @@ namespace nota {
         std::unique_ptr<Stmt> declaration();
         std::unique_ptr<Stmt> varDeclaration(bool isMutable);
         std::unique_ptr<Stmt> statement();
+        std::unique_ptr<Stmt> ifStatement();
         std::unique_ptr<Stmt> expressionStatement();
         std::unique_ptr<Expr> expression();
         std::unique_ptr<Expr> assignment();

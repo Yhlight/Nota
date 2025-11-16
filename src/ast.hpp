@@ -14,6 +14,7 @@ struct ExpressionStmt;
 struct VarStmt;
 struct BlockStmt;
 struct IfStmt;
+struct WhileStmt;
 
 using LiteralValue = std::variant<std::monostate, std::string, long long, double, bool>;
 
@@ -83,6 +84,7 @@ public:
     virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<BlockStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<WhileStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -133,5 +135,17 @@ struct IfStmt : Stmt {
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(std::make_shared<IfStmt>(*this));
+    }
+};
+
+struct WhileStmt : Stmt {
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> body;
+
+    WhileStmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> body)
+        : condition(condition), body(body) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(std::make_shared<WhileStmt>(*this));
     }
 };

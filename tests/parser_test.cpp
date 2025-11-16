@@ -92,6 +92,14 @@ public:
         result += ")";
     }
 
+    void visit(const std::shared_ptr<WhileStmt>& stmt) override {
+        result += "(while ";
+        stmt->condition->accept(*this);
+        result += " ";
+        stmt->body->accept(*this);
+        result += ")";
+    }
+
 private:
     std::string result;
 };
@@ -122,4 +130,13 @@ TEST(ParserTest, TestIfElseIfElseStatement) {
     std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
     ASTPrinter printer;
     ASSERT_EQ(printer.print(stmts[0]), "(if true { (var a = 1) } else (if false { (var b = 2) } else { (var c = 3) }))");
+}
+
+TEST(ParserTest, TestWhileStatement) {
+    Lexer lexer("while (true) let a = 1 end");
+    std::vector<Token> tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
+    ASTPrinter printer;
+    ASSERT_EQ(printer.print(stmts[0]), "(while true { (var a = 1) })");
 }

@@ -21,6 +21,7 @@ namespace nota {
         {"return", TokenType::Return},
         {"true", TokenType::True},
         {"false", TokenType::False},
+        {"end", TokenType::End},
     };
 
     Lexer::Lexer(const std::string& source)

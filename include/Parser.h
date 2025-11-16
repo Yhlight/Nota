@@ -50,8 +50,9 @@ namespace nota {
 
         std::unique_ptr<ast::Stmt> statement();
         std::unique_ptr<ast::Stmt> var_declaration();
+        std::unique_ptr<ast::Stmt> if_statement();
+        std::unique_ptr<ast::Stmt> block();
         std::unique_ptr<ast::Expr> expression();
-        std::unique_ptr<ast::Expr> primary();
 
         // Pratt parser methods
         std::unique_ptr<ast::Expr> parse_precedence(Precedence precedence);
@@ -59,7 +60,8 @@ namespace nota {
 
         // Prefix parse functions
         std::unique_ptr<ast::Expr> unary();
-        std::unique_ptr<ast::Expr> number();
+        std::unique_ptr<ast::Expr> literal();
+        std::unique_ptr<ast::Expr> grouping();
 
         // Infix parse functions
         std::unique_ptr<ast::Expr> binary(std::unique_ptr<ast::Expr> left);

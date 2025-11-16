@@ -5,6 +5,7 @@
 #include "Expr.h"
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace nota {
 namespace ast {
@@ -13,6 +14,8 @@ namespace ast {
     class StmtVisitor {
     public:
         virtual R visit(class VarDeclStmt& stmt) = 0;
+        virtual R visit(class BlockStmt& stmt) = 0;
+        virtual R visit(class IfStmt& stmt) = 0;
     };
 
     class Stmt {
@@ -33,6 +36,32 @@ namespace ast {
         Token name;
         std::optional<Token> type;
         std::unique_ptr<Expr> initializer;
+    };
+
+    class BlockStmt : public Stmt {
+    public:
+        BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
+            : statements(std::move(statements)) {}
+
+        void accept(StmtVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::vector<std::unique_ptr<Stmt>> statements;
+    };
+
+    class IfStmt : public Stmt {
+    public:
+        IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> then_branch, std::unique_ptr<Stmt> else_branch)
+            : condition(std::move(condition)), then_branch(std::move(then_branch)), else_branch(std::move(else_branch)) {}
+
+        void accept(StmtVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> condition;
+        std::unique_ptr<Stmt> then_branch;
+        std::unique_ptr<Stmt> else_branch;
     };
 
 } // namespace ast

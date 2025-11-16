@@ -119,3 +119,61 @@ TEST(ParserTest, BinaryExpr) {
     ASSERT_NE(right_binary, nullptr);
     EXPECT_EQ(right_binary->op.type, TokenType::Star);
 }
+
+TEST(ParserTest, IfStmt) {
+    std::string source = "if (true)\n let x = 1\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+
+    ast::IfStmt* if_stmt = dynamic_cast<ast::IfStmt*>(statements[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    ast::LiteralExpr* condition = dynamic_cast<ast::LiteralExpr*>(if_stmt->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->value.type, TokenType::True);
+
+    ast::BlockStmt* then_branch = dynamic_cast<ast::BlockStmt*>(if_stmt->then_branch.get());
+    ASSERT_NE(then_branch, nullptr);
+    EXPECT_EQ(then_branch->statements.size(), 1);
+}
+
+TEST(ParserTest, IfElseStmt) {
+    std::string source = "if (false)\n let x = 1\n else\n let y = 2\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+
+    ast::IfStmt* if_stmt = dynamic_cast<ast::IfStmt*>(statements[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    ast::BlockStmt* else_branch = dynamic_cast<ast::BlockStmt*>(if_stmt->else_branch.get());
+    ASSERT_NE(else_branch, nullptr);
+    EXPECT_EQ(else_branch->statements.size(), 1);
+}
+
+TEST(ParserTest, IfElseIfElseStmt) {
+    std::string source = "if (false)\n let x = 1\n else if (true)\n let y = 2\n else\n let z = 3\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+
+    ast::IfStmt* if_stmt = dynamic_cast<ast::IfStmt*>(statements[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    ast::IfStmt* else_if_stmt = dynamic_cast<ast::IfStmt*>(if_stmt->else_branch.get());
+    ASSERT_NE(else_if_stmt, nullptr);
+
+    ast::BlockStmt* else_branch = dynamic_cast<ast::BlockStmt*>(else_if_stmt->else_branch.get());
+    ASSERT_NE(else_branch, nullptr);
+    EXPECT_EQ(else_branch->statements.size(), 1);
+}

@@ -8,7 +8,7 @@ namespace nota {
 
         // Initialize the rules map
         rules = {
-            {TokenType::LeftParen, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::LeftParen, {&Parser::grouping, nullptr, PREC_NONE}},
             {TokenType::RightParen, {nullptr, nullptr, PREC_NONE}},
             {TokenType::LeftBrace, {nullptr, nullptr, PREC_NONE}},
             {TokenType::RightBrace, {nullptr, nullptr, PREC_NONE}},
@@ -26,9 +26,11 @@ namespace nota {
             {TokenType::Less, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::LessEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::Identifier, {nullptr, nullptr, PREC_NONE}},
-            {TokenType::String, {nullptr, nullptr, PREC_NONE}},
-            {TokenType::Integer, {&Parser::number, nullptr, PREC_NONE}},
-            {TokenType::Float, {&Parser::number, nullptr, PREC_NONE}},
+            {TokenType::String, {&Parser::literal, nullptr, PREC_NONE}},
+            {TokenType::Integer, {&Parser::literal, nullptr, PREC_NONE}},
+            {TokenType::Float, {&Parser::literal, nullptr, PREC_NONE}},
+            {TokenType::True, {&Parser::literal, nullptr, PREC_NONE}},
+            {TokenType::False, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::Eof, {nullptr, nullptr, PREC_NONE}},
         };
 
@@ -59,6 +61,9 @@ namespace nota {
     std::vector<std::unique_ptr<ast::Stmt>> Parser::parse() {
         std::vector<std::unique_ptr<ast::Stmt>> statements;
         while (current_token.type != TokenType::Eof) {
+            if (match(TokenType::Newline)) {
+                continue;
+            }
             statements.push_back(statement());
         }
         return statements;
@@ -68,14 +73,10 @@ namespace nota {
         if (match(TokenType::Let) || match(TokenType::Mut)) {
             return var_declaration();
         }
-        // Other statements will go here
-
-        // Skip tokens until the next statement
-        while(current_token.type != TokenType::Newline && current_token.type != TokenType::Eof)
-        {
-            advance();
+        if (match(TokenType::If)) {
+            return if_statement();
         }
-        if(current_token.type == TokenType::Newline) advance();
+        // Other statements will go here
 
         return nullptr;
     }
@@ -97,6 +98,37 @@ namespace nota {
 
         consume(TokenType::Newline, "Expect newline after variable declaration.");
         return std::make_unique<ast::VarDeclStmt>(name, type, std::move(initializer));
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::if_statement() {
+        auto condition = expression();
+        consume(TokenType::Newline, "Expect newline after if condition.");
+        auto then_branch = block();
+
+        std::unique_ptr<ast::Stmt> else_branch = nullptr;
+        if (match(TokenType::Else)) {
+            if (match(TokenType::If)) {
+                else_branch = if_statement();
+            } else {
+                consume(TokenType::Newline, "Expect newline after else.");
+                else_branch = block();
+                consume(TokenType::End, "Expect 'end' after else block.");
+            }
+        } else {
+            consume(TokenType::End, "Expect 'end' after if block.");
+        }
+
+        if(current_token.type == TokenType::Newline) advance();
+
+        return std::make_unique<ast::IfStmt>(std::move(condition), std::move(then_branch), std::move(else_branch));
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::block() {
+        std::vector<std::unique_ptr<ast::Stmt>> statements;
+        while (current_token.type != TokenType::End && current_token.type != TokenType::Else && current_token.type != TokenType::Eof) {
+            statements.push_back(statement());
+        }
+        return std::make_unique<ast::BlockStmt>(std::move(statements));
     }
 
     std::unique_ptr<ast::Expr> Parser::expression() {
@@ -131,8 +163,14 @@ namespace nota {
         return std::make_unique<ast::UnaryExpr>(op, std::move(right));
     }
 
-    std::unique_ptr<ast::Expr> Parser::number() {
+    std::unique_ptr<ast::Expr> Parser::literal() {
         return std::make_unique<ast::LiteralExpr>(previous_token);
+    }
+
+    std::unique_ptr<ast::Expr> Parser::grouping() {
+        auto expr = expression();
+        consume(TokenType::RightParen, "Expect ')' after expression.");
+        return expr;
     }
 
     std::unique_ptr<ast::Expr> Parser::binary(std::unique_ptr<ast::Expr> left) {

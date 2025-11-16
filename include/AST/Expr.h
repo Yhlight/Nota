@@ -15,6 +15,7 @@ namespace ast {
         virtual R visit(class BinaryExpr& expr) = 0;
         virtual R visit(class VariableExpr& expr) = 0;
         virtual R visit(class AssignExpr& expr) = 0;
+        virtual R visit(class PostfixExpr& expr) = 0;
     };
 
     class Expr {
@@ -83,6 +84,19 @@ namespace ast {
 
         Token name;
         std::unique_ptr<Expr> value;
+    };
+
+    class PostfixExpr : public Expr {
+    public:
+        PostfixExpr(std::unique_ptr<Expr> left, Token op)
+            : left(std::move(left)), op(op) {}
+
+        void accept(ExprVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> left;
+        Token op;
     };
 
 } // namespace ast

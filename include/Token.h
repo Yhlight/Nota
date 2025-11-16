@@ -32,7 +32,7 @@ namespace nota {
         PlusPlus, MinusMinus,
 
         // Punctuation
-        Newline, Colon, LeftParen, RightParen, LeftBrace, RightBrace,
+        Newline, Colon, Semicolon, LeftParen, RightParen, LeftBrace, RightBrace,
         LeftBracket, RightBracket, Comma, Dot,
 
         // Etc...

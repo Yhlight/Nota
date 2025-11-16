@@ -298,3 +298,37 @@ TEST(ParserTest, ForEachStmt) {
     ASSERT_NE(body, nullptr);
     EXPECT_EQ(body->statements.size(), 1);
 }
+
+TEST(ParserTest, PostfixExpr) {
+    std::string source = "i++\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    ASSERT_EQ(statements.size(), 1);
+
+    auto* expr_stmt = dynamic_cast<ast::ExpressionStmt*>(statements[0].get());
+    ASSERT_NE(expr_stmt, nullptr);
+
+    auto* postfix_expr = dynamic_cast<ast::PostfixExpr*>(expr_stmt->expression.get());
+    ASSERT_NE(postfix_expr, nullptr);
+
+    EXPECT_EQ(postfix_expr->op.type, TokenType::PlusPlus);
+}
+
+TEST(ParserTest, ForStmt) {
+    std::string source = "for let i = 0; i < 10; i++\n let x = 1\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    ASSERT_EQ(statements.size(), 1);
+
+    auto* for_stmt = dynamic_cast<ast::ForStmt*>(statements[0].get());
+    ASSERT_NE(for_stmt, nullptr);
+
+    ASSERT_NE(for_stmt->initializer, nullptr);
+    ASSERT_NE(for_stmt->condition, nullptr);
+    ASSERT_NE(for_stmt->increment, nullptr);
+    ASSERT_NE(for_stmt->body, nullptr);
+}

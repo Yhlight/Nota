@@ -14,6 +14,7 @@ namespace nota {
             {TokenType::RightBrace, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Comma, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Dot, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::Semicolon, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Minus, {&Parser::unary, &Parser::binary, PREC_TERM}},
             {TokenType::Plus, {nullptr, &Parser::binary, PREC_TERM}},
             {TokenType::Slash, {nullptr, &Parser::binary, PREC_FACTOR}},
@@ -28,6 +29,8 @@ namespace nota {
             {TokenType::LessEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::AmpersandAmpersand, {nullptr, &Parser::binary, PREC_AND}},
             {TokenType::PipePipe, {nullptr, &Parser::binary, PREC_OR}},
+            {TokenType::PlusPlus, {nullptr, &Parser::postfix, PREC_POSTFIX}},
+            {TokenType::MinusMinus, {nullptr, &Parser::postfix, PREC_POSTFIX}},
             {TokenType::Identifier, {&Parser::variable, nullptr, PREC_NONE}},
             {TokenType::String, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::Integer, {&Parser::literal, nullptr, PREC_NONE}},
@@ -73,9 +76,6 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Stmt> Parser::statement() {
-        if (match(TokenType::Let) || match(TokenType::Mut)) {
-            return var_declaration();
-        }
         if (match(TokenType::If)) {
             return if_statement();
         }
@@ -86,7 +86,7 @@ namespace nota {
             return do_while_statement();
         }
         if (match(TokenType::For)) {
-            return for_each_statement();
+            return for_statement();
         }
 
         return expression_statement();
@@ -107,7 +107,6 @@ namespace nota {
             initializer = expression();
         }
 
-        consume(TokenType::Newline, "Expect newline after variable declaration.");
         return std::make_unique<ast::VarDeclStmt>(name, type, std::move(initializer));
     }
 
@@ -155,29 +154,57 @@ namespace nota {
         return std::make_unique<ast::DoWhileStmt>(std::move(body), std::move(condition));
     }
 
-    std::unique_ptr<ast::Stmt> Parser::for_each_statement() {
-        // Optional let/mut
-        if (match(TokenType::Let) || match(TokenType::Mut)) {
-            // Can be ignored for now, as we don't have semantic analysis
+    std::unique_ptr<ast::Stmt> Parser::for_statement() {
+        bool is_let = match(TokenType::Let);
+        if ((is_let || current_token.type == TokenType::Identifier) && lexer.peek() == ':') {
+            if (!is_let) {
+                consume(TokenType::Identifier, "Expect variable name.");
+            }
+            Token variable = previous_token;
+            consume(TokenType::Colon, "Expect ':' after variable name.");
+            auto container = expression();
+            consume(TokenType::Newline, "Expect newline after for-each container.");
+            auto body = block();
+            consume(TokenType::End, "Expect 'end' after for-each block.");
+            if (current_token.type == TokenType::Newline) advance();
+            return std::make_unique<ast::ForEachStmt>(variable, std::move(container), std::move(body));
         }
 
-        consume(TokenType::Identifier, "Expect variable name.");
-        Token variable = previous_token;
+        std::unique_ptr<ast::Stmt> initializer = nullptr;
+        if (is_let) {
+            initializer = var_declaration();
+        } else if (!match(TokenType::Semicolon)) {
+            initializer = std::make_unique<ast::ExpressionStmt>(expression());
+        }
+        if (initializer) {
+            consume(TokenType::Semicolon, "Expect ';' after loop initializer.");
+        }
 
-        consume(TokenType::Colon, "Expect ':' after variable name.");
+        std::unique_ptr<ast::Expr> condition = nullptr;
+        if (!match(TokenType::Semicolon)) {
+            condition = expression();
+            consume(TokenType::Semicolon, "Expect ';' after loop condition.");
+        }
 
-        auto container = expression();
-        consume(TokenType::Newline, "Expect newline after for-each container.");
+        std::unique_ptr<ast::Expr> increment = nullptr;
+        if (!match(TokenType::Newline)) {
+            increment = expression();
+        }
+        consume(TokenType::Newline, "Expect newline after for clauses.");
 
         auto body = block();
-        consume(TokenType::End, "Expect 'end' after for-each block.");
+        consume(TokenType::End, "Expect 'end' after for block.");
+        if (current_token.type == TokenType::Newline) advance();
 
-        if(current_token.type == TokenType::Newline) advance();
-
-        return std::make_unique<ast::ForEachStmt>(variable, std::move(container), std::move(body));
+        return std::make_unique<ast::ForStmt>(std::move(initializer), std::move(condition), std::move(increment), std::move(body));
     }
 
     std::unique_ptr<ast::Stmt> Parser::expression_statement() {
+        if (match(TokenType::Let) || match(TokenType::Mut)) {
+            auto decl = var_declaration();
+            consume(TokenType::Newline, "Expect newline after variable declaration.");
+            return decl;
+        }
         auto expr = expression();
         consume(TokenType::Newline, "Expect newline after expression.");
         return std::make_unique<ast::ExpressionStmt>(std::move(expr));
@@ -251,6 +278,11 @@ namespace nota {
         }
 
         throw std::runtime_error("Invalid assignment target.");
+    }
+
+    std::unique_ptr<ast::Expr> Parser::postfix(std::unique_ptr<ast::Expr> left) {
+        Token op = previous_token;
+        return std::make_unique<ast::PostfixExpr>(std::move(left), op);
     }
 
 } // namespace nota

@@ -22,7 +22,7 @@ This document outlines the development roadmap for the Nota programming language
 - [x] **Operators**
     - [x] Arithmetic operators (`+`, `-`, `*`, `/`, `%`)
     - [x] Comparison operators (`==`, `!=`, `>`, `<`, etc.)
-    - [ ] Logical operators (`&&`, `||`, `!`)
+    - [x] Logical operators (`&&`, `||`, `!`)
     - [x] Assignment operators (`=`, `+=`, etc.)
 
 ## Phase 2: Control Flow
@@ -34,7 +34,7 @@ This document outlines the development roadmap for the Nota programming language
     - [x] `while` loops
     - [x] `do-while` loops
     - [ ] C-style `for` loops
-    - [ ] `for-each` loops
+    - [x] `for-each` loops
 
 ## Phase 3: Functions and Scope
 

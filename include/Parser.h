@@ -23,6 +23,7 @@ namespace nota {
         PREC_TERM,        // + -
         PREC_FACTOR,      // * /
         PREC_UNARY,       // ! -
+        PREC_POSTFIX,     // ++ --
         PREC_CALL,        // . ()
         PREC_PRIMARY
     };
@@ -53,7 +54,7 @@ namespace nota {
         std::unique_ptr<ast::Stmt> if_statement();
         std::unique_ptr<ast::Stmt> while_statement();
         std::unique_ptr<ast::Stmt> do_while_statement();
-        std::unique_ptr<ast::Stmt> for_each_statement();
+        std::unique_ptr<ast::Stmt> for_statement();
         std::unique_ptr<ast::Stmt> expression_statement();
         std::unique_ptr<ast::Stmt> block();
         std::unique_ptr<ast::Expr> expression();
@@ -71,6 +72,7 @@ namespace nota {
         // Infix parse functions
         std::unique_ptr<ast::Expr> binary(std::unique_ptr<ast::Expr> left);
         std::unique_ptr<ast::Expr> assignment(std::unique_ptr<ast::Expr> left);
+        std::unique_ptr<ast::Expr> postfix(std::unique_ptr<ast::Expr> left);
 
         std::map<TokenType, ParseRule> rules;
     };

@@ -6,8 +6,11 @@
 
 namespace nota {
 
+    class Parser;
+
     class Lexer {
     public:
+        friend class Parser;
         Lexer(const std::string& source);
 
         Token next_token();

@@ -20,6 +20,7 @@ namespace ast {
         virtual R visit(class DoWhileStmt& stmt) = 0;
         virtual R visit(class ExpressionStmt& stmt) = 0;
         virtual R visit(class ForEachStmt& stmt) = 0;
+        virtual R visit(class ForStmt& stmt) = 0;
     };
 
     class Stmt {
@@ -117,6 +118,21 @@ namespace ast {
 
         Token variable;
         std::unique_ptr<Expr> container;
+        std::unique_ptr<Stmt> body;
+    };
+
+    class ForStmt : public Stmt {
+    public:
+        ForStmt(std::unique_ptr<Stmt> initializer, std::unique_ptr<Expr> condition, std::unique_ptr<Expr> increment, std::unique_ptr<Stmt> body)
+            : initializer(std::move(initializer)), condition(std::move(condition)), increment(std::move(increment)), body(std::move(body)) {}
+
+        void accept(StmtVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::unique_ptr<Stmt> initializer;
+        std::unique_ptr<Expr> condition;
+        std::unique_ptr<Expr> increment;
         std::unique_ptr<Stmt> body;
     };
 

@@ -1,6 +1,7 @@
 #include <iostream>
+#include "Version.h"
 
 int main() {
-    std::cout << "Hello, Nota!" << std::endl;
+    std::cout << "Nota version " << nota::getVersion() << std::endl;
     return 0;
 }

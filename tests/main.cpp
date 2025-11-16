@@ -1,6 +1,6 @@
-#include <iostream>
+#include <gtest/gtest.h>
+#include "Version.h"
 
-int main() {
-    std::cout << "Running tests..." << std::endl;
-    return 0;
+TEST(VersionTest, GetVersion) {
+    EXPECT_EQ(nota::getVersion(), "0.0.1");
 }

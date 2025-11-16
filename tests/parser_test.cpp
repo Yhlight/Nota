@@ -78,3 +78,28 @@ TEST(ParserTest, OperatorPrecedence) {
     ASSERT_NE(right_num, nullptr);
     ASSERT_EQ(right_num->value.text, "3");
 }
+
+TEST(ParserTest, IfStatement) {
+    std::string source = "if 1 < 2 let x = 1 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Program program = parser.parse();
+
+    ASSERT_EQ(program.size(), 1);
+
+    auto* if_stmt = dynamic_cast<IfStmt*>(program[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+
+    auto* cond_expr = dynamic_cast<BinaryExpr*>(if_stmt->condition.get());
+    ASSERT_NE(cond_expr, nullptr);
+    ASSERT_EQ(cond_expr->op.type, TokenType::LessThan);
+
+    auto* then_block = dynamic_cast<BlockStmt*>(if_stmt->then_branch.get());
+    ASSERT_NE(then_block, nullptr);
+    ASSERT_EQ(then_block->statements.size(), 1);
+
+    auto* var_decl = dynamic_cast<VarDeclStmt*>(then_block->statements[0].get());
+    ASSERT_NE(var_decl, nullptr);
+    ASSERT_EQ(var_decl->name.text, "x");
+}

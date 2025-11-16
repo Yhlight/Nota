@@ -9,6 +9,7 @@ static std::map<TokenType, int> precedence = {
     {TokenType::Asterisk, 20},
     {TokenType::Slash, 20},
     {TokenType::Percent, 20},
+    {TokenType::LessThan, 5},
 };
 
 static int get_precedence(TokenType type) {
@@ -22,11 +23,18 @@ Parser::Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
 
 // Helper methods
 Token Parser::peek() const {
+    if (is_at_end()) {
+        // Return a sentinel token to avoid out-of-bounds access
+        return {TokenType::Unknown, ""};
+    }
     return tokens[position];
 }
 
 Token Parser::advance() {
-    return tokens[position++];
+    if (!is_at_end()) {
+        return tokens[position++];
+    }
+    return {TokenType::Unknown, ""};
 }
 
 bool Parser::is_at_end() const {
@@ -38,6 +46,9 @@ bool Parser::is_at_end() const {
 std::unique_ptr<Stmt> Parser::parse_statement() {
     if (peek().type == TokenType::Let) {
         return parse_let_statement();
+    }
+    if (peek().type == TokenType::If) {
+        return parse_if_statement();
     }
     // Handle other statement types here...
     return nullptr;
@@ -65,6 +76,51 @@ std::unique_ptr<Stmt> Parser::parse_let_statement() {
     }
 
     return std::make_unique<VarDeclStmt>(name, std::move(initializer));
+}
+
+std::unique_ptr<Stmt> Parser::parse_if_statement() {
+    advance(); // Consume 'if'
+
+    std::unique_ptr<Expr> condition = parse_expression();
+    if (!condition) {
+        // Error handling: expected an expression
+        return nullptr;
+    }
+
+    std::unique_ptr<Stmt> then_branch = parse_block_statement();
+    if (!then_branch) {
+        // Error handling: expected a block
+        return nullptr;
+    }
+
+    std::unique_ptr<Stmt> else_branch = nullptr;
+    if (peek().type == TokenType::Else) {
+        advance(); // Consume 'else'
+        else_branch = parse_block_statement();
+        if (!else_branch) {
+            // Error handling: expected a block
+            return nullptr;
+        }
+    }
+
+    return std::make_unique<IfStmt>(std::move(condition), std::move(then_branch),
+                                      std::move(else_branch));
+}
+
+std::unique_ptr<Stmt> Parser::parse_block_statement() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+    while (peek().type != TokenType::End && peek().type != TokenType::Else && !is_at_end()) {
+        statements.push_back(parse_statement());
+    }
+
+    if (peek().type == TokenType::End) {
+        advance(); // Consume 'end'
+    } else {
+        // Error handling: expected 'end'
+        return nullptr;
+    }
+
+    return std::make_unique<BlockStmt>(std::move(statements));
 }
 
 std::unique_ptr<Expr> Parser::parse_primary_expression() {

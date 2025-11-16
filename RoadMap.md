@@ -21,6 +21,7 @@
 ## Phase 2: Control Flow
 
 - [ ] If/Else Statements
+    - [ ] `if` statement parsing
 - [ ] Match Statements
 - [ ] While Loops
 - [ ] For Loops (C-style)

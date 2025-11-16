@@ -7,6 +7,9 @@ enum class TokenType {
     // Keywords
     Let,
     Mut,
+    If,
+    Else,
+    End,
 
     // Literals
     Identifier,
@@ -19,6 +22,7 @@ enum class TokenType {
     Slash,
     Percent,
     Equal,
+    LessThan,
 
     // Misc
     Unknown,

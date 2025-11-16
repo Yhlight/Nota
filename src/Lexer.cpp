@@ -9,6 +9,9 @@ std::vector<Token> Lexer::tokenize() {
     std::map<std::string, TokenType> keywords = {
         {"let", TokenType::Let},
         {"mut", TokenType::Mut},
+        {"if", TokenType::If},
+        {"else", TokenType::Else},
+        {"end", TokenType::End},
     };
 
     while (position < source.length()) {
@@ -80,6 +83,7 @@ std::vector<Token> Lexer::tokenize() {
             case '/': tokens.push_back({TokenType::Slash, "/"}); break;
             case '%': tokens.push_back({TokenType::Percent, "%"}); break;
             case '=': tokens.push_back({TokenType::Equal, "="}); break;
+            case '<': tokens.push_back({TokenType::LessThan, "<"}); break;
             default: tokens.push_back({TokenType::Unknown, std::string(1, current_char)}); break;
         }
         position++;

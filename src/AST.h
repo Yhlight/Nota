@@ -50,5 +50,28 @@ public:
     std::unique_ptr<Expr> initializer;
 };
 
+// Statement for a block of statements, e.g., "{ let x = 1; }"
+class BlockStmt : public Stmt {
+public:
+    explicit BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
+        : statements(std::move(statements)) {}
+
+    std::vector<std::unique_ptr<Stmt>> statements;
+};
+
+// Statement for an if statement, e.g., "if (x) { ... } else { ... }"
+class IfStmt : public Stmt {
+public:
+    IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> then_branch,
+           std::unique_ptr<Stmt> else_branch)
+        : condition(std::move(condition)),
+          then_branch(std::move(then_branch)),
+          else_branch(std::move(else_branch)) {}
+
+    std::unique_ptr<Expr> condition;
+    std::unique_ptr<Stmt> then_branch;
+    std::unique_ptr<Stmt> else_branch;
+};
+
 // A program is a series of statements
 using Program = std::vector<std::unique_ptr<Stmt>>;

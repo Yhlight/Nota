@@ -11,7 +11,6 @@ include_directories(${gtest_SOURCE_DIR}/include ${gmock_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 add_executable(nota_tests
-    main.cpp
     lexer_test.cpp
     parser_test.cpp
 )

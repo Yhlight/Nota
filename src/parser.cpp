@@ -54,6 +54,7 @@ namespace nota {
         if (match({TokenType::IF})) return if_statement();
         if (match({TokenType::RETURN})) return return_statement();
         if (match({TokenType::WHILE})) return while_statement();
+        if (match({TokenType::DO})) return do_while_statement();
         return expression_statement();
     }
 
@@ -130,6 +131,14 @@ namespace nota {
         std::unique_ptr<Stmt> body = statement();
         consume(TokenType::END, "Expect 'end' after while loop.");
         return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+    }
+
+    std::unique_ptr<Stmt> Parser::do_while_statement() {
+        std::unique_ptr<Stmt> body = statement();
+        consume(TokenType::WHILE, "Expect 'while' after do-while body.");
+        std::unique_ptr<Expr> condition = expression();
+        consume(TokenType::END, "Expect 'end' after do-while condition.");
+        return std::make_unique<DoWhileStmt>(std::move(condition), std::move(body));
     }
 
     std::unique_ptr<Stmt> Parser::block() {

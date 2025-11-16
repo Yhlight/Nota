@@ -43,9 +43,9 @@ struct VarStmt;
 struct BlockStmt;
 struct IfStmt;
 struct WhileStmt;
-struct ForStmt;
 struct FunctionStmt;
 struct ReturnStmt;
+struct DoWhileStmt;
 
 
 // Visitor for Statements
@@ -55,9 +55,9 @@ struct StmtVisitor {
     virtual std::string visit(const BlockStmt& stmt) = 0;
     virtual std::string visit(const IfStmt& stmt) = 0;
     virtual std::string visit(const WhileStmt& stmt) = 0;
-    virtual std::string visit(const ForStmt& stmt) = 0;
     virtual std::string visit(const FunctionStmt& stmt) = 0;
     virtual std::string visit(const ReturnStmt& stmt) = 0;
+    virtual std::string visit(const DoWhileStmt& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -195,18 +195,6 @@ struct WhileStmt : Stmt {
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
 };
 
-struct ForStmt : Stmt {
-    std::unique_ptr<Stmt> initializer;
-    std::unique_ptr<Expr> condition;
-    std::unique_ptr<Expr> increment;
-    std::unique_ptr<Stmt> body;
-
-    ForStmt(std::unique_ptr<Stmt> initializer, std::unique_ptr<Expr> condition, std::unique_ptr<Expr> increment, std::unique_ptr<Stmt> body)
-        : initializer(std::move(initializer)), condition(std::move(condition)), increment(std::move(increment)), body(std::move(body)) {}
-
-    std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
-};
-
 struct FunctionStmt : Stmt {
     Token name;
     std::vector<Token> params;
@@ -224,6 +212,16 @@ struct ReturnStmt : Stmt {
 
     ReturnStmt(Token keyword, std::unique_ptr<Expr> value)
         : keyword(keyword), value(std::move(value)) {}
+
+    std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct DoWhileStmt : Stmt {
+    std::unique_ptr<Expr> condition;
+    std::unique_ptr<Stmt> body;
+
+    DoWhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+        : condition(std::move(condition)), body(std::move(body)) {}
 
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
 };

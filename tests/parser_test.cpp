@@ -92,23 +92,6 @@ public:
         return "while " + stmt.condition->accept(*this) + " " + stmt.body->accept(*this);
     }
 
-    std::string visit(const ForStmt& stmt) override {
-        std::string result = "for (";
-        if (stmt.initializer) {
-            result += stmt.initializer->accept(*this);
-        }
-        result += "; ";
-        if (stmt.condition) {
-            result += stmt.condition->accept(*this);
-        }
-        result += "; ";
-        if (stmt.increment) {
-            result += stmt.increment->accept(*this);
-        }
-        result += ") " + stmt.body->accept(*this);
-        return result;
-    }
-
     std::string visit(const FunctionStmt& stmt) override {
         std::string result = "func " + stmt.name.lexeme + "(";
         for (size_t i = 0; i < stmt.params.size(); ++i) {
@@ -123,6 +106,10 @@ public:
 
     std::string visit(const ReturnStmt& stmt) override {
         return "return"; // Simplified
+    }
+
+    std::string visit(const DoWhileStmt& stmt) override {
+        return "do " + stmt.body->accept(*this) + " while " + stmt.condition->accept(*this);
     }
 
 
@@ -230,4 +217,18 @@ TEST(ParserTest, LambdaExpressionNoArgs) {
 
     EXPECT_EQ(statements.size(), 1);
     EXPECT_EQ(result, "let get_42 = lambda () => 42;\n");
+}
+
+TEST(ParserTest, DoWhileLoop) {
+    std::string source = "do x = x + 1 while x < 10 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "do (= x (+ x 1)); while (< x 10)\n");
 }

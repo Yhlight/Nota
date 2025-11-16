@@ -25,7 +25,8 @@
     - [x] `else` and `else if` parsing
 - [x] Match Statements
     - [x] `match` statement parsing
-- [ ] While Loops
+- [x] While Loops
+    - [x] `while` loop parsing
 - [ ] For Loops (C-style)
 - [ ] For-Each Loops
 - [ ] Do-While Loops

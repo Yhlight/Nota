@@ -11,6 +11,7 @@ enum class TokenType {
     Else,
     End,
     Match,
+    While,
 
     // Literals
     Identifier,

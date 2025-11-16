@@ -220,3 +220,28 @@ TEST(ParserTest, MatchStatementMultiValue) {
     ASSERT_NE(case1_val2, nullptr);
     ASSERT_EQ(case1_val2->value.text, "2");
 }
+
+TEST(ParserTest, WhileStatement) {
+    std::string source = "while 1 < 2 let x = 1 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Program program = parser.parse();
+
+    ASSERT_EQ(program.size(), 1);
+
+    auto* while_stmt = dynamic_cast<WhileStmt*>(program[0].get());
+    ASSERT_NE(while_stmt, nullptr);
+
+    auto* cond_expr = dynamic_cast<BinaryExpr*>(while_stmt->condition.get());
+    ASSERT_NE(cond_expr, nullptr);
+    ASSERT_EQ(cond_expr->op.type, TokenType::LessThan);
+
+    auto* body_block = dynamic_cast<BlockStmt*>(while_stmt->body.get());
+    ASSERT_NE(body_block, nullptr);
+    ASSERT_EQ(body_block->statements.size(), 1);
+
+    auto* var_decl = dynamic_cast<VarDeclStmt*>(body_block->statements[0].get());
+    ASSERT_NE(var_decl, nullptr);
+    ASSERT_EQ(var_decl->name.text, "x");
+}

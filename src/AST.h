@@ -106,3 +106,13 @@ public:
     std::unique_ptr<Expr> condition;
     std::vector<MatchCase> cases;
 };
+
+// Statement for a while loop, e.g., "while (x) { ... }"
+class WhileStmt : public Stmt {
+public:
+    WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+        : condition(std::move(condition)), body(std::move(body)) {}
+
+    std::unique_ptr<Expr> condition;
+    std::unique_ptr<Stmt> body;
+};

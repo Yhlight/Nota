@@ -21,6 +21,7 @@ private:
     std::unique_ptr<Stmt> parse_let_statement();
     std::unique_ptr<Stmt> parse_if_statement(bool is_else_if = false);
     std::unique_ptr<Stmt> parse_match_statement();
+    std::unique_ptr<Stmt> parse_while_statement();
     std::unique_ptr<Stmt> parse_block_statement();
     std::unique_ptr<Expr> parse_expression(int min_precedence = 0);
     std::unique_ptr<Expr> parse_primary_expression();

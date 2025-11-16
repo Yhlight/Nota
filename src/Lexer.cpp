@@ -13,6 +13,7 @@ std::vector<Token> Lexer::tokenize() {
         {"else", TokenType::Else},
         {"end", TokenType::End},
         {"match", TokenType::Match},
+        {"while", TokenType::While},
     };
 
     while (position < source.length()) {

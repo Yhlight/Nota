@@ -63,6 +63,9 @@ std::unique_ptr<Stmt> Parser::parse_statement() {
     if (peek().type == TokenType::Match) {
         return parse_match_statement();
     }
+    if (peek().type == TokenType::While) {
+        return parse_while_statement();
+    }
     // Handle other statement types here...
     return nullptr;
 }
@@ -155,6 +158,28 @@ std::unique_ptr<Stmt> Parser::parse_match_statement() {
     }
 
     return std::make_unique<MatchStmt>(std::move(condition), std::move(cases));
+}
+
+std::unique_ptr<Stmt> Parser::parse_while_statement() {
+    advance(); // Consume 'while'
+
+    std::unique_ptr<Expr> condition = parse_expression();
+    if (!condition) {
+        // Error handling
+        return nullptr;
+    }
+
+    std::unique_ptr<Stmt> body = parse_block_statement();
+    if (!body) {
+        // Error handling
+        return nullptr;
+    }
+
+    if (consume(TokenType::End, "Expected 'end' after while loop.").type == TokenType::Unknown) {
+        return nullptr;
+    }
+
+    return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
 
 

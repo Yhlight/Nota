@@ -38,9 +38,14 @@ def run():
     print(f"Running {executable_path}...")
     run_command(executable_path)
 
+def test():
+    """Runs the tests."""
+    print("Running tests...")
+    run_command("ctest --test-dir build --output-on-failure")
+
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python build.py [build|run]")
+        print("Usage: python build.py [build|run|test]")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -48,6 +53,8 @@ def main():
         build()
     elif command == "run":
         run()
+    elif command == "test":
+        test()
     else:
         print(f"Unknown command: {command}")
         sys.exit(1)

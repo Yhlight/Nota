@@ -172,6 +172,23 @@ public:
         return result;
     }
 
+    std::string visit(const ForEachStmt& stmt) override {
+        std::string type = stmt.is_mutable ? "mut" : "let";
+        return "for " + type + " " + stmt.variable.lexeme + " : " + stmt.collection->accept(*this) + " " + stmt.body->accept(*this);
+    }
+
+    std::string visit(const ArrayExpr& expr) override {
+        std::vector<Expr*> elements;
+        for (const auto& element : expr.elements) {
+            elements.push_back(element.get());
+        }
+        return parenthesize("array", elements);
+    }
+
+    std::string visit(const IndexExpr& expr) override {
+        return parenthesize("index " + expr.callee->accept(*this), {expr.index.get()});
+    }
+
 
 private:
     std::string parenthesize(const std::string& name, const std::vector<Expr*>& exprs) {
@@ -210,4 +227,88 @@ TEST(ParserTest, MatchStatement) {
 
     EXPECT_EQ(statements.size(), 1);
     EXPECT_EQ(result, "match (x) {\n1: {\n10;\n}\n2, 3: {\n20;\n}\n_: {\n30;\n}\n}\n");
+}
+
+TEST(ParserTest, ForEachStatement) {
+    std::string source = "for let i : items i = i + 1 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "for let i : items {\n(= i (+ i 1));\n}\n");
+}
+
+TEST(ParserTest, ForEachStatementMutable) {
+    std::string source = "for mut i : items i = i + 1 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "for mut i : items {\n(= i (+ i 1));\n}\n");
+}
+
+TEST(ParserTest, ArrayExpression) {
+    std::string source = "[1, 2, 3]";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "(array 1 2 3);\n");
+}
+
+TEST(ParserTest, EmptyArrayExpression) {
+    std::string source = "[]";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "(array);\n");
+}
+
+TEST(ParserTest, IndexExpression) {
+    std::string source = "arr[0]";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "(index arr 0);\n");
+}
+
+TEST(ParserTest, ChainedIndexExpression) {
+    std::string source = "arr[0][1]";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "(index (index arr 0) 1);\n");
 }

@@ -26,6 +26,7 @@ namespace nota {
         std::unique_ptr<Stmt> var_declaration(bool is_mutable);
         std::unique_ptr<Stmt> statement();
         std::unique_ptr<Stmt> for_statement();
+    std::unique_ptr<Stmt> for_each_statement();
         std::unique_ptr<Stmt> if_statement();
         std::unique_ptr<Stmt> return_statement();
         std::unique_ptr<Stmt> while_statement();
@@ -60,6 +61,7 @@ namespace nota {
         bool is_at_end();
         void synchronize();
         bool is_lambda();
+        bool is_for_each();
 
         std::vector<Token> tokens;
         int current = 0;

@@ -21,6 +21,8 @@ struct TypeExpr;
 struct GetExpr;
 struct SetExpr;
 struct ThisExpr;
+struct ArrayExpr;
+struct IndexExpr;
 
 // Visitor for Expressions
 struct ExprVisitor {
@@ -36,6 +38,8 @@ struct ExprVisitor {
     virtual std::string visit(const GetExpr& expr) = 0;
     virtual std::string visit(const SetExpr& expr) = 0;
     virtual std::string visit(const ThisExpr& expr) = 0;
+    virtual std::string visit(const ArrayExpr& expr) = 0;
+    virtual std::string visit(const IndexExpr& expr) = 0;
     virtual ~ExprVisitor() = default;
 };
 
@@ -56,6 +60,7 @@ struct ReturnStmt;
 struct DoWhileStmt;
 struct ClassStmt;
 struct MatchStmt;
+struct ForEachStmt;
 
 
 // Visitor for Statements
@@ -70,6 +75,7 @@ struct StmtVisitor {
     virtual std::string visit(const DoWhileStmt& stmt) = 0;
     virtual std::string visit(const ClassStmt& stmt) = 0;
     virtual std::string visit(const MatchStmt& stmt) = 0;
+    virtual std::string visit(const ForEachStmt& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -210,6 +216,18 @@ struct ExpressionStmt : Stmt {
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
 };
 
+struct ForEachStmt : Stmt {
+    Token variable;
+    std::unique_ptr<Expr> collection;
+    std::unique_ptr<Stmt> body;
+    bool is_mutable;
+
+    ForEachStmt(Token variable, std::unique_ptr<Expr> collection, std::unique_ptr<Stmt> body, bool is_mutable)
+        : variable(variable), collection(std::move(collection)), body(std::move(body)), is_mutable(is_mutable) {}
+
+    std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
 struct VarStmt : Stmt {
     Token name;
     std::unique_ptr<TypeExpr> type;
@@ -307,6 +325,25 @@ struct MatchStmt : Stmt {
         : expression(std::move(expression)), cases(std::move(cases)) {}
 
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct ArrayExpr : Expr {
+    std::vector<std::unique_ptr<Expr>> elements;
+
+    ArrayExpr(std::vector<std::unique_ptr<Expr>> elements) : elements(std::move(elements)) {}
+
+    std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct IndexExpr : Expr {
+    std::unique_ptr<Expr> callee;
+    Token bracket;
+    std::unique_ptr<Expr> index;
+
+    IndexExpr(std::unique_ptr<Expr> callee, Token bracket, std::unique_ptr<Expr> index)
+        : callee(std::move(callee)), bracket(bracket), index(std::move(index)) {}
+
+    std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
 };
 
 

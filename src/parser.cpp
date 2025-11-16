@@ -79,7 +79,13 @@ namespace nota {
     }
 
     std::unique_ptr<Stmt> Parser::statement() {
-        if (match({TokenType::FOR})) return for_statement();
+        if (check(TokenType::FOR)) {
+            if (is_for_each()) {
+                advance(); // consume 'for'
+                return for_each_statement();
+            }
+            return for_statement();
+        }
         if (match({TokenType::IF})) return if_statement();
         if (match({TokenType::RETURN})) return return_statement();
         if (match({TokenType::WHILE})) return while_statement();
@@ -133,6 +139,18 @@ namespace nota {
         }
 
         return while_loop;
+    }
+
+    std::unique_ptr<Stmt> Parser::for_each_statement() {
+        bool is_mutable = match({TokenType::MUT});
+        if (!is_mutable) match({TokenType::LET}); // Optional let
+
+        Token variable = consume(TokenType::IDENTIFIER, "Expect variable name in for-each loop.");
+        consume(TokenType::COLON, "Expect ':' after variable name in for-each loop.");
+        std::unique_ptr<Expr> collection = expression();
+        std::unique_ptr<Stmt> body = std::make_unique<BlockStmt>(block());
+
+        return std::make_unique<ForEachStmt>(variable, std::move(collection), std::move(body), is_mutable);
     }
 
     std::unique_ptr<Stmt> Parser::if_statement() {
@@ -340,6 +358,11 @@ namespace nota {
             } else if (match({TokenType::DOT})) {
                 Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
                 expr = std::make_unique<GetExpr>(std::move(expr), name);
+            } else if (match({TokenType::LEFT_BRACKET})) {
+                Token bracket = previous();
+                std::unique_ptr<Expr> index = expression();
+                consume(TokenType::RIGHT_BRACKET, "Expect ']' after index.");
+                expr = std::make_unique<IndexExpr>(std::move(expr), bracket, std::move(index));
             }
             else {
                 break;
@@ -371,6 +394,21 @@ namespace nota {
         return false;
     }
 
+    bool Parser::is_for_each() {
+        // This is called after 'for' is checked
+        int lookahead = 1;
+        if (tokens[current + lookahead].type == TokenType::LET || tokens[current + lookahead].type == TokenType::MUT) {
+            lookahead++;
+        }
+
+        if (tokens[current + lookahead].type == TokenType::IDENTIFIER &&
+            tokens[current + lookahead + 1].type == TokenType::COLON) {
+            return true;
+        }
+
+        return false;
+    }
+
 
     std::unique_ptr<Expr> Parser::primary() {
         if (match({TokenType::FALSE})) return std::make_unique<LiteralExpr>("false");
@@ -388,6 +426,17 @@ namespace nota {
             std::unique_ptr<Expr> expr = expression();
             consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
             return std::make_unique<GroupingExpr>(std::move(expr));
+        }
+
+        if (match({TokenType::LEFT_BRACKET})) {
+            std::vector<std::unique_ptr<Expr>> elements;
+            if (!check(TokenType::RIGHT_BRACKET)) {
+                do {
+                    elements.push_back(expression());
+                } while (match({TokenType::COMMA}));
+            }
+            consume(TokenType::RIGHT_BRACKET, "Expect ']' after array elements.");
+            return std::make_unique<ArrayExpr>(std::move(elements));
         }
 
         throw ParseError("Expect expression.");

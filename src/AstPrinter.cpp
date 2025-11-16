@@ -138,7 +138,7 @@ namespace ast {
 
     std::string AstPrinter::visit(class PostfixExpr& expr) {
         std::stringstream ss;
-        ss << "(" << expr.op.lexeme << " " << expr.left->accept(*this) << ")";
+        ss << "(" << expr.left->accept(*this) << " " << expr.op.lexeme << ")";
         return ss.str();
     }
 

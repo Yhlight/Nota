@@ -95,7 +95,11 @@ namespace nota {
                 return make_token(TokenType::Dot, ".");
             case ';': return make_token(TokenType::Semicolon, ";");
             case '-': return make_token(match('=') ? TokenType::MinusEqual : (match('-') ? TokenType::MinusMinus : TokenType::Minus), source.substr(start, current - start));
-            case '+': return make_token(match('=') ? TokenType::PlusEqual : (match('+') ? TokenType::PlusPlus : TokenType::Plus), source.substr(start, current - start));
+            case '+': {
+                if (match('=')) return make_token(TokenType::PlusEqual, "+=");
+                if (match('+')) return make_token(TokenType::PlusPlus, "++");
+                return make_token(TokenType::Plus, "+");
+            }
             case '*': return make_token(match('=') ? TokenType::StarEqual : TokenType::Star, source.substr(start, current - start));
             case '%': return make_token(match('=') ? TokenType::PercentEqual : TokenType::Percent, source.substr(start, current - start));
             case '&': return make_token(match('&') ? TokenType::AmpersandAmpersand : TokenType::Ampersand, source.substr(start, current - start));

@@ -321,17 +321,13 @@ TEST(ParserTest, ForStmt) {
     std::string source = "for let i = 0; i < 10; i++\n let x = 1\n end\n";
     Lexer lexer(source);
     Parser parser(lexer);
+    ast::AstPrinter printer;
 
     std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
-    ASSERT_EQ(statements.size(), 1);
+    std::string result = printer.print(statements);
 
-    auto* for_stmt = dynamic_cast<ast::ForStmt*>(statements[0].get());
-    ASSERT_NE(for_stmt, nullptr);
-
-    ASSERT_NE(for_stmt->initializer, nullptr);
-    ASSERT_NE(for_stmt->condition, nullptr);
-    ASSERT_NE(for_stmt->increment, nullptr);
-    ASSERT_NE(for_stmt->body, nullptr);
+    std::string expected = "(for (var-decl i 0) (< i 10) (i ++) (block (var-decl x 1)))";
+    EXPECT_EQ(result, expected);
 }
 
 TEST(ParserTest, MatchStmt) {

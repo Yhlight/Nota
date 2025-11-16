@@ -33,7 +33,7 @@ This document outlines the development roadmap for the Nota programming language
 - [x] **Looping Structures**
     - [x] `while` loops
     - [x] `do-while` loops
-    - [ ] C-style `for` loops
+    - [x] C-style `for` loops
     - [x] `for-each` loops
 
 ## Phase 3: Functions and Scope

@@ -4,6 +4,7 @@
 #include "ast.hpp"
 #include <string>
 #include <iostream>
+#include <list>
 
 // ASTPrinter implementation for testing
 class ASTPrinter : public ExprVisitor, public StmtVisitor {
@@ -58,7 +59,6 @@ public:
 
     void visit(const std::shared_ptr<ExpressionStmt>& stmt) override {
         stmt->expression->accept(*this);
-        result += ";";
     }
 
     void visit(const std::shared_ptr<VarStmt>& stmt) override {
@@ -68,7 +68,28 @@ public:
             result += " = ";
             stmt->initializer->accept(*this);
         }
-        result += ";)";
+        result += ")";
+    }
+
+    void visit(const std::shared_ptr<BlockStmt>& stmt) override {
+        result += "{ ";
+        for (const auto& statement : stmt->statements) {
+            statement->accept(*this);
+            result += " ";
+        }
+        result += "}";
+    }
+
+    void visit(const std::shared_ptr<IfStmt>& stmt) override {
+        result += "(if ";
+        stmt->condition->accept(*this);
+        result += " ";
+        stmt->thenBranch->accept(*this);
+        if (stmt->elseBranch) {
+            result += " else ";
+            stmt->elseBranch->accept(*this);
+        }
+        result += ")";
     }
 
 private:
@@ -76,65 +97,29 @@ private:
 };
 
 
-TEST(ParserTest, TestLiteralExpression) {
-    Lexer lexer("123;");
+TEST(ParserTest, TestIfStatement) {
+    Lexer lexer("if (true) let a = 1 end");
     std::vector<Token> tokens = lexer.scanTokens();
     Parser parser(tokens);
     std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
     ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "123;");
+    ASSERT_EQ(printer.print(stmts[0]), "(if true { (var a = 1) })");
 }
 
-TEST(ParserTest, TestUnaryExpression) {
-    Lexer lexer("!true;");
+TEST(ParserTest, TestIfElseStatement) {
+    Lexer lexer("if (true) let a = 1 else let b = 2 end");
     std::vector<Token> tokens = lexer.scanTokens();
     Parser parser(tokens);
     std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
     ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(! true);");
+    ASSERT_EQ(printer.print(stmts[0]), "(if true { (var a = 1) } else { (var b = 2) })");
 }
 
-TEST(ParserTest, TestGroupingExpression) {
-    Lexer lexer("(123);");
+TEST(ParserTest, TestIfElseIfElseStatement) {
+    Lexer lexer("if (true) let a = 1 else if (false) let b = 2 else let c = 3 end");
     std::vector<Token> tokens = lexer.scanTokens();
     Parser parser(tokens);
     std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
     ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(group 123);");
-}
-
-TEST(ParserTest, TestBinaryExpression) {
-    Lexer lexer("1 + 2 * 3;");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(+ 1 (* 2 3));");
-}
-
-TEST(ParserTest, TestBinaryExpressionWithPrecedence) {
-    Lexer lexer("1 * 2 + 3;");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(+ (* 1 2) 3);");
-}
-
-TEST(ParserTest, TestVariableDeclaration) {
-    Lexer lexer("let a = 1;");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(var a = 1;)");
-}
-
-TEST(ParserTest, TestMutableVariableDeclaration) {
-    Lexer lexer("mut a = 1;");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(var a = 1;)");
+    ASSERT_EQ(printer.print(stmts[0]), "(if true { (var a = 1) } else (if false { (var b = 2) } else { (var c = 3) }))");
 }

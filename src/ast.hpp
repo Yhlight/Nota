@@ -12,6 +12,8 @@ struct UnaryExpr;
 
 struct ExpressionStmt;
 struct VarStmt;
+struct BlockStmt;
+struct IfStmt;
 
 using LiteralValue = std::variant<std::monostate, std::string, long long, double, bool>;
 
@@ -79,6 +81,8 @@ public:
     virtual ~StmtVisitor() = default;
     virtual void visit(const std::shared_ptr<ExpressionStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<BlockStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -106,5 +110,28 @@ struct VarStmt : Stmt {
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(std::make_shared<VarStmt>(*this));
+    }
+};
+
+struct BlockStmt : Stmt {
+    std::vector<std::shared_ptr<Stmt>> statements;
+
+    BlockStmt(std::vector<std::shared_ptr<Stmt>> statements) : statements(statements) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(std::make_shared<BlockStmt>(*this));
+    }
+};
+
+struct IfStmt : Stmt {
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> thenBranch;
+    std::shared_ptr<Stmt> elseBranch;
+
+    IfStmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> thenBranch, std::shared_ptr<Stmt> elseBranch)
+        : condition(condition), thenBranch(thenBranch), elseBranch(elseBranch) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(std::make_shared<IfStmt>(*this));
     }
 };

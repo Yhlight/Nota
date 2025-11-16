@@ -56,7 +56,40 @@ std::shared_ptr<Stmt> Parser::declaration() {
 }
 
 std::shared_ptr<Stmt> Parser::statement() {
+    if (match(TokenType::IF)) {
+        std::shared_ptr<Stmt> stmt = ifStatement();
+        consume(TokenType::END, "Expect 'end' after if statement.");
+        return stmt;
+    }
     return expressionStatement();
+}
+
+std::vector<std::shared_ptr<Stmt>> Parser::block() {
+    std::vector<std::shared_ptr<Stmt>> statements;
+
+    while (!check(TokenType::END) && !check(TokenType::ELSE) && !isAtEnd()) {
+        statements.push_back(declaration());
+    }
+
+    return statements;
+}
+
+std::shared_ptr<Stmt> Parser::ifStatement() {
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+    std::shared_ptr<Expr> condition = expression();
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
+
+    std::shared_ptr<Stmt> thenBranch = std::make_shared<BlockStmt>(block());
+    std::shared_ptr<Stmt> elseBranch = nullptr;
+    if (match(TokenType::ELSE)) {
+        if (match(TokenType::IF)) {
+            elseBranch = ifStatement();
+        } else {
+            elseBranch = std::make_shared<BlockStmt>(block());
+        }
+    }
+
+    return std::make_shared<IfStmt>(condition, thenBranch, elseBranch);
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration() {
@@ -67,13 +100,11 @@ std::shared_ptr<Stmt> Parser::varDeclaration() {
         initializer = expression();
     }
 
-    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
     return std::make_shared<VarStmt>(name, initializer);
 }
 
 std::shared_ptr<Stmt> Parser::expressionStatement() {
     std::shared_ptr<Expr> expr = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after expression.");
     return std::make_shared<ExpressionStmt>(expr);
 }
 
@@ -194,6 +225,7 @@ void Parser::synchronize() {
             case TokenType::WHILE:
             case TokenType::PRINT:
             case TokenType::RETURN:
+            case TokenType::END:
                 return;
         }
 

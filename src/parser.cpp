@@ -62,13 +62,14 @@ std::shared_ptr<Stmt> Parser::statement() {
         return stmt;
     }
     if (match(TokenType::WHILE)) return whileStatement();
+    if (match(TokenType::DO)) return doWhileStatement();
     return expressionStatement();
 }
 
 std::vector<std::shared_ptr<Stmt>> Parser::block() {
     std::vector<std::shared_ptr<Stmt>> statements;
 
-    while (!check(TokenType::END) && !check(TokenType::ELSE) && !isAtEnd()) {
+    while (!check(TokenType::END) && !check(TokenType::ELSE) && !check(TokenType::WHILE) && !isAtEnd()) {
         statements.push_back(declaration());
     }
 
@@ -101,6 +102,15 @@ std::shared_ptr<Stmt> Parser::whileStatement() {
 
     consume(TokenType::END, "Expect 'end' after while statement.");
     return std::make_shared<WhileStmt>(condition, body);
+}
+
+std::shared_ptr<Stmt> Parser::doWhileStatement() {
+    std::shared_ptr<Stmt> body = std::make_shared<BlockStmt>(block());
+    consume(TokenType::WHILE, "Expect 'while' after do-while block.");
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+    std::shared_ptr<Expr> condition = expression();
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after while condition.");
+    return std::make_shared<DoWhileStmt>(body, condition);
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration() {

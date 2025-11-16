@@ -33,6 +33,7 @@ private:
     std::shared_ptr<Stmt> statement();
     std::shared_ptr<Stmt> ifStatement();
     std::shared_ptr<Stmt> whileStatement();
+    std::shared_ptr<Stmt> doWhileStatement();
     std::shared_ptr<Stmt> varDeclaration();
     std::vector<std::shared_ptr<Stmt>> block();
     std::shared_ptr<Stmt> expressionStatement();

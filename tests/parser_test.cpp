@@ -100,6 +100,14 @@ public:
         result += ")";
     }
 
+    void visit(const std::shared_ptr<DoWhileStmt>& stmt) override {
+        result += "(do-while ";
+        stmt->body->accept(*this);
+        result += " ";
+        stmt->condition->accept(*this);
+        result += ")";
+    }
+
 private:
     std::string result;
 };
@@ -139,4 +147,13 @@ TEST(ParserTest, TestWhileStatement) {
     std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
     ASTPrinter printer;
     ASSERT_EQ(printer.print(stmts[0]), "(while true { (var a = 1) })");
+}
+
+TEST(ParserTest, TestDoWhileStatement) {
+    Lexer lexer("do let a = 1 while (true)");
+    std::vector<Token> tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
+    ASTPrinter printer;
+    ASSERT_EQ(printer.print(stmts[0]), "(do-while { (var a = 1) } true)");
 }

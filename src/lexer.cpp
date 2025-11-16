@@ -22,6 +22,7 @@ Lexer::Lexer(const std::string& source) : source(source) {
     keywords["let"] = TokenType::LET;
     keywords["mut"] = TokenType::MUT;
     keywords["end"] = TokenType::END;
+    keywords["do"] = TokenType::DO;
 }
 
 std::vector<Token> Lexer::scanTokens() {

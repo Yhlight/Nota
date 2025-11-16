@@ -76,6 +76,9 @@ namespace nota {
         if (match(TokenType::If)) {
             return if_statement();
         }
+        if (match(TokenType::While)) {
+            return while_statement();
+        }
         // Other statements will go here
 
         return nullptr;
@@ -121,6 +124,17 @@ namespace nota {
         if(current_token.type == TokenType::Newline) advance();
 
         return std::make_unique<ast::IfStmt>(std::move(condition), std::move(then_branch), std::move(else_branch));
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::while_statement() {
+        auto condition = expression();
+        consume(TokenType::Newline, "Expect newline after while condition.");
+        auto body = block();
+        consume(TokenType::End, "Expect 'end' after while block.");
+
+        if(current_token.type == TokenType::Newline) advance();
+
+        return std::make_unique<ast::WhileStmt>(std::move(condition), std::move(body));
     }
 
     std::unique_ptr<ast::Stmt> Parser::block() {

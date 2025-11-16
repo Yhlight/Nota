@@ -16,6 +16,7 @@ namespace ast {
         virtual R visit(class VarDeclStmt& stmt) = 0;
         virtual R visit(class BlockStmt& stmt) = 0;
         virtual R visit(class IfStmt& stmt) = 0;
+        virtual R visit(class WhileStmt& stmt) = 0;
     };
 
     class Stmt {
@@ -62,6 +63,19 @@ namespace ast {
         std::unique_ptr<Expr> condition;
         std::unique_ptr<Stmt> then_branch;
         std::unique_ptr<Stmt> else_branch;
+    };
+
+    class WhileStmt : public Stmt {
+    public:
+        WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+            : condition(std::move(condition)), body(std::move(body)) {}
+
+        void accept(StmtVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> condition;
+        std::unique_ptr<Stmt> body;
     };
 
 } // namespace ast

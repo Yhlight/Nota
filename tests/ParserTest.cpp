@@ -177,3 +177,24 @@ TEST(ParserTest, IfElseIfElseStmt) {
     ASSERT_NE(else_branch, nullptr);
     EXPECT_EQ(else_branch->statements.size(), 1);
 }
+
+TEST(ParserTest, WhileStmt) {
+    std::string source = "while (true)\n let x = 1\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+
+    ast::WhileStmt* while_stmt = dynamic_cast<ast::WhileStmt*>(statements[0].get());
+    ASSERT_NE(while_stmt, nullptr);
+
+    ast::LiteralExpr* condition = dynamic_cast<ast::LiteralExpr*>(while_stmt->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->value.type, TokenType::True);
+
+    ast::BlockStmt* body = dynamic_cast<ast::BlockStmt*>(while_stmt->body.get());
+    ASSERT_NE(body, nullptr);
+    EXPECT_EQ(body->statements.size(), 1);
+}

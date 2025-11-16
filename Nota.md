@@ -84,7 +84,7 @@ end
 ```
 
 ```nota
-match (表达式)
+match 表达式
 结果:
 
 结果2:

@@ -60,6 +60,9 @@ std::unique_ptr<Stmt> Parser::parse_statement() {
     if (peek().type == TokenType::If) {
         return parse_if_statement();
     }
+    if (peek().type == TokenType::Match) {
+        return parse_match_statement();
+    }
     // Handle other statement types here...
     return nullptr;
 }
@@ -119,10 +122,52 @@ std::unique_ptr<Stmt> Parser::parse_if_statement(bool is_else_if) {
                                       std::move(else_branch));
 }
 
+std::unique_ptr<Stmt> Parser::parse_match_statement() {
+    advance(); // Consume 'match'
+
+    std::unique_ptr<Expr> condition = parse_expression();
+    if (!condition) {
+        // Error handling
+        return nullptr;
+    }
+
+    std::vector<MatchCase> cases;
+    while (peek().type != TokenType::End && !is_at_end()) {
+        std::vector<std::unique_ptr<Expr>> values;
+        do {
+            values.push_back(parse_expression());
+        } while (peek().type == TokenType::Comma && advance().type != TokenType::Unknown);
+
+        if (consume(TokenType::Colon, "Expected ':' after match case values.").type == TokenType::Unknown) {
+            return nullptr;
+        }
+
+        std::unique_ptr<Stmt> body = parse_block_statement();
+        if (!body) {
+            return nullptr;
+        }
+
+        cases.emplace_back(std::move(values), std::move(body));
+    }
+
+    if (consume(TokenType::End, "Expected 'end' after match statement.").type == TokenType::Unknown) {
+        return nullptr;
+    }
+
+    return std::make_unique<MatchStmt>(std::move(condition), std::move(cases));
+}
+
+
 std::unique_ptr<Stmt> Parser::parse_block_statement() {
     std::vector<std::unique_ptr<Stmt>> statements;
     while (peek().type != TokenType::End && peek().type != TokenType::Else && !is_at_end()) {
-        statements.push_back(parse_statement());
+        auto stmt = parse_statement();
+        if (stmt) {
+            statements.push_back(std::move(stmt));
+        } else {
+            // If we can't parse a statement, assume we're at the end of the block.
+            break;
+        }
     }
 
     return std::make_unique<BlockStmt>(std::move(statements));
@@ -132,6 +177,9 @@ std::unique_ptr<Stmt> Parser::parse_block_statement() {
 std::unique_ptr<Expr> Parser::parse_primary_expression() {
     if (peek().type == TokenType::Number) {
         return std::make_unique<NumberExpr>(advance());
+    }
+    if (peek().type == TokenType::Identifier) {
+        return std::make_unique<IdentifierExpr>(advance());
     }
     // Handle other primary expression types here...
     return nullptr;

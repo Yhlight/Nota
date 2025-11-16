@@ -10,6 +10,7 @@ enum class TokenType {
     If,
     Else,
     End,
+    Match,
 
     // Literals
     Identifier,
@@ -23,6 +24,8 @@ enum class TokenType {
     Percent,
     Equal,
     LessThan,
+    Colon,
+    Comma,
 
     // Misc
     Unknown,

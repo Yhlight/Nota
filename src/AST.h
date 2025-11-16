@@ -22,11 +22,20 @@ public:
 };
 
 // Expression for a numeric literal like "123" or "45.67"
+// Expression for a numeric literal like "123" or "45.67"
 class NumberExpr : public Expr {
 public:
     explicit NumberExpr(Token number) : value(std::move(number)) {}
 
     Token value;
+};
+
+// Expression for an identifier like "x"
+class IdentifierExpr : public Expr {
+public:
+    explicit IdentifierExpr(Token name) : name(std::move(name)) {}
+
+    Token name;
 };
 
 // Expression for a binary operation like "1 + 2"
@@ -75,3 +84,25 @@ public:
 
 // A program is a series of statements
 using Program = std::vector<std::unique_ptr<Stmt>>;
+
+// A single case in a match statement, e.g., "1, 2: let x = 1;"
+class MatchCase {
+public:
+    MatchCase(std::vector<std::unique_ptr<Expr>> values,
+              std::unique_ptr<Stmt> body)
+        : values(std::move(values)), body(std::move(body)) {}
+
+    std::vector<std::unique_ptr<Expr>> values;
+    std::unique_ptr<Stmt> body;
+};
+
+// Statement for a match statement, e.g., "match x { ... }"
+class MatchStmt : public Stmt {
+public:
+    MatchStmt(std::unique_ptr<Expr> condition,
+              std::vector<MatchCase> cases)
+        : condition(std::move(condition)), cases(std::move(cases)) {}
+
+    std::unique_ptr<Expr> condition;
+    std::vector<MatchCase> cases;
+};

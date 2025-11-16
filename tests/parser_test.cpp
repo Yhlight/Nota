@@ -170,3 +170,53 @@ TEST(ParserTest, NestedIfStatement) {
     ASSERT_NE(inner_block, nullptr);
     ASSERT_EQ(inner_block->statements.size(), 1);
 }
+
+TEST(ParserTest, MatchStatement) {
+    std::string source = "match x 1: let a = 1 _: let b = 2 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Program program = parser.parse();
+
+    ASSERT_EQ(program.size(), 1);
+
+    auto* match_stmt = dynamic_cast<MatchStmt*>(program[0].get());
+    ASSERT_NE(match_stmt, nullptr);
+    ASSERT_EQ(match_stmt->cases.size(), 2);
+
+    // Check the first case
+    ASSERT_EQ(match_stmt->cases[0].values.size(), 1);
+    auto* case1_val = dynamic_cast<NumberExpr*>(match_stmt->cases[0].values[0].get());
+    ASSERT_NE(case1_val, nullptr);
+    ASSERT_EQ(case1_val->value.text, "1");
+
+    // Check the wildcard case
+    ASSERT_EQ(match_stmt->cases[1].values.size(), 1);
+    auto* case2_val = dynamic_cast<IdentifierExpr*>(match_stmt->cases[1].values[0].get());
+    ASSERT_NE(case2_val, nullptr);
+    ASSERT_EQ(case2_val->name.text, "_");
+}
+
+TEST(ParserTest, MatchStatementMultiValue) {
+    std::string source = "match x 1, 2: let a = 1 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+    Program program = parser.parse();
+
+    ASSERT_EQ(program.size(), 1);
+
+    auto* match_stmt = dynamic_cast<MatchStmt*>(program[0].get());
+    ASSERT_NE(match_stmt, nullptr);
+    ASSERT_EQ(match_stmt->cases.size(), 1);
+
+    // Check the first case
+    ASSERT_EQ(match_stmt->cases[0].values.size(), 2);
+    auto* case1_val1 = dynamic_cast<NumberExpr*>(match_stmt->cases[0].values[0].get());
+    ASSERT_NE(case1_val1, nullptr);
+    ASSERT_EQ(case1_val1->value.text, "1");
+
+    auto* case1_val2 = dynamic_cast<NumberExpr*>(match_stmt->cases[0].values[1].get());
+    ASSERT_NE(case1_val2, nullptr);
+    ASSERT_EQ(case1_val2->value.text, "2");
+}

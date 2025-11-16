@@ -12,6 +12,7 @@ std::vector<Token> Lexer::tokenize() {
         {"if", TokenType::If},
         {"else", TokenType::Else},
         {"end", TokenType::End},
+        {"match", TokenType::Match},
     };
 
     while (position < source.length()) {
@@ -84,6 +85,8 @@ std::vector<Token> Lexer::tokenize() {
             case '%': tokens.push_back({TokenType::Percent, "%"}); break;
             case '=': tokens.push_back({TokenType::Equal, "="}); break;
             case '<': tokens.push_back({TokenType::LessThan, "<"}); break;
+            case ':': tokens.push_back({TokenType::Colon, ":"}); break;
+            case ',': tokens.push_back({TokenType::Comma, ","}); break;
             default: tokens.push_back({TokenType::Unknown, std::string(1, current_char)}); break;
         }
         position++;

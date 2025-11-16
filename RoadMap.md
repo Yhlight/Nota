@@ -29,7 +29,7 @@ This document outlines the development roadmap for the Nota programming language
 
 - [x] **Conditional Structures**
     - [x] `if...else if...else` statements
-    - [ ] `match` statements
+    - [x] `match` statements
 - [x] **Looping Structures**
     - [x] `while` loops
     - [x] `do-while` loops

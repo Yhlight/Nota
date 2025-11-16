@@ -3,6 +3,7 @@
 #include "Lexer.h"
 #include "AST/Stmt.h"
 #include "AST/Expr.h"
+#include "AST/AstPrinter.h"
 
 using namespace nota;
 
@@ -331,4 +332,17 @@ TEST(ParserTest, ForStmt) {
     ASSERT_NE(for_stmt->condition, nullptr);
     ASSERT_NE(for_stmt->increment, nullptr);
     ASSERT_NE(for_stmt->body, nullptr);
+}
+
+TEST(ParserTest, MatchStmt) {
+    std::string source = "match x\n 1, 2:\n let a = 1\n end\n 3:\n let b = 2\n end\n _:\n let c = 3\n end\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+    ast::AstPrinter printer;
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    std::string result = printer.print(statements);
+
+    std::string expected = "(match x (case 1 2 (block (var-decl a 1))) (case 3 (block (var-decl b 2))) (block (var-decl c 3)))";
+    EXPECT_EQ(result, expected);
 }

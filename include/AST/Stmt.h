@@ -21,12 +21,13 @@ namespace ast {
         virtual R visit(class ExpressionStmt& stmt) = 0;
         virtual R visit(class ForEachStmt& stmt) = 0;
         virtual R visit(class ForStmt& stmt) = 0;
+        virtual R visit(class MatchStmt& stmt) = 0;
     };
 
     class Stmt {
     public:
         virtual ~Stmt() = default;
-        virtual void accept(StmtVisitor<void>& visitor) = 0;
+        virtual std::string accept(StmtVisitor<std::string>& visitor) = 0;
     };
 
     class VarDeclStmt : public Stmt {
@@ -34,8 +35,8 @@ namespace ast {
         VarDeclStmt(Token name, std::optional<Token> type, std::unique_ptr<Expr> initializer)
             : name(name), type(type), initializer(std::move(initializer)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         Token name;
@@ -48,8 +49,8 @@ namespace ast {
         BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
             : statements(std::move(statements)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::vector<std::unique_ptr<Stmt>> statements;
@@ -60,8 +61,8 @@ namespace ast {
         IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> then_branch, std::unique_ptr<Stmt> else_branch)
             : condition(std::move(condition)), then_branch(std::move(then_branch)), else_branch(std::move(else_branch)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::unique_ptr<Expr> condition;
@@ -74,8 +75,8 @@ namespace ast {
         WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
             : condition(std::move(condition)), body(std::move(body)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::unique_ptr<Expr> condition;
@@ -87,8 +88,8 @@ namespace ast {
         DoWhileStmt(std::unique_ptr<Stmt> body, std::unique_ptr<Expr> condition)
             : body(std::move(body)), condition(std::move(condition)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::unique_ptr<Stmt> body;
@@ -100,8 +101,8 @@ namespace ast {
         ExpressionStmt(std::unique_ptr<Expr> expression)
             : expression(std::move(expression)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::unique_ptr<Expr> expression;
@@ -112,8 +113,8 @@ namespace ast {
         ForEachStmt(Token variable, std::unique_ptr<Expr> container, std::unique_ptr<Stmt> body)
             : variable(variable), container(std::move(container)), body(std::move(body)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         Token variable;
@@ -126,14 +127,37 @@ namespace ast {
         ForStmt(std::unique_ptr<Stmt> initializer, std::unique_ptr<Expr> condition, std::unique_ptr<Expr> increment, std::unique_ptr<Stmt> body)
             : initializer(std::move(initializer)), condition(std::move(condition)), increment(std::move(increment)), body(std::move(body)) {}
 
-        void accept(StmtVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::unique_ptr<Stmt> initializer;
         std::unique_ptr<Expr> condition;
         std::unique_ptr<Expr> increment;
         std::unique_ptr<Stmt> body;
+    };
+
+    class MatchCase {
+    public:
+        MatchCase(std::vector<std::unique_ptr<Expr>> values, std::unique_ptr<Stmt> body)
+            : values(std::move(values)), body(std::move(body)) {}
+
+        std::vector<std::unique_ptr<Expr>> values;
+        std::unique_ptr<Stmt> body;
+    };
+
+    class MatchStmt : public Stmt {
+    public:
+        MatchStmt(std::unique_ptr<Expr> expression, std::vector<MatchCase> cases, std::unique_ptr<Stmt> else_branch)
+            : expression(std::move(expression)), cases(std::move(cases)), else_branch(std::move(else_branch)) {}
+
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> expression;
+        std::vector<MatchCase> cases;
+        std::unique_ptr<Stmt> else_branch;
     };
 
 } // namespace ast

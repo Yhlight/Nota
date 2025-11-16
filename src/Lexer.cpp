@@ -103,6 +103,7 @@ namespace nota {
             case '^': return make_token(TokenType::Caret, "^");
             case '~': return make_token(TokenType::Tilde, "~");
             case ':': return make_token(TokenType::Colon, ":");
+            case '_': return make_token(TokenType::Underscore, "_");
 
             // One or two character tokens
             case '!': return make_token(match('=') ? TokenType::BangEqual : TokenType::Bang, source.substr(start, current - start));

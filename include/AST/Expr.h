@@ -21,15 +21,15 @@ namespace ast {
     class Expr {
     public:
         virtual ~Expr() = default;
-        virtual void accept(ExprVisitor<void>& visitor) = 0;
+        virtual std::string accept(ExprVisitor<std::string>& visitor) = 0;
     };
 
     class LiteralExpr : public Expr {
     public:
         LiteralExpr(Token value) : value(value) {}
 
-        void accept(ExprVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         Token value;
@@ -40,8 +40,8 @@ namespace ast {
         UnaryExpr(Token op, std::unique_ptr<Expr> right)
             : op(op), right(std::move(right)) {}
 
-        void accept(ExprVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         Token op;
@@ -53,8 +53,8 @@ namespace ast {
         BinaryExpr(std::unique_ptr<Expr> left, Token op, std::unique_ptr<Expr> right)
             : left(std::move(left)), op(op), right(std::move(right)) {}
 
-        void accept(ExprVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::unique_ptr<Expr> left;
@@ -66,8 +66,8 @@ namespace ast {
     public:
         VariableExpr(Token name) : name(name) {}
 
-        void accept(ExprVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         Token name;
@@ -78,8 +78,8 @@ namespace ast {
         AssignExpr(Token name, std::unique_ptr<Expr> value)
             : name(name), value(std::move(value)) {}
 
-        void accept(ExprVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         Token name;
@@ -91,8 +91,8 @@ namespace ast {
         PostfixExpr(std::unique_ptr<Expr> left, Token op)
             : left(std::move(left)), op(op) {}
 
-        void accept(ExprVisitor<void>& visitor) override {
-            visitor.visit(*this);
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
         }
 
         std::unique_ptr<Expr> left;

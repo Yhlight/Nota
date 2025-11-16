@@ -3,6 +3,7 @@ add_library(nota
     nota.cpp
     Lexer.cpp
     Parser.cpp
+    AstPrinter.cpp
 )
 
 # Link the include directory to the library

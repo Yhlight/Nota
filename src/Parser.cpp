@@ -88,6 +88,9 @@ namespace nota {
         if (match(TokenType::For)) {
             return for_statement();
         }
+        if (match(TokenType::Match)) {
+            return match_statement();
+        }
 
         return expression_statement();
     }
@@ -152,6 +155,44 @@ namespace nota {
         consume(TokenType::Newline, "Expect newline after do-while condition.");
 
         return std::make_unique<ast::DoWhileStmt>(std::move(body), std::move(condition));
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::match_statement() {
+        auto expression = this->expression();
+        consume(TokenType::Newline, "Expect newline after match expression.");
+
+        std::vector<ast::MatchCase> cases;
+        std::unique_ptr<ast::Stmt> else_branch = nullptr;
+
+        while (current_token.type != TokenType::End && current_token.type != TokenType::Eof) {
+            if (match(TokenType::Underscore)) {
+                consume(TokenType::Colon, "Expect ':' after default case.");
+                consume(TokenType::Newline, "Expect newline after default case.");
+                else_branch = block();
+                consume(TokenType::End, "Expect 'end' after default case block.");
+                if (current_token.type == TokenType::Newline) advance();
+                break;
+            }
+
+            std::vector<std::unique_ptr<ast::Expr>> values;
+            do {
+                values.push_back(this->expression());
+            } while (match(TokenType::Comma));
+
+            consume(TokenType::Colon, "Expect ':' after match case values.");
+            consume(TokenType::Newline, "Expect newline after match case.");
+
+            auto body = block();
+            consume(TokenType::End, "Expect 'end' after match case block.");
+            if (current_token.type == TokenType::Newline) advance();
+
+            cases.emplace_back(std::move(values), std::move(body));
+        }
+
+        consume(TokenType::End, "Expect 'end' after match statement.");
+        if (current_token.type == TokenType::Newline) advance();
+
+        return std::make_unique<ast::MatchStmt>(std::move(expression), std::move(cases), std::move(else_branch));
     }
 
     std::unique_ptr<ast::Stmt> Parser::for_statement() {

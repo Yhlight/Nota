@@ -5,6 +5,11 @@ add_library(nota_core STATIC
     Token.h
     Lexer.h
     Lexer.cpp
+    Expr.h
+    AstPrinter.h
+    AstPrinter.cpp
+    Parser.h
+    Parser.cpp
 )
 
 # Expose the src directory as a public include directory

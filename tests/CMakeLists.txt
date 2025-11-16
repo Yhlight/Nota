@@ -1,6 +1,8 @@
 add_executable(nota_tests
     main.test.cpp
     Lexer.test.cpp
+    AstPrinter.test.cpp
+    Parser.test.cpp
 )
 
 # Link against both the core library and GoogleTest

@@ -4,14 +4,14 @@ This document tracks the development progress of the Nota programming language.
 
 ## Phase 1: Core Language Features
 
-- [ ] Lexer (Tokenizer)
-- [ ] Parser (Recursive Descent)
-- [ ] Abstract Syntax Tree (AST)
-- [ ] Basic variable declarations (`let`, `mut`)
-- [ ] Basic data types (`int`, `float`, `bool`, `string`)
-- [ ] Basic operators (`+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `<`, `>=`, `<=`)
+- [x] Lexer (Tokenizer)
+- [x] Parser (Recursive Descent)
+- [x] Abstract Syntax Tree (AST)
+- [x] Basic variable declarations (`let`, `mut`)
+- [x] Basic data types (`int`, `float`, `bool`, `string`)
+- [x] Basic operators (`+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `<`, `>=`, `<=`)
 - [ ] Basic control flow (`if`/`else`)
-- [ ] Comments (`//`, `/* */`)
+- [x] Comments (`//`, `/* */`)
 
 ## Phase 2: Advanced Language Features
 

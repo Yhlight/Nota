@@ -43,6 +43,10 @@ std::any AstPrinter::visitUnaryExpr(const Unary& expr) {
     return parenthesize(expr.op.lexeme, std::vector<const Expr*>{expr.right.get()});
 }
 
+std::any AstPrinter::visitVariableExpr(const Variable& expr) {
+    return expr.name.lexeme;
+}
+
 std::any AstPrinter::visitExpressionStmt(const Expression& stmt) {
     return parenthesize(";", std::vector<const Expr*>{stmt.expression.get()});
 }

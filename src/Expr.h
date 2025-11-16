@@ -10,6 +10,7 @@ class Binary;
 class Grouping;
 class Literal;
 class Unary;
+class Variable;
 
 template <typename R>
 class ExprVisitor {
@@ -18,6 +19,7 @@ public:
     virtual R visitGroupingExpr(const Grouping& expr) = 0;
     virtual R visitLiteralExpr(const Literal& expr) = 0;
     virtual R visitUnaryExpr(const Unary& expr) = 0;
+    virtual R visitVariableExpr(const Variable& expr) = 0;
     virtual ~ExprVisitor() = default;
 };
 
@@ -79,6 +81,18 @@ public:
 
     const Token op;
     const std::unique_ptr<Expr> right;
+};
+
+class Variable : public Expr {
+public:
+    Variable(Token name) :
+        name(std::move(name)) {}
+
+    std::any accept(ExprVisitor<std::any>& visitor) const override {
+        return visitor.visitVariableExpr(*this);
+    }
+
+    const Token name;
 };
 
 #endif // EXPR_H

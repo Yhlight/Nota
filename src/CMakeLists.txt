@@ -7,10 +7,15 @@ add_library(nota_core STATIC
     Lexer.cpp
     Expr.h
     Stmt.h
+    RuntimeError.h
     AstPrinter.h
     AstPrinter.cpp
     Parser.h
     Parser.cpp
+    Interpreter.h
+    Interpreter.cpp
+    Environment.h
+    Environment.cpp
 )
 
 # Expose the src directory as a public include directory

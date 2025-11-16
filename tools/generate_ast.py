@@ -77,7 +77,8 @@ if __name__ == "__main__":
         "Binary": "std::unique_ptr<Expr> left, Token op, std::unique_ptr<Expr> right",
         "Grouping": "std::unique_ptr<Expr> expression",
         "Literal": "std::any value",
-        "Unary": "Token op, std::unique_ptr<Expr> right"
+        "Unary": "Token op, std::unique_ptr<Expr> right",
+        "Variable": "Token name"
     }
     define_ast(output_dir, "Expr", expr_types, ['"Token.h"'])
 

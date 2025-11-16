@@ -16,6 +16,7 @@ public:
     std::any visitGroupingExpr(const Grouping& expr) override;
     std::any visitLiteralExpr(const Literal& expr) override;
     std::any visitUnaryExpr(const Unary& expr) override;
+    std::any visitVariableExpr(const Variable& expr) override;
 
     // Statement visitors
     std::any visitExpressionStmt(const Expression& stmt) override;

@@ -55,6 +55,7 @@ struct FunctionStmt;
 struct ReturnStmt;
 struct DoWhileStmt;
 struct ClassStmt;
+struct MatchStmt;
 
 
 // Visitor for Statements
@@ -68,6 +69,7 @@ struct StmtVisitor {
     virtual std::string visit(const ReturnStmt& stmt) = 0;
     virtual std::string visit(const DoWhileStmt& stmt) = 0;
     virtual std::string visit(const ClassStmt& stmt) = 0;
+    virtual std::string visit(const MatchStmt& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -288,6 +290,21 @@ struct ClassStmt : Stmt {
 
     ClassStmt(Token name, std::vector<std::unique_ptr<VarStmt>> fields, std::vector<std::unique_ptr<FunctionStmt>> methods)
         : name(name), fields(std::move(fields)), methods(std::move(methods)) {}
+
+    std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct MatchCase {
+    std::vector<std::unique_ptr<Expr>> patterns;
+    std::unique_ptr<Stmt> body;
+};
+
+struct MatchStmt : Stmt {
+    std::unique_ptr<Expr> expression;
+    std::vector<MatchCase> cases;
+
+    MatchStmt(std::unique_ptr<Expr> expression, std::vector<MatchCase> cases)
+        : expression(std::move(expression)), cases(std::move(cases)) {}
 
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
 };

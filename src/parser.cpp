@@ -62,10 +62,7 @@ namespace nota {
             return_type = type();
         }
 
-        std::unique_ptr<Stmt> body = statement();
-        consume(TokenType::END, "Expect 'end' after function body.");
-
-        return std::make_unique<FunctionStmt>(name, std::move(parameters), std::move(body), std::move(return_type));
+        return std::make_unique<FunctionStmt>(name, std::move(parameters), std::make_unique<BlockStmt>(block()), std::move(return_type));
     }
 
     std::unique_ptr<Stmt> Parser::var_declaration(bool is_mutable) {
@@ -87,6 +84,7 @@ namespace nota {
         if (match({TokenType::RETURN})) return return_statement();
         if (match({TokenType::WHILE})) return while_statement();
         if (match({TokenType::DO})) return do_while_statement();
+        if (match({TokenType::MATCH})) return match_statement();
         return expression_statement();
     }
 
@@ -112,8 +110,7 @@ namespace nota {
             increment = expression();
         }
 
-        std::unique_ptr<Stmt> body = statement();
-        consume(TokenType::END, "Expect 'end' after for loop.");
+        std::unique_ptr<Stmt> body = std::make_unique<BlockStmt>(block());
 
         // Desugar 'for' loop into a 'while' loop
         if (increment) {
@@ -140,12 +137,11 @@ namespace nota {
 
     std::unique_ptr<Stmt> Parser::if_statement() {
         std::unique_ptr<Expr> condition = expression();
-        std::unique_ptr<Stmt> then_branch = statement();
+        std::unique_ptr<Stmt> then_branch = std::make_unique<BlockStmt>(block());
         std::unique_ptr<Stmt> else_branch = nullptr;
         if (match({TokenType::ELSE})) {
             else_branch = statement();
         }
-        consume(TokenType::END, "Expect 'end' after if statement.");
         return std::make_unique<IfStmt>(std::move(condition), std::move(then_branch), std::move(else_branch));
     }
 
@@ -160,8 +156,7 @@ namespace nota {
 
     std::unique_ptr<Stmt> Parser::while_statement() {
         std::unique_ptr<Expr> condition = expression();
-        std::unique_ptr<Stmt> body = statement();
-        consume(TokenType::END, "Expect 'end' after while loop.");
+        std::unique_ptr<Stmt> body = std::make_unique<BlockStmt>(block());
         return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
     }
 
@@ -172,7 +167,40 @@ namespace nota {
         return std::make_unique<DoWhileStmt>(std::move(condition), std::move(body));
     }
 
-    std::unique_ptr<Stmt> Parser::block() {
+    std::unique_ptr<Stmt> Parser::match_statement() {
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'match'.");
+        std::unique_ptr<Expr> expr = expression();
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after match expression.");
+
+        std::vector<MatchCase> cases;
+        while (!check(TokenType::END) && !is_at_end()) {
+            std::vector<std::unique_ptr<Expr>> patterns;
+            do {
+                if (match({TokenType::IDENTIFIER}) && previous().lexeme == "_") {
+                    patterns.push_back(std::make_unique<LiteralExpr>("_"));
+                } else {
+                    patterns.push_back(primary());
+                }
+            } while (match({TokenType::COMMA}));
+
+            consume(TokenType::COLON, "Expect ':' after match case pattern.");
+            std::unique_ptr<Stmt> body = std::make_unique<BlockStmt>(block());
+            cases.push_back({std::move(patterns), std::move(body)});
+        }
+
+        return std::make_unique<MatchStmt>(std::move(expr), std::move(cases));
+    }
+
+    std::vector<std::unique_ptr<Stmt>> Parser::block() {
+        std::vector<std::unique_ptr<Stmt>> statements;
+        while (!check(TokenType::END) && !check(TokenType::ELSE) && !is_at_end()) {
+            statements.push_back(declaration());
+        }
+        consume(TokenType::END, "Expect 'end' after block.");
+        return statements;
+    }
+
+    std::unique_ptr<Stmt> Parser::braced_block() {
         std::vector<std::unique_ptr<Stmt>> statements;
         while (!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
             statements.push_back(declaration());
@@ -410,6 +438,13 @@ namespace nota {
     bool Parser::check(TokenType type) {
         if (is_at_end()) return false;
         return peek().type == type;
+    }
+
+    bool Parser::check_next(TokenType type) {
+        if (is_at_end() || tokens[current + 1].type == TokenType::EOF_TOKEN) {
+            return false;
+        }
+        return tokens[current + 1].type == type;
     }
 
     Token Parser::peek_next() {

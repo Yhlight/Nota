@@ -157,6 +157,21 @@ public:
         return result;
     }
 
+    std::string visit(const MatchStmt& stmt) override {
+        std::string result = "match (" + stmt.expression->accept(*this) + ") {\n";
+        for (const auto& case_ : stmt.cases) {
+            for (size_t i = 0; i < case_.patterns.size(); ++i) {
+                result += case_.patterns[i]->accept(*this);
+                if (i < case_.patterns.size() - 1) {
+                    result += ", ";
+                }
+            }
+            result += ": " + case_.body->accept(*this) + "\n";
+        }
+        result += "}";
+        return result;
+    }
+
 
 private:
     std::string parenthesize(const std::string& name, const std::vector<Expr*>& exprs) {
@@ -169,8 +184,8 @@ private:
     }
 };
 
-TEST(ParserTest, ClassDeclaration) {
-    std::string source = "class MyClass name: string func get_name() return this.name end end";
+TEST(ParserTest, DoWhileStatement) {
+    std::string source = "do x = x + 1 while x < 10";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scan_tokens();
     Parser parser(tokens);
@@ -180,5 +195,19 @@ TEST(ParserTest, ClassDeclaration) {
     std::string result = printer.print(statements);
 
     EXPECT_EQ(statements.size(), 1);
-    EXPECT_EQ(result, "class MyClass {\nlet name: string;\nfunc get_name() return (. this name);\n}\n");
+    EXPECT_EQ(result, "do (= x (+ x 1)); while (< x 10)\n");
+}
+
+TEST(ParserTest, MatchStatement) {
+    std::string source = "match (x) 1: 10 end 2, 3: 20 end _: 30 end";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    AstPrinter printer;
+    std::string result = printer.print(statements);
+
+    EXPECT_EQ(statements.size(), 1);
+    EXPECT_EQ(result, "match (x) {\n1: {\n10;\n}\n2, 3: {\n20;\n}\n_: {\n30;\n}\n}\n");
 }

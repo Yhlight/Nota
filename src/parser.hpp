@@ -30,7 +30,9 @@ namespace nota {
         std::unique_ptr<Stmt> return_statement();
         std::unique_ptr<Stmt> while_statement();
         std::unique_ptr<Stmt> do_while_statement();
-        std::unique_ptr<Stmt> block();
+        std::unique_ptr<Stmt> match_statement();
+        std::vector<std::unique_ptr<Stmt>> block();
+        std::unique_ptr<Stmt> braced_block();
         std::unique_ptr<Stmt> expression_statement();
 
         std::unique_ptr<Expr> expression();
@@ -50,6 +52,7 @@ namespace nota {
         Token consume(TokenType type, const std::string& message);
         bool match(const std::vector<TokenType>& types);
         bool check(TokenType type);
+        bool check_next(TokenType type);
         Token peek_next();
         Token advance();
         Token peek();

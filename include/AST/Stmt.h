@@ -18,6 +18,7 @@ namespace ast {
         virtual R visit(class IfStmt& stmt) = 0;
         virtual R visit(class WhileStmt& stmt) = 0;
         virtual R visit(class DoWhileStmt& stmt) = 0;
+        virtual R visit(class ExpressionStmt& stmt) = 0;
     };
 
     class Stmt {
@@ -90,6 +91,18 @@ namespace ast {
 
         std::unique_ptr<Stmt> body;
         std::unique_ptr<Expr> condition;
+    };
+
+    class ExpressionStmt : public Stmt {
+    public:
+        ExpressionStmt(std::unique_ptr<Expr> expression)
+            : expression(std::move(expression)) {}
+
+        void accept(StmtVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> expression;
     };
 
 } // namespace ast

@@ -219,3 +219,39 @@ TEST(ParserTest, DoWhileStmt) {
     ASSERT_NE(body, nullptr);
     EXPECT_EQ(body->statements.size(), 1);
 }
+
+TEST(ParserTest, Assignment) {
+    std::string source = "x = 10\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    ASSERT_EQ(statements.size(), 1);
+
+    auto* expr_stmt = dynamic_cast<ast::ExpressionStmt*>(statements[0].get());
+    ASSERT_NE(expr_stmt, nullptr);
+
+    auto* assign_expr = dynamic_cast<ast::AssignExpr*>(expr_stmt->expression.get());
+    ASSERT_NE(assign_expr, nullptr);
+
+    EXPECT_EQ(assign_expr->name.lexeme, "x");
+}
+
+TEST(ParserTest, VariableInExpression) {
+    std::string source = "let y = x + 5\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    ASSERT_EQ(statements.size(), 1);
+
+    auto* var_decl = dynamic_cast<ast::VarDeclStmt*>(statements[0].get());
+    ASSERT_NE(var_decl, nullptr);
+
+    auto* binary_expr = dynamic_cast<ast::BinaryExpr*>(var_decl->initializer.get());
+    ASSERT_NE(binary_expr, nullptr);
+
+    auto* var_expr = dynamic_cast<ast::VariableExpr*>(binary_expr->left.get());
+    ASSERT_NE(var_expr, nullptr);
+    EXPECT_EQ(var_expr->name.lexeme, "x");
+}

@@ -20,12 +20,13 @@ namespace nota {
             {TokenType::Star, {nullptr, &Parser::binary, PREC_FACTOR}},
             {TokenType::Bang, {&Parser::unary, nullptr, PREC_NONE}},
             {TokenType::BangEqual, {nullptr, &Parser::binary, PREC_EQUALITY}},
+            {TokenType::Equal, {nullptr, &Parser::assignment, PREC_ASSIGNMENT}},
             {TokenType::EqualEqual, {nullptr, &Parser::binary, PREC_EQUALITY}},
             {TokenType::Greater, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::GreaterEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::Less, {nullptr, &Parser::binary, PREC_COMPARISON}},
             {TokenType::LessEqual, {nullptr, &Parser::binary, PREC_COMPARISON}},
-            {TokenType::Identifier, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::Identifier, {&Parser::variable, nullptr, PREC_NONE}},
             {TokenType::String, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::Integer, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::Float, {&Parser::literal, nullptr, PREC_NONE}},
@@ -82,9 +83,8 @@ namespace nota {
         if (match(TokenType::Do)) {
             return do_while_statement();
         }
-        // Other statements will go here
 
-        return nullptr;
+        return expression_statement();
     }
 
     std::unique_ptr<ast::Stmt> Parser::var_declaration() {
@@ -150,6 +150,12 @@ namespace nota {
         return std::make_unique<ast::DoWhileStmt>(std::move(body), std::move(condition));
     }
 
+    std::unique_ptr<ast::Stmt> Parser::expression_statement() {
+        auto expr = expression();
+        consume(TokenType::Newline, "Expect newline after expression.");
+        return std::make_unique<ast::ExpressionStmt>(std::move(expr));
+    }
+
     std::unique_ptr<ast::Stmt> Parser::block() {
         std::vector<std::unique_ptr<ast::Stmt>> statements;
         while (current_token.type != TokenType::End && current_token.type != TokenType::Else && current_token.type != TokenType::While && current_token.type != TokenType::Eof) {
@@ -194,6 +200,10 @@ namespace nota {
         return std::make_unique<ast::LiteralExpr>(previous_token);
     }
 
+    std::unique_ptr<ast::Expr> Parser::variable() {
+        return std::make_unique<ast::VariableExpr>(previous_token);
+    }
+
     std::unique_ptr<ast::Expr> Parser::grouping() {
         auto expr = expression();
         consume(TokenType::RightParen, "Expect ')' after expression.");
@@ -205,6 +215,15 @@ namespace nota {
         ParseRule& rule = get_rule(op.type);
         std::unique_ptr<ast::Expr> right = parse_precedence((Precedence)(rule.precedence + 1));
         return std::make_unique<ast::BinaryExpr>(std::move(left), op, std::move(right));
+    }
+
+    std::unique_ptr<ast::Expr> Parser::assignment(std::unique_ptr<ast::Expr> left) {
+        if (auto var = dynamic_cast<ast::VariableExpr*>(left.get())) {
+            auto value = expression();
+            return std::make_unique<ast::AssignExpr>(var->name, std::move(value));
+        }
+
+        throw std::runtime_error("Invalid assignment target.");
     }
 
 } // namespace nota

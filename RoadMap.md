@@ -4,35 +4,35 @@ This document outlines the development roadmap for the Nota programming language
 
 ## Phase 1: Core Language Features & Infrastructure
 
-- [ ] **Project Setup**
+- [x] **Project Setup**
     - [x] Directory Structure (`src`, `include`, `tests`)
-    - [ ] CMake Build System
-    - [ ] Python Build Script
-    - [ ] Test Framework Integration (GoogleTest)
-- [ ] **Lexer & Parser Basics**
-    - [ ] Comment Parsing (`//`, `/* */`)
-    - [ ] Tokenization of basic keywords (`let`, `mut`, `if`, etc.)
-    - [ ] End-of-statement handling (`\n`)
-    - [ ] Statement continuation (`+`)
-- [ ] **Variables & Data Types**
-    - [ ] Variable declaration (`let`, `mut`)
-    - [ ] Basic types (`int`, `float`, `bool`)
-    - [ ] Type annotations
-    - [ ] String literals
-- [ ] **Operators**
-    - [ ] Arithmetic operators (`+`, `-`, `*`, `/`, `%`)
-    - [ ] Comparison operators (`==`, `!=`, `>`, `<`, etc.)
+    - [x] CMake Build System
+    - [x] Python Build Script
+    - [x] Test Framework Integration (GoogleTest)
+- [x] **Lexer & Parser Basics**
+    - [x] Comment Parsing (`//`, `/* */`)
+    - [x] Tokenization of basic keywords (`let`, `mut`, `if`, etc.)
+    - [x] End-of-statement handling (`\n`)
+    - [x] Statement continuation (`+`)
+- [x] **Variables & Data Types**
+    - [x] Variable declaration (`let`, `mut`)
+    - [x] Basic types (`int`, `float`, `bool`)
+    - [x] Type annotations
+    - [x] String literals
+- [x] **Operators**
+    - [x] Arithmetic operators (`+`, `-`, `*`, `/`, `%`)
+    - [x] Comparison operators (`==`, `!=`, `>`, `<`, etc.)
     - [ ] Logical operators (`&&`, `||`, `!`)
-    - [ ] Assignment operators (`=`, `+=`, etc.)
+    - [x] Assignment operators (`=`, `+=`, etc.)
 
 ## Phase 2: Control Flow
 
-- [ ] **Conditional Structures**
-    - [ ] `if...else if...else` statements
+- [x] **Conditional Structures**
+    - [x] `if...else if...else` statements
     - [ ] `match` statements
-- [ ] **Looping Structures**
-    - [ ] `while` loops
-    - [ ] `do-while` loops
+- [x] **Looping Structures**
+    - [x] `while` loops
+    - [x] `do-while` loops
     - [ ] C-style `for` loops
     - [ ] `for-each` loops
 

@@ -18,6 +18,9 @@ struct AssignExpr;
 struct CallExpr;
 struct LambdaExpr;
 struct TypeExpr;
+struct GetExpr;
+struct SetExpr;
+struct ThisExpr;
 
 // Visitor for Expressions
 struct ExprVisitor {
@@ -30,6 +33,9 @@ struct ExprVisitor {
     virtual std::string visit(const CallExpr& expr) = 0;
     virtual std::string visit(const LambdaExpr& expr) = 0;
     virtual std::string visit(const TypeExpr& expr) = 0;
+    virtual std::string visit(const GetExpr& expr) = 0;
+    virtual std::string visit(const SetExpr& expr) = 0;
+    virtual std::string visit(const ThisExpr& expr) = 0;
     virtual ~ExprVisitor() = default;
 };
 
@@ -48,6 +54,7 @@ struct WhileStmt;
 struct FunctionStmt;
 struct ReturnStmt;
 struct DoWhileStmt;
+struct ClassStmt;
 
 
 // Visitor for Statements
@@ -60,6 +67,7 @@ struct StmtVisitor {
     virtual std::string visit(const FunctionStmt& stmt) = 0;
     virtual std::string visit(const ReturnStmt& stmt) = 0;
     virtual std::string visit(const DoWhileStmt& stmt) = 0;
+    virtual std::string visit(const ClassStmt& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -142,6 +150,35 @@ struct CallExpr : Expr {
 
     CallExpr(std::unique_ptr<Expr> callee, Token paren, std::vector<std::unique_ptr<Expr>> arguments)
         : callee(std::move(callee)), paren(paren), arguments(std::move(arguments)) {}
+
+    std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct GetExpr : Expr {
+    std::unique_ptr<Expr> object;
+    Token name;
+
+    GetExpr(std::unique_ptr<Expr> object, Token name)
+        : object(std::move(object)), name(name) {}
+
+    std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct SetExpr : Expr {
+    std::unique_ptr<Expr> object;
+    Token name;
+    std::unique_ptr<Expr> value;
+
+    SetExpr(std::unique_ptr<Expr> object, Token name, std::unique_ptr<Expr> value)
+        : object(std::move(object)), name(name), value(std::move(value)) {}
+
+    std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct ThisExpr : Expr {
+    Token keyword;
+
+    ThisExpr(Token keyword) : keyword(keyword) {}
 
     std::string accept(ExprVisitor& visitor) const override { return visitor.visit(*this); }
 };
@@ -240,6 +277,17 @@ struct DoWhileStmt : Stmt {
 
     DoWhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
         : condition(std::move(condition)), body(std::move(body)) {}
+
+    std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
+};
+
+struct ClassStmt : Stmt {
+    Token name;
+    std::vector<std::unique_ptr<VarStmt>> fields;
+    std::vector<std::unique_ptr<FunctionStmt>> methods;
+
+    ClassStmt(Token name, std::vector<std::unique_ptr<VarStmt>> fields, std::vector<std::unique_ptr<FunctionStmt>> methods)
+        : name(name), fields(std::move(fields)), methods(std::move(methods)) {}
 
     std::string accept(StmtVisitor& visitor) const override { return visitor.visit(*this); }
 };

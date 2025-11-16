@@ -17,10 +17,28 @@ namespace nota {
     }
 
     std::unique_ptr<Stmt> Parser::declaration() {
+        if (match({TokenType::CLASS})) return class_declaration();
         if (match({TokenType::FUNC})) return function_declaration();
         if (match({TokenType::LET})) return var_declaration(false);
         if (match({TokenType::MUT})) return var_declaration(true);
         return statement();
+    }
+
+    std::unique_ptr<Stmt> Parser::class_declaration() {
+        Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
+        std::vector<std::unique_ptr<VarStmt>> fields;
+        std::vector<std::unique_ptr<FunctionStmt>> methods;
+
+        while (!check(TokenType::END) && !is_at_end()) {
+            if (match({TokenType::FUNC})) {
+                methods.push_back(std::unique_ptr<FunctionStmt>(static_cast<FunctionStmt*>(function_declaration().release())));
+            } else {
+                fields.push_back(std::unique_ptr<VarStmt>(static_cast<VarStmt*>(var_declaration(false).release())));
+            }
+        }
+
+        consume(TokenType::END, "Expect 'end' after class body.");
+        return std::make_unique<ClassStmt>(name, std::move(fields), std::move(methods));
     }
 
     std::unique_ptr<Stmt> Parser::function_declaration() {
@@ -181,6 +199,8 @@ namespace nota {
             std::unique_ptr<Expr> value = assignment();
             if (auto var_expr = dynamic_cast<VariableExpr*>(expr.get())) {
                 return std::make_unique<AssignExpr>(var_expr->name, std::move(value));
+            } else if (auto get_expr = dynamic_cast<GetExpr*>(expr.get())) {
+                return std::make_unique<SetExpr>(std::move(get_expr->object), get_expr->name, std::move(value));
             }
             throw ParseError("Invalid assignment target.");
         }
@@ -289,7 +309,11 @@ namespace nota {
                 }
                 Token paren = consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
                 expr = std::make_unique<CallExpr>(std::move(expr), paren, std::move(arguments));
-            } else {
+            } else if (match({TokenType::DOT})) {
+                Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
+                expr = std::make_unique<GetExpr>(std::move(expr), name);
+            }
+            else {
                 break;
             }
         }

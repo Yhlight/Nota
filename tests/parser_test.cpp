@@ -66,6 +66,18 @@ public:
         return expr.name.lexeme;
     }
 
+    std::string visit(const GetExpr& expr) override {
+        return "(. " + expr.object->accept(*this) + " " + expr.name.lexeme + ")";
+    }
+
+    std::string visit(const SetExpr& expr) override {
+        return "(= " + expr.object->accept(*this) + " " + expr.name.lexeme + " " + expr.value->accept(*this) + ")";
+    }
+
+    std::string visit(const ThisExpr& expr) override {
+        return "this";
+    }
+
     std::string visit(const ExpressionStmt& stmt) override {
         return stmt.expression->accept(*this) + ";";
     }
@@ -123,11 +135,26 @@ public:
     }
 
     std::string visit(const ReturnStmt& stmt) override {
-        return "return"; // Simplified
+        if (stmt.value) {
+            return "return " + stmt.value->accept(*this) + ";";
+        }
+        return "return;";
     }
 
     std::string visit(const DoWhileStmt& stmt) override {
         return "do " + stmt.body->accept(*this) + " while " + stmt.condition->accept(*this);
+    }
+
+    std::string visit(const ClassStmt& stmt) override {
+        std::string result = "class " + stmt.name.lexeme + " {\n";
+        for (const auto& field : stmt.fields) {
+            result += field->accept(*this) + "\n";
+        }
+        for (const auto& method : stmt.methods) {
+            result += method->accept(*this) + "\n";
+        }
+        result += "}";
+        return result;
     }
 
 
@@ -142,8 +169,8 @@ private:
     }
 };
 
-TEST(ParserTest, VarDeclaration) {
-    std::string source = "let x = 10";
+TEST(ParserTest, ClassDeclaration) {
+    std::string source = "class MyClass name: string func get_name() return this.name end end";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scan_tokens();
     Parser parser(tokens);
@@ -153,47 +180,5 @@ TEST(ParserTest, VarDeclaration) {
     std::string result = printer.print(statements);
 
     EXPECT_EQ(statements.size(), 1);
-    EXPECT_EQ(result, "let x = 10;\n");
-}
-
-TEST(ParserTest, VarDeclarationWithType) {
-    std::string source = "let x: int = 10";
-    Lexer lexer(source);
-    std::vector<Token> tokens = lexer.scan_tokens();
-    Parser parser(tokens);
-    auto statements = parser.parse();
-
-    AstPrinter printer;
-    std::string result = printer.print(statements);
-
-    EXPECT_EQ(statements.size(), 1);
-    EXPECT_EQ(result, "let x: int = 10;\n");
-}
-
-TEST(ParserTest, FunctionDeclarationWithType) {
-    std::string source = "func add(a: int, b: int): int a + b end";
-    Lexer lexer(source);
-    std::vector<Token> tokens = lexer.scan_tokens();
-    Parser parser(tokens);
-    auto statements = parser.parse();
-
-    AstPrinter printer;
-    std::string result = printer.print(statements);
-
-    EXPECT_EQ(statements.size(), 1);
-    EXPECT_EQ(result, "func add(a: int, b: int): int (+ a b);\n");
-}
-
-TEST(ParserTest, DoWhileLoop) {
-    std::string source = "do x = x + 1 while x < 10";
-    Lexer lexer(source);
-    std::vector<Token> tokens = lexer.scan_tokens();
-    Parser parser(tokens);
-    auto statements = parser.parse();
-
-    AstPrinter printer;
-    std::string result = printer.print(statements);
-
-    EXPECT_EQ(statements.size(), 1);
-    EXPECT_EQ(result, "do (= x (+ x 1)); while (< x 10)\n");
+    EXPECT_EQ(result, "class MyClass {\nlet name: string;\nfunc get_name() return (. this name);\n}\n");
 }

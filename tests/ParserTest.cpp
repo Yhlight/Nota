@@ -198,3 +198,24 @@ TEST(ParserTest, WhileStmt) {
     ASSERT_NE(body, nullptr);
     EXPECT_EQ(body->statements.size(), 1);
 }
+
+TEST(ParserTest, DoWhileStmt) {
+    std::string source = "do\n let x = 1\n while (true)\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+
+    ASSERT_EQ(statements.size(), 1);
+
+    ast::DoWhileStmt* do_while_stmt = dynamic_cast<ast::DoWhileStmt*>(statements[0].get());
+    ASSERT_NE(do_while_stmt, nullptr);
+
+    ast::LiteralExpr* condition = dynamic_cast<ast::LiteralExpr*>(do_while_stmt->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->value.type, TokenType::True);
+
+    ast::BlockStmt* body = dynamic_cast<ast::BlockStmt*>(do_while_stmt->body.get());
+    ASSERT_NE(body, nullptr);
+    EXPECT_EQ(body->statements.size(), 1);
+}

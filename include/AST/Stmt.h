@@ -17,6 +17,7 @@ namespace ast {
         virtual R visit(class BlockStmt& stmt) = 0;
         virtual R visit(class IfStmt& stmt) = 0;
         virtual R visit(class WhileStmt& stmt) = 0;
+        virtual R visit(class DoWhileStmt& stmt) = 0;
     };
 
     class Stmt {
@@ -76,6 +77,19 @@ namespace ast {
 
         std::unique_ptr<Expr> condition;
         std::unique_ptr<Stmt> body;
+    };
+
+    class DoWhileStmt : public Stmt {
+    public:
+        DoWhileStmt(std::unique_ptr<Stmt> body, std::unique_ptr<Expr> condition)
+            : body(std::move(body)), condition(std::move(condition)) {}
+
+        void accept(StmtVisitor<void>& visitor) override {
+            visitor.visit(*this);
+        }
+
+        std::unique_ptr<Stmt> body;
+        std::unique_ptr<Expr> condition;
     };
 
 } // namespace ast

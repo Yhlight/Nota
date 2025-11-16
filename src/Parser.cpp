@@ -79,6 +79,9 @@ namespace nota {
         if (match(TokenType::While)) {
             return while_statement();
         }
+        if (match(TokenType::Do)) {
+            return do_while_statement();
+        }
         // Other statements will go here
 
         return nullptr;
@@ -137,9 +140,19 @@ namespace nota {
         return std::make_unique<ast::WhileStmt>(std::move(condition), std::move(body));
     }
 
+    std::unique_ptr<ast::Stmt> Parser::do_while_statement() {
+        consume(TokenType::Newline, "Expect newline after 'do'.");
+        auto body = block();
+        consume(TokenType::While, "Expect 'while' after do block.");
+        auto condition = expression();
+        consume(TokenType::Newline, "Expect newline after do-while condition.");
+
+        return std::make_unique<ast::DoWhileStmt>(std::move(body), std::move(condition));
+    }
+
     std::unique_ptr<ast::Stmt> Parser::block() {
         std::vector<std::unique_ptr<ast::Stmt>> statements;
-        while (current_token.type != TokenType::End && current_token.type != TokenType::Else && current_token.type != TokenType::Eof) {
+        while (current_token.type != TokenType::End && current_token.type != TokenType::Else && current_token.type != TokenType::While && current_token.type != TokenType::Eof) {
             statements.push_back(statement());
         }
         return std::make_unique<ast::BlockStmt>(std::move(statements));

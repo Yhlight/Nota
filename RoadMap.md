@@ -7,8 +7,11 @@
     - [x] Basic Data Types (int, float, bool)
     - [x] Variable Declaration (let, mut)
     - [x] Basic Operators (+, -, *, /, %)
-- [ ] Parser (LL(k) recursive descent)
-- [ ] Abstract Syntax Tree (AST)
+- [x] Parser (LL(k) recursive descent)
+    - [x] Variable Declarations
+- [x] Abstract Syntax Tree (AST)
+    - [x] Variable Declarations
+    - [x] Numeric Literals
 - [ ] Bytecode Generator
 - [ ] Virtual Machine (VM)
 

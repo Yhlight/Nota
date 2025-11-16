@@ -15,6 +15,8 @@ bool Parser::is_at_end() const {
     return position >= tokens.size();
 }
 
+// Parsing methods
+
 std::unique_ptr<Stmt> Parser::parse_statement() {
     if (peek().type == TokenType::Let) {
         return parse_let_statement();
@@ -47,13 +49,24 @@ std::unique_ptr<Stmt> Parser::parse_let_statement() {
     return std::make_unique<VarDeclStmt>(name, std::move(initializer));
 }
 
-std::unique_ptr<Expr> Parser::parse_expression() {
-    // For now, only number literals are supported
+std::unique_ptr<Expr> Parser::parse_primary_expression() {
     if (peek().type == TokenType::Number) {
         return std::make_unique<NumberExpr>(advance());
     }
-    // Handle other expression types here...
+    // Handle other primary expression types here...
     return nullptr;
+}
+
+std::unique_ptr<Expr> Parser::parse_expression() {
+    std::unique_ptr<Expr> left = parse_primary_expression();
+
+    while (!is_at_end() && peek().type == TokenType::Plus) {
+        Token op = advance();
+        std::unique_ptr<Expr> right = parse_primary_expression();
+        left = std::make_unique<BinaryExpr>(std::move(left), op, std::move(right));
+    }
+
+    return left;
 }
 
 Program Parser::parse() {

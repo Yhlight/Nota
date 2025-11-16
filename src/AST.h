@@ -29,6 +29,17 @@ public:
     Token value;
 };
 
+// Expression for a binary operation like "1 + 2"
+class BinaryExpr : public Expr {
+public:
+    BinaryExpr(std::unique_ptr<Expr> left, Token op, std::unique_ptr<Expr> right)
+        : left(std::move(left)), op(std::move(op)), right(std::move(right)) {}
+
+    std::unique_ptr<Expr> left;
+    Token op;
+    std::unique_ptr<Expr> right;
+};
+
 // Statement for a variable declaration, e.g., "let x = 5;"
 class VarDeclStmt : public Stmt {
 public:

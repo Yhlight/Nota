@@ -2,13 +2,49 @@
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
-std::unique_ptr<Expr> Parser::parse() {
+std::vector<std::unique_ptr<Stmt>> Parser::parse() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+    while (!isAtEnd()) {
+        statements.push_back(declaration());
+    }
+    return statements;
+}
+
+std::unique_ptr<Stmt> Parser::declaration() {
     try {
-        return expression();
-    } catch (const ParseError& error) {
+        if (match({TokenType::VAR, TokenType::LET, TokenType::MUT})) {
+            Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+            std::unique_ptr<Expr> initializer = nullptr;
+            if (match({TokenType::EQUAL})) {
+                initializer = expression();
+            }
+            consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+            return std::make_unique<Var>(name, std::move(initializer));
+        }
+        return statement();
+    } catch (ParseError& error) {
+        synchronize();
         return nullptr;
     }
 }
+
+std::unique_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::PRINT})) return printStatement();
+    return expressionStatement();
+}
+
+std::unique_ptr<Stmt> Parser::printStatement() {
+    std::unique_ptr<Expr> value = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after value.");
+    return std::make_unique<Print>(std::move(value));
+}
+
+std::unique_ptr<Stmt> Parser::expressionStatement() {
+    std::unique_ptr<Expr> expr = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+    return std::make_unique<Expression>(std::move(expr));
+}
+
 
 std::unique_ptr<Expr> Parser::expression() {
     return equality();
@@ -95,6 +131,31 @@ ParseError Parser::error(const Token& token, const std::string& message) {
     // For now, we'll just throw an exception.
     return ParseError(message);
 }
+
+void Parser::synchronize() {
+    advance();
+
+    while (!isAtEnd()) {
+        if (previous().type == TokenType::SEMICOLON) return;
+
+        switch (peek().type) {
+            case TokenType::CLASS:
+            case TokenType::FUN:
+            case TokenType::VAR:
+            case TokenType::FOR:
+            case TokenType::IF:
+            case TokenType::WHILE:
+            case TokenType::PRINT:
+            case TokenType::RETURN:
+                return;
+            default:
+                break;
+        }
+
+        advance();
+    }
+}
+
 
 bool Parser::isAtEnd() {
     return peek().type == TokenType::END_OF_FILE;

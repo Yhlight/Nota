@@ -3,6 +3,7 @@
 
 #include "Token.h"
 #include "Expr.h"
+#include "Stmt.h"
 #include <vector>
 #include <stdexcept>
 
@@ -15,12 +16,16 @@ public:
 class Parser {
 public:
     Parser(const std::vector<Token>& tokens);
-    std::unique_ptr<Expr> parse();
+    std::vector<std::unique_ptr<Stmt>> parse();
 
 private:
     std::vector<Token> tokens;
     int current = 0;
 
+    std::unique_ptr<Stmt> declaration();
+    std::unique_ptr<Stmt> statement();
+    std::unique_ptr<Stmt> printStatement();
+    std::unique_ptr<Stmt> expressionStatement();
     std::unique_ptr<Expr> expression();
     std::unique_ptr<Expr> equality();
     std::unique_ptr<Expr> comparison();
@@ -37,6 +42,7 @@ private:
     bool match(const std::vector<TokenType>& types);
     Token consume(TokenType type, const std::string& message);
     ParseError error(const Token& token, const std::string& message);
+    void synchronize();
 };
 
 #endif // PARSER_H

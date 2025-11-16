@@ -6,6 +6,7 @@ add_library(nota_core STATIC
     Lexer.h
     Lexer.cpp
     Expr.h
+    Stmt.h
     AstPrinter.h
     AstPrinter.cpp
     Parser.h

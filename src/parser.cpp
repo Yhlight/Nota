@@ -44,6 +44,8 @@ namespace nota {
 
     std::unique_ptr<Stmt> Parser::statement() {
         if (match({TokenType::IF})) return ifStatement();
+        if (match({TokenType::WHILE})) return whileStatement();
+        if (match({TokenType::DO})) return doWhileStatement();
         if (match({TokenType::LEFT_BRACE})) {
             std::vector<std::unique_ptr<Stmt>> statements;
             while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
@@ -66,6 +68,20 @@ namespace nota {
         }
 
         return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
+    }
+
+    std::unique_ptr<Stmt> Parser::whileStatement() {
+        std::unique_ptr<Expr> condition = expression();
+        consume(TokenType::END, "Expect 'end' after while condition.");
+        std::unique_ptr<Stmt> body = statement();
+        return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+    }
+
+    std::unique_ptr<Stmt> Parser::doWhileStatement() {
+        std::unique_ptr<Stmt> body = statement();
+        consume(TokenType::WHILE, "Expect 'while' after do-while body.");
+        std::unique_ptr<Expr> condition = expression();
+        return std::make_unique<DoWhileStmt>(std::move(body), std::move(condition));
     }
 
     std::unique_ptr<Stmt> Parser::expressionStatement() {

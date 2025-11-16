@@ -117,8 +117,8 @@ end
 
 ```nota
 do
-
-while 表达式 end
+    // statement
+while 表达式
 ```
 
 ## 函数

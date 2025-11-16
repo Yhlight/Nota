@@ -23,6 +23,8 @@ struct ExpressionStmt;
 struct VarDeclStmt;
 struct BlockStmt;
 struct IfStmt;
+struct WhileStmt;
+struct DoWhileStmt;
 
 // Visitor for Expressions
 struct ExprVisitor {
@@ -48,6 +50,8 @@ struct StmtVisitor {
     virtual void visit(const VarDeclStmt& stmt) = 0;
     virtual void visit(const BlockStmt& stmt) = 0;
     virtual void visit(const IfStmt& stmt) = 0;
+    virtual void visit(const WhileStmt& stmt) = 0;
+    virtual void visit(const DoWhileStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -175,6 +179,30 @@ struct IfStmt : Stmt {
     const std::unique_ptr<Expr> condition;
     const std::unique_ptr<Stmt> thenBranch;
     const std::unique_ptr<Stmt> elseBranch;
+};
+
+struct WhileStmt : Stmt {
+    WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+        : condition(std::move(condition)), body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> body;
+};
+
+struct DoWhileStmt : Stmt {
+    DoWhileStmt(std::unique_ptr<Stmt> body, std::unique_ptr<Expr> condition)
+        : body(std::move(body)), condition(std::move(condition)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::unique_ptr<Stmt> body;
+    const std::unique_ptr<Expr> condition;
 };
 
 } // namespace nota

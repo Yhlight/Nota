@@ -121,6 +121,11 @@ namespace nota {
                     ip += offset;
                     break;
                 }
+                case OpCode::OP_LOOP: {
+                    uint16_t offset = READ_SHORT();
+                    ip -= offset;
+                    break;
+                }
                 case OpCode::OP_NEGATE: {
                     if (!std::holds_alternative<double>(peek(0))) {
                         std::cerr << "Operand must be a number." << std::endl;

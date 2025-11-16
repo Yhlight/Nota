@@ -16,6 +16,7 @@ namespace nota {
         OP_SET_GLOBAL,
         OP_JUMP_IF_FALSE,
         OP_JUMP,
+        OP_LOOP,
         OP_NEGATE,
         OP_ADD,
         OP_SUBTRACT,

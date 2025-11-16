@@ -1,5 +1,23 @@
 #include "Parser.h"
 
+#include <map>
+
+// Operator precedence table
+static std::map<TokenType, int> precedence = {
+    {TokenType::Plus, 10},
+    {TokenType::Minus, 10},
+    {TokenType::Asterisk, 20},
+    {TokenType::Slash, 20},
+    {TokenType::Percent, 20},
+};
+
+static int get_precedence(TokenType type) {
+    if (precedence.count(type)) {
+        return precedence[type];
+    }
+    return -1;
+}
+
 Parser::Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
 
 // Helper methods
@@ -57,12 +75,22 @@ std::unique_ptr<Expr> Parser::parse_primary_expression() {
     return nullptr;
 }
 
-std::unique_ptr<Expr> Parser::parse_expression() {
+std::unique_ptr<Expr> Parser::parse_expression(int min_precedence) {
     std::unique_ptr<Expr> left = parse_primary_expression();
 
-    while (!is_at_end() && peek().type == TokenType::Plus) {
+    while (!is_at_end()) {
+        int prec = get_precedence(peek().type);
+        if (prec < min_precedence) {
+            break;
+        }
+
         Token op = advance();
-        std::unique_ptr<Expr> right = parse_primary_expression();
+        std::unique_ptr<Expr> right = parse_expression(prec + 1);
+        if (!right) {
+            // Error handling: expected an expression
+            return nullptr;
+        }
+
         left = std::make_unique<BinaryExpr>(std::move(left), op, std::move(right));
     }
 
@@ -77,7 +105,9 @@ Program Parser::parse() {
             program.push_back(std::move(stmt));
         } else {
             // For now, skip tokens that don't form a valid statement
-            advance();
+            if (!is_at_end()) {
+                advance();
+            }
         }
     }
     return program;

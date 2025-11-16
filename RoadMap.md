@@ -9,9 +9,12 @@
     - [x] Basic Operators (+, -, *, /, %)
 - [x] Parser (LL(k) recursive descent)
     - [x] Variable Declarations
+    - [x] Simple Binary Expressions
+    - [x] Operator Precedence
 - [x] Abstract Syntax Tree (AST)
     - [x] Variable Declarations
     - [x] Numeric Literals
+    - [x] Binary Expressions
 - [ ] Bytecode Generator
 - [ ] Virtual Machine (VM)
 

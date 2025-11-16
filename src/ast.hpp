@@ -9,6 +9,7 @@ struct BinaryExpr;
 struct GroupingExpr;
 struct LiteralExpr;
 struct UnaryExpr;
+struct PostfixExpr;
 
 struct ExpressionStmt;
 struct VarStmt;
@@ -16,6 +17,7 @@ struct BlockStmt;
 struct IfStmt;
 struct WhileStmt;
 struct DoWhileStmt;
+struct ForStmt;
 
 using LiteralValue = std::variant<std::monostate, std::string, long long, double, bool>;
 
@@ -26,6 +28,7 @@ public:
     virtual void visit(const std::shared_ptr<GroupingExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<LiteralExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<UnaryExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<PostfixExpr>& expr) = 0;
 };
 
 class Expr {
@@ -78,6 +81,18 @@ struct UnaryExpr : Expr {
     }
 };
 
+struct PostfixExpr : Expr {
+    std::shared_ptr<Expr> left;
+    Token op;
+
+    PostfixExpr(std::shared_ptr<Expr> left, Token op)
+        : left(left), op(op) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(std::make_shared<PostfixExpr>(*this));
+    }
+};
+
 class StmtVisitor {
 public:
     virtual ~StmtVisitor() = default;
@@ -87,6 +102,7 @@ public:
     virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<WhileStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<DoWhileStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<ForStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -161,5 +177,19 @@ struct DoWhileStmt : Stmt {
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(std::make_shared<DoWhileStmt>(*this));
+    }
+};
+
+struct ForStmt : Stmt {
+    std::shared_ptr<Stmt> initializer;
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Expr> increment;
+    std::shared_ptr<Stmt> body;
+
+    ForStmt(std::shared_ptr<Stmt> initializer, std::shared_ptr<Expr> condition, std::shared_ptr<Expr> increment, std::shared_ptr<Stmt> body)
+        : initializer(initializer), condition(condition), increment(increment), body(body) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(std::make_shared<ForStmt>(*this));
     }
 };

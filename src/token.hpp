@@ -11,6 +11,7 @@ enum class TokenType {
     BANG, BANG_EQUAL,
     EQUAL, EQUAL_EQUAL,
     GREATER, GREATER_EQUAL,
+    PLUS_PLUS, MINUS_MINUS,
     LESS, LESS_EQUAL,
 
     // Literals

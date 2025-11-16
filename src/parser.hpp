@@ -34,6 +34,7 @@ private:
     std::shared_ptr<Stmt> ifStatement();
     std::shared_ptr<Stmt> whileStatement();
     std::shared_ptr<Stmt> doWhileStatement();
+    std::shared_ptr<Stmt> forStatement();
     std::shared_ptr<Stmt> varDeclaration();
     std::vector<std::shared_ptr<Stmt>> block();
     std::shared_ptr<Stmt> expressionStatement();
@@ -43,7 +44,9 @@ private:
     std::shared_ptr<Expr> term();
     std::shared_ptr<Expr> factor();
     std::shared_ptr<Expr> unary();
+    std::shared_ptr<Expr> call();
     std::shared_ptr<Expr> primary();
+    std::shared_ptr<Expr> finishCall(std::shared_ptr<Expr> callee);
 
     // Error handling
     Token consume(TokenType type, const std::string& message);

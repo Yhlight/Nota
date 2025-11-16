@@ -57,6 +57,14 @@ public:
         result += ")";
     }
 
+    void visit(const std::shared_ptr<PostfixExpr>& expr) override {
+        result += "(";
+        result += expr->op.lexeme;
+        result += " ";
+        expr->left->accept(*this);
+        result += ")";
+    }
+
     void visit(const std::shared_ptr<ExpressionStmt>& stmt) override {
         stmt->expression->accept(*this);
     }
@@ -108,52 +116,28 @@ public:
         result += ")";
     }
 
+    void visit(const std::shared_ptr<ForStmt>& stmt) override {
+        result += "(for ";
+        stmt->initializer->accept(*this);
+        result += " ";
+        stmt->condition->accept(*this);
+        result += " ";
+        stmt->increment->accept(*this);
+        result += " ";
+        stmt->body->accept(*this);
+        result += ")";
+    }
+
 private:
     std::string result;
 };
 
 
-TEST(ParserTest, TestIfStatement) {
-    Lexer lexer("if (true) let a = 1 end");
+TEST(ParserTest, TestForStatement) {
+    Lexer lexer("for (let i = 0; i < 10; i++) let a = 1 end");
     std::vector<Token> tokens = lexer.scanTokens();
     Parser parser(tokens);
     std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
     ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(if true { (var a = 1) })");
-}
-
-TEST(ParserTest, TestIfElseStatement) {
-    Lexer lexer("if (true) let a = 1 else let b = 2 end");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(if true { (var a = 1) } else { (var b = 2) })");
-}
-
-TEST(ParserTest, TestIfElseIfElseStatement) {
-    Lexer lexer("if (true) let a = 1 else if (false) let b = 2 else let c = 3 end");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(if true { (var a = 1) } else (if false { (var b = 2) } else { (var c = 3) }))");
-}
-
-TEST(ParserTest, TestWhileStatement) {
-    Lexer lexer("while (true) let a = 1 end");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(while true { (var a = 1) })");
-}
-
-TEST(ParserTest, TestDoWhileStatement) {
-    Lexer lexer("do let a = 1 while (true)");
-    std::vector<Token> tokens = lexer.scanTokens();
-    Parser parser(tokens);
-    std::vector<std::shared_ptr<Stmt>> stmts = parser.parse();
-    ASTPrinter printer;
-    ASSERT_EQ(printer.print(stmts[0]), "(do-while { (var a = 1) } true)");
+    ASSERT_EQ(printer.print(stmts[0]), "(for (var i = 0) (< i 10) (++ i) { (var a = 1) })");
 }

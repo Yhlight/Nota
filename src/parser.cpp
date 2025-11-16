@@ -63,6 +63,7 @@ std::shared_ptr<Stmt> Parser::statement() {
     }
     if (match(TokenType::WHILE)) return whileStatement();
     if (match(TokenType::DO)) return doWhileStatement();
+    if (match(TokenType::FOR)) return forStatement();
     return expressionStatement();
 }
 
@@ -111,6 +112,37 @@ std::shared_ptr<Stmt> Parser::doWhileStatement() {
     std::shared_ptr<Expr> condition = expression();
     consume(TokenType::RIGHT_PAREN, "Expect ')' after while condition.");
     return std::make_shared<DoWhileStmt>(body, condition);
+}
+
+std::shared_ptr<Stmt> Parser::forStatement() {
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+
+    std::shared_ptr<Stmt> initializer;
+    if (match(TokenType::SEMICOLON)) {
+        initializer = nullptr;
+    } else if (match(TokenType::LET, TokenType::MUT)) {
+        initializer = varDeclaration();
+    } else {
+        initializer = expressionStatement();
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after loop initializer.");
+
+    std::shared_ptr<Expr> condition = nullptr;
+    if (!check(TokenType::SEMICOLON)) {
+        condition = expression();
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+    std::shared_ptr<Expr> increment = nullptr;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        increment = expression();
+    }
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    std::shared_ptr<Stmt> body = std::make_shared<BlockStmt>(block());
+    consume(TokenType::END, "Expect 'end' after for statement.");
+
+    return std::make_shared<ForStmt>(initializer, condition, increment, body);
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration() {
@@ -188,7 +220,29 @@ std::shared_ptr<Expr> Parser::unary() {
         return std::make_shared<UnaryExpr>(op, right);
     }
 
-    return primary();
+    return call();
+}
+
+std::shared_ptr<Expr> Parser::call() {
+    std::shared_ptr<Expr> expr = primary();
+
+    while (true) {
+        if (match(TokenType::LEFT_PAREN)) {
+            expr = finishCall(expr);
+        } else if (match(TokenType::PLUS_PLUS, TokenType::MINUS_MINUS)) {
+            Token op = previous();
+            expr = std::make_shared<PostfixExpr>(expr, op);
+        } else {
+            break;
+        }
+    }
+
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::finishCall(std::shared_ptr<Expr> callee) {
+    // This is a placeholder for now
+    return callee;
 }
 
 std::shared_ptr<Expr> Parser::primary() {
@@ -205,6 +259,10 @@ std::shared_ptr<Expr> Parser::primary() {
         }
     }
     if (match(TokenType::STRING)) {
+        return std::make_shared<LiteralExpr>(previous().lexeme);
+    }
+
+    if (match(TokenType::IDENTIFIER)) {
         return std::make_shared<LiteralExpr>(previous().lexeme);
     }
 

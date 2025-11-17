@@ -1,31 +1,20 @@
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 #include "VM.h"
-#include "Compiler.h"
-#include "Lexer.h"
-#include "Parser.h"
+#include "Bytecode.h"
 
-using namespace nota;
+TEST(VM, TestSimpleAddition) {
+    nota::Chunk chunk;
+    chunk.constants.push_back(1LL);
+    chunk.constants.push_back(2LL);
+    chunk.code = {
+        (uint8_t)nota::OpCode::Constant, 0,
+        (uint8_t)nota::OpCode::Constant, 1,
+        (uint8_t)nota::OpCode::Add,
+        (uint8_t)nota::OpCode::Return
+    };
 
-TEST(VMTest, SimpleExpression) {
-    std::string source = "1 + 2\n";
-    Lexer lexer(source);
-    Parser parser(lexer);
-    auto stmts = parser.parse();
-    Compiler compiler;
-    Chunk chunk = compiler.compile(stmts);
-    VM vm;
-    InterpretResult result = vm.interpret(chunk);
-    ASSERT_EQ(result, InterpretResult::Ok);
-}
+    nota::VM vm;
+    vm.interpret(chunk);
 
-TEST(VMTest, UnaryMinus) {
-    std::string source = "-1\n";
-    Lexer lexer(source);
-    Parser parser(lexer);
-    auto stmts = parser.parse();
-    Compiler compiler;
-    Chunk chunk = compiler.compile(stmts);
-    VM vm;
-    InterpretResult result = vm.interpret(chunk);
-    ASSERT_EQ(result, InterpretResult::Ok);
+    EXPECT_EQ(std::get<long long>(vm.pop()), 3LL);
 }

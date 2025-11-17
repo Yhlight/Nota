@@ -541,13 +541,16 @@ std::any Interpreter::visit(ast::ImportStmt &stmt) {
         if (double_colon_pos != std::string::npos) {
             name = path.substr(double_colon_pos + 2);
         } else {
-            size_t last_slash = path.find_last_of("/\\");
-            size_t last_dot = path.find_last_of('.');
-            if (last_dot != std::string::npos && (last_slash == std::string::npos || last_dot > last_slash)) {
-                name = path.substr(last_slash == std::string::npos ? 0 : last_slash + 1, last_dot - (last_slash == std::string::npos ? 0 : last_slash + 1));
+            size_t last_slash_pos = path.find_last_of('/');
+            if (last_slash_pos != std::string::npos) {
+                name = path.substr(last_slash_pos + 1);
             } else {
                 name = path;
             }
+        }
+        size_t last_dot_pos = name.rfind(".nota");
+        if (last_dot_pos != std::string::npos) {
+            name = name.substr(0, last_dot_pos);
         }
     }
     environment->define(name, module_env);
@@ -556,8 +559,13 @@ std::any Interpreter::visit(ast::ImportStmt &stmt) {
 }
 
 std::any Interpreter::visit(ast::PackageDeclStmt &stmt) {
+    std::string dir;
     size_t last_slash = path.find_last_of("/\\");
-    std::string dir = path.substr(0, last_slash);
+    if (last_slash != std::string::npos) {
+        dir = path.substr(0, last_slash);
+    } else {
+        dir = ".";
+    }
     module_manager.register_package(stmt.name.lexeme, dir);
     return {};
 }

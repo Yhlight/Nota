@@ -13,6 +13,7 @@ add_executable(run_tests
     ModuleTest.cpp
     PackageTest.cpp
     CompilerTest.cpp
+    VMTest.cpp
 )
 
 target_link_libraries(run_tests nota gtest_main)

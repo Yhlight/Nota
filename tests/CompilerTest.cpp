@@ -19,14 +19,6 @@ static nota::Value run(const std::string &source) {
     nota::VM vm;
     vm.interpret(chunk);
 
-    // For expression statements, the result is left on the stack.
-    // A proper implementation would handle this differently, but for testing it's fine.
-    // We also need to pop the result of the expression statement.
-    // The compiler currently only compiles expression statements.
-    // After an expression statement is executed, the result is left on the stack.
-    // The VM needs a way to pop the value. The ExpressionStmt visitor in the compiler should probably emit a POP instruction.
-    // For now, we manually pop.
-    // Let's modify the compiler to emit a pop after an expression statement.
     return vm.pop();
 }
 

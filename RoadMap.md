@@ -85,3 +85,13 @@ This document outlines the development roadmap for the Nota programming language
     - [x] Stack-based execution
     - [x] Instruction dispatch loop
     - [ ] Garbage Collection
+
+## Phase 7: Advanced Language Features
+
+- [ ] **Undefined Values**
+    - [ ] `none` keyword and value
+- [ ] **Type Conversions**
+    - [ ] Implicit and explicit type casting
+- [ ] **References and Copying**
+    - [ ] `&` operator for mutable references
+    - [ ] `*` operator for copying

@@ -20,11 +20,26 @@ const std::vector<std::unique_ptr<ast::Stmt>> &ModuleManager::resolve_import(con
             throw std::runtime_error("Package not found: " + package_name);
         }
     }
-    return load_module(path);
+
+    std::string file_path = path;
+    if (file_path.rfind(".nota") == std::string::npos) {
+        file_path += ".nota";
+    }
+    return load_module(file_path);
 }
 
 void ModuleManager::register_package(const std::string &name, const std::string &path) {
     packages[name] = path;
+}
+
+void ModuleManager::add_search_path(const std::string &path) {
+    search_paths.push_back(path);
+}
+
+void ModuleManager::reset() {
+    modules.clear();
+    packages.clear();
+    search_paths.clear();
 }
 
 const std::vector<std::unique_ptr<ast::Stmt>> &ModuleManager::load_module(const std::string &path) {
@@ -32,21 +47,29 @@ const std::vector<std::unique_ptr<ast::Stmt>> &ModuleManager::load_module(const 
         return modules.at(path);
     }
 
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open file: " + path);
+    std::vector<std::string> paths_to_try;
+    paths_to_try.push_back(path);
+    for (const auto &search_path : search_paths) {
+        paths_to_try.push_back(search_path + "/" + path);
     }
 
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string source = buffer.str();
+    for (const auto &p : paths_to_try) {
+        std::ifstream file(p);
+        if (file.is_open()) {
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            std::string source = buffer.str();
 
-    Lexer lexer(source);
-    Parser parser(lexer);
-    auto statements = parser.parse();
+            Lexer lexer(source);
+            Parser parser(lexer);
+            auto statements = parser.parse();
 
-    modules[path] = std::move(statements);
-    return modules[path];
+            modules[path] = std::move(statements);
+            return modules[path];
+        }
+    }
+
+    throw std::runtime_error("Could not open file: " + path);
 }
 
 } // namespace nota

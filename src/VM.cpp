@@ -129,15 +129,10 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 stack.push_back(std::visit([](auto&& arg1, auto&& arg2) -> Value {
                     using T1 = std::decay_t<decltype(arg1)>;
                     using T2 = std::decay_t<decltype(arg2)>;
-                    if constexpr (std::is_arithmetic_v<T1> && std::is_arithmetic_v<T2>) {
+                    if constexpr (std::is_same_v<T1, T2>) {
                         return arg1 != arg2;
                     }
-                    if constexpr (std::is_same_v<T1, std::string> && std::is_same_v<T2, std::string>) {
-                        return arg1 != arg2;
-                    }
-                    if constexpr (std::is_same_v<T1, bool> && std::is_same_v<T2, bool>) {
-                        return arg1 != arg2;
-                    }
+                    // If types are different, they are not equal.
                     return true;
                 }, a, b));
                 break;

@@ -18,6 +18,10 @@ void interpret(const std::string& source) {
     interpreter.interpret(stmts, "test.nota");
 }
 
+nota::ModuleManager &get_module_manager() {
+    return module_manager;
+}
+
 void interpret_file(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -33,4 +37,13 @@ void interpret_file(const std::string& path) {
     auto stmts = parser.parse();
     nota::Interpreter interpreter(module_manager);
     interpreter.interpret(stmts, path);
+}
+
+void interpret_with_search_path(const std::string &source, const std::string &search_path) {
+    module_manager.add_search_path(search_path);
+    nota::Lexer lexer(source);
+    nota::Parser parser(lexer);
+    auto stmts = parser.parse();
+    nota::Interpreter interpreter(module_manager);
+    interpreter.interpret(stmts, "test.nota");
 }

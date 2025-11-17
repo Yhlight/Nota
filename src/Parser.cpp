@@ -342,6 +342,10 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Expr> Parser::grouping() {
+        if (current_token.type == TokenType::RightParen ||
+            (current_token.type == TokenType::Identifier && (lexer.peek() == ':' || lexer.peek() == ',' || lexer.peek() == ')'))) {
+            return lambda_expression();
+        }
         auto expr = expression();
         consume(TokenType::RightParen, "Expect ')' after expression.");
         return expr;
@@ -377,6 +381,34 @@ namespace nota {
         }
         consume(TokenType::RightParen, "Expect ')' after arguments.");
         return std::make_unique<ast::CallExpr>(std::move(left), std::move(arguments));
+    }
+
+    std::unique_ptr<ast::Expr> Parser::lambda_expression() {
+        std::vector<ast::Param> params;
+        if (current_token.type != TokenType::RightParen) {
+            do {
+                consume(TokenType::Identifier, "Expect parameter name.");
+                Token param_name = previous_token;
+                std::optional<Token> param_type;
+                if (match(TokenType::Colon)) {
+                    consume(TokenType::Identifier, "Expect parameter type.");
+                    param_type = previous_token;
+                }
+                params.push_back({param_name, param_type});
+            } while (match(TokenType::Comma));
+        }
+        consume(TokenType::RightParen, "Expect ')' after parameters.");
+        consume(TokenType::FatArrow, "Expect '=>' after lambda parameters.");
+
+        std::variant<std::unique_ptr<ast::Expr>, std::unique_ptr<ast::Stmt>> body;
+        if (match(TokenType::Newline)) {
+            body = block();
+            consume(TokenType::End, "Expect 'end' after lambda body.");
+        } else {
+            body = expression();
+        }
+
+        return std::make_unique<ast::LambdaExpr>(std::move(params), std::move(body));
     }
 
 } // namespace nota

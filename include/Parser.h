@@ -70,6 +70,7 @@ namespace nota {
         std::unique_ptr<ast::Expr> literal();
         std::unique_ptr<ast::Expr> grouping();
         std::unique_ptr<ast::Expr> variable();
+        std::unique_ptr<ast::Expr> lambda_expression();
 
         // Infix parse functions
         std::unique_ptr<ast::Expr> binary(std::unique_ptr<ast::Expr> left);

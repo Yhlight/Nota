@@ -3,10 +3,19 @@
 
 #include "../Token.h"
 #include <memory>
+#include <optional>
+#include <variant>
 #include <vector>
 
 namespace nota {
 namespace ast {
+
+    class Stmt;
+
+    struct Param {
+        Token name;
+        std::optional<Token> type;
+    };
 
     template<typename R>
     class ExprVisitor {
@@ -18,6 +27,7 @@ namespace ast {
         virtual R visit(class AssignExpr& expr) = 0;
         virtual R visit(class PostfixExpr& expr) = 0;
         virtual R visit(class CallExpr& expr) = 0;
+        virtual R visit(class LambdaExpr& expr) = 0;
     };
 
     class Expr {
@@ -112,6 +122,19 @@ namespace ast {
 
         std::unique_ptr<Expr> callee;
         std::vector<std::unique_ptr<Expr>> arguments;
+    };
+
+    class LambdaExpr : public Expr {
+    public:
+        LambdaExpr(std::vector<Param> params, std::variant<std::unique_ptr<Expr>, std::unique_ptr<Stmt>> body)
+            : params(std::move(params)), body(std::move(body)) {}
+
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::vector<Param> params;
+        std::variant<std::unique_ptr<Expr>, std::unique_ptr<Stmt>> body;
     };
 
 } // namespace ast

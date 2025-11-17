@@ -162,11 +162,6 @@ namespace ast {
         std::unique_ptr<Stmt> else_branch;
     };
 
-    struct Param {
-        Token name;
-        std::optional<Token> type;
-    };
-
     class FuncDeclStmt : public Stmt {
     public:
         FuncDeclStmt(Token name, std::vector<Param> params, std::unique_ptr<Stmt> body, std::optional<Token> return_type)

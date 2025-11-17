@@ -31,6 +31,7 @@ namespace ast {
         std::string visit(class AssignExpr& expr) override;
         std::string visit(class PostfixExpr& expr) override;
         std::string visit(class CallExpr& expr) override;
+        std::string visit(class LambdaExpr& expr) override;
     };
 
 } // namespace ast

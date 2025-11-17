@@ -111,7 +111,7 @@ namespace nota {
 
             // One or two character tokens
             case '!': return make_token(match('=') ? TokenType::BangEqual : TokenType::Bang, source.substr(start, current - start));
-            case '=': return make_token(match('=') ? TokenType::EqualEqual : TokenType::Equal, source.substr(start, current - start));
+            case '=': return make_token(match('>') ? TokenType::FatArrow : (match('=') ? TokenType::EqualEqual : TokenType::Equal), source.substr(start, current - start));
             case '<': return make_token(match('<') ? TokenType::LessLess : (match('=') ? TokenType::LessEqual : TokenType::Less), source.substr(start, current - start));
             case '>': return make_token(match('>') ? TokenType::GreaterGreater : (match('=') ? TokenType::GreaterEqual : TokenType::Greater), source.substr(start, current - start));
 

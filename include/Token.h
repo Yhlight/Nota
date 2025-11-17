@@ -30,6 +30,7 @@ namespace nota {
         PlusEqual, MinusEqual, StarEqual, SlashEqual, PercentEqual,
         AmpersandAmpersand, PipePipe,
         PlusPlus, MinusMinus,
+        FatArrow,
 
         // Punctuation
         Newline, Colon, Semicolon, LeftParen, RightParen, LeftBrace, RightBrace,

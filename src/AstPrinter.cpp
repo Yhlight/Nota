@@ -25,6 +25,28 @@ namespace ast {
         return ss.str();
     }
 
+    std::string AstPrinter::visit(class LambdaExpr& expr) {
+        std::stringstream ss;
+        ss << "(lambda (";
+        for (size_t i = 0; i < expr.params.size(); ++i) {
+            ss << expr.params[i].name.lexeme;
+            if (expr.params[i].type) {
+                ss << ": " << expr.params[i].type->lexeme;
+            }
+            if (i < expr.params.size() - 1) {
+                ss << " ";
+            }
+        }
+        ss << ") ";
+        if (std::holds_alternative<std::unique_ptr<Expr>>(expr.body)) {
+            ss << std::get<std::unique_ptr<Expr>>(expr.body)->accept(*this);
+        } else {
+            ss << std::get<std::unique_ptr<Stmt>>(expr.body)->accept(*this);
+        }
+        ss << ")";
+        return ss.str();
+    }
+
     std::string AstPrinter::visit(class BlockStmt& stmt) {
         std::stringstream ss;
         ss << "(block";

@@ -7,6 +7,8 @@ add_library(nota
     Environment.cpp
     Interpreter.cpp
     NotaFunction.cpp
+    NotaLambda.cpp
+    ModuleManager.cpp
     Return.cpp
     NotaArray.cpp
     NotaInstance.cpp

@@ -1,5 +1,6 @@
 #include "Interpreter.h"
 #include "NotaFunction.h"
+#include "NotaLambda.h"
 #include "NotaArray.h"
 #include "NotaClass.h"
 #include "NotaInstance.h"
@@ -19,7 +20,7 @@ class Clock : public Callable {
     }
 };
 
-Interpreter::Interpreter() : globals(new Environment()), environment(globals) {
+Interpreter::Interpreter(ModuleManager &module_manager) : module_manager(module_manager), globals(new Environment()), environment(globals) {
     globals->define("clock", new Clock());
 }
 
@@ -45,6 +46,14 @@ void Interpreter::execute_block(
         execute(*statement);
     }
     this->environment = previous;
+}
+
+Value Interpreter::evaluate_in_environment(ast::Expr &expr, std::shared_ptr<Environment> environment) {
+    auto previous = this->environment;
+    this->environment = environment;
+    Value result = evaluate(expr);
+    this->environment = previous;
+    return result;
 }
 
 bool Interpreter::is_truthy(const Value &value) {
@@ -232,7 +241,31 @@ std::any Interpreter::visit(ast::AssignExpr &expr) {
 }
 
 std::any Interpreter::visit(ast::PostfixExpr &expr) {
-    return Value{std::monostate()};
+    if (ast::VariableExpr* var = dynamic_cast<ast::VariableExpr*>(expr.left.get())) {
+        Value value = environment->get(var->name);
+        if (std::holds_alternative<long long>(value)) {
+            long long current_value = std::get<long long>(value);
+            long long next_value = current_value;
+            if (expr.op.type == TokenType::PlusPlus) {
+                next_value++;
+            } else if (expr.op.type == TokenType::MinusMinus) {
+                next_value--;
+            }
+            environment->assign(var->name, next_value);
+            return Value{current_value};
+        } else if (std::holds_alternative<double>(value)) {
+            double current_value = std::get<double>(value);
+            double next_value = current_value;
+            if (expr.op.type == TokenType::PlusPlus) {
+                next_value++;
+            } else if (expr.op.type == TokenType::MinusMinus) {
+                next_value--;
+            }
+            environment->assign(var->name, next_value);
+            return Value{current_value};
+        }
+    }
+    throw std::runtime_error("Operand of postfix operator must be a variable.");
 }
 
 std::any Interpreter::visit(ast::CallExpr &expr) {
@@ -267,7 +300,7 @@ std::any Interpreter::visit(ast::CallExpr &expr) {
 }
 
 std::any Interpreter::visit(ast::LambdaExpr &expr) {
-    return Value{std::monostate()};
+    return Value{new NotaLambda(&expr, environment)};
 }
 
 std::any Interpreter::visit(ast::ArrayLiteralExpr &expr) {
@@ -299,7 +332,11 @@ std::any Interpreter::visit(ast::GetExpr &expr) {
         return std::get<NotaInstance *>(object)->get(expr.name);
     }
 
-    throw std::runtime_error("Only instances have properties.");
+    if (std::holds_alternative<std::shared_ptr<Environment>>(object)) {
+        return std::get<std::shared_ptr<Environment>>(object)->get(expr.name);
+    }
+
+    throw std::runtime_error("Only instances and modules have properties.");
 }
 
 std::any Interpreter::visit(ast::SetExpr &expr) {
@@ -386,14 +423,64 @@ std::any Interpreter::visit(ast::ExpressionStmt &stmt) {
 }
 
 std::any Interpreter::visit(ast::ForEachStmt &stmt) {
+    Value container = evaluate(*stmt.container);
+    if (std::holds_alternative<NotaArray *>(container)) {
+        NotaArray *array = std::get<NotaArray *>(container);
+        for (int i = 0; i < array->size(); ++i) {
+            auto loop_env = std::make_shared<Environment>(environment);
+            auto previous = this->environment;
+            this->environment = loop_env;
+            environment->define(stmt.variable.lexeme, array->get(i));
+            execute(*stmt.body);
+            this->environment = previous;
+        }
+    } else {
+        throw std::runtime_error("For-each loop requires an array container.");
+    }
     return {};
 }
 
 std::any Interpreter::visit(ast::ForStmt &stmt) {
+    auto loop_env = std::make_shared<Environment>(environment);
+    auto previous = this->environment;
+    this->environment = loop_env;
+
+    if (stmt.initializer) {
+        execute(*stmt.initializer);
+    }
+
+    while (true) {
+        if (stmt.condition) {
+            if (!is_truthy(evaluate(*stmt.condition))) {
+                break;
+            }
+        }
+        execute(*stmt.body);
+        if (stmt.increment) {
+            evaluate(*stmt.increment);
+        }
+    }
+
+    this->environment = previous;
     return {};
 }
 
 std::any Interpreter::visit(ast::MatchStmt &stmt) {
+    Value value = evaluate(*stmt.expression);
+    for (auto &match_case : stmt.cases) {
+        for (auto &case_value_expr : match_case.values) {
+            Value case_value = evaluate(*case_value_expr);
+            if (value == case_value) {
+                execute(*match_case.body);
+                return {};
+            }
+        }
+    }
+
+    if (stmt.else_branch) {
+        execute(*stmt.else_branch);
+    }
+
     return {};
 }
 
@@ -423,6 +510,30 @@ std::any Interpreter::visit(ast::ReturnStmt &stmt) {
         value = evaluate(*stmt.value);
     }
     throw Return(value);
+}
+
+std::any Interpreter::visit(ast::ImportStmt &stmt) {
+    std::string path = stmt.path.lexeme.substr(1, stmt.path.lexeme.length() - 2);
+    const auto &stmts = module_manager.load_module(path);
+
+    auto module_env = std::make_shared<Environment>();
+    execute_block(stmts, module_env);
+
+    std::string name;
+    if (stmt.alias) {
+        name = stmt.alias->lexeme;
+    } else {
+        size_t last_slash = path.find_last_of("/\\");
+        size_t last_dot = path.find_last_of('.');
+        if (last_dot != std::string::npos && (last_slash == std::string::npos || last_dot > last_slash)) {
+            name = path.substr(last_slash == std::string::npos ? 0 : last_slash + 1, last_dot - (last_slash == std::string::npos ? 0 : last_slash + 1));
+        } else {
+            name = path;
+        }
+    }
+    environment->define(name, module_env);
+
+    return {};
 }
 
 } // namespace nota

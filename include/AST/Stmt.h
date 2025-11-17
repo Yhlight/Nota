@@ -26,6 +26,7 @@ namespace ast {
         virtual std::any visit(class FuncDeclStmt &stmt) = 0;
         virtual std::any visit(class ReturnStmt &stmt) = 0;
         virtual std::any visit(class ClassDeclStmt &stmt) = 0;
+        virtual std::any visit(class ImportStmt &stmt) = 0;
     };
 
     class Stmt {
@@ -216,6 +217,19 @@ namespace ast {
 
         Token name;
         std::vector<std::unique_ptr<FuncDeclStmt>> methods;
+    };
+
+    class ImportStmt : public Stmt {
+    public:
+        ImportStmt(Token path, std::optional<Token> alias)
+            : path(path), alias(alias) {}
+
+        std::any accept(StmtVisitor &visitor) override {
+            return visitor.visit(*this);
+        }
+
+        Token path;
+        std::optional<Token> alias;
     };
 
 } // namespace ast

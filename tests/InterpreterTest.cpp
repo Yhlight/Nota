@@ -36,3 +36,28 @@ TEST(InterpreterTest, NativeFunction) {
     std::string source = "let t = clock()\n";
     ASSERT_NO_THROW(interpret(source));
 }
+
+TEST(InterpreterTest, ForLoop) {
+    std::string source = "mut a = 0\nfor let i = 0; i < 10; i++\na = a + i\nend\n";
+    ASSERT_NO_THROW(interpret(source));
+}
+
+TEST(InterpreterTest, ForEachLoop) {
+    std::string source = "let a = [1, 2, 3]\nmut sum = 0\nfor i: a\nsum = sum + i\nend\n";
+    ASSERT_NO_THROW(interpret(source));
+}
+
+TEST(InterpreterTest, MatchStatement) {
+    std::string source = "let a = 2\nmut b = 0\nmatch a\n1:\nb = 1\nend\n2:\nb = 2\nend\n_:\nb = 3\nend\nend\n";
+    ASSERT_NO_THROW(interpret(source));
+}
+
+TEST(InterpreterTest, LambdaExpression) {
+    std::string source = "let add = (a: int, b: int) => a + b\nlet c = add(1, 2)\n";
+    ASSERT_NO_THROW(interpret(source));
+}
+
+TEST(InterpreterTest, PostfixExpression) {
+    std::string source = "mut a = 10\na++\n";
+    ASSERT_NO_THROW(interpret(source));
+}

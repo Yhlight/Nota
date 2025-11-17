@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <memory>
 
 namespace nota {
 
@@ -12,10 +13,11 @@ class Callable;
 class NotaArray;
 class NotaClass;
 class NotaInstance;
+class Environment;
 
 using Value =
     std::variant<std::monostate, bool, long long, double, std::string,
-                 Callable *, NotaArray *, NotaClass *, NotaInstance *>;
+                 Callable *, NotaArray *, NotaClass *, NotaInstance *, std::shared_ptr<Environment>>;
 
 class Callable {
   public:

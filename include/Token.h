@@ -34,7 +34,7 @@ namespace nota {
 
         // Punctuation
         Newline, Colon, Semicolon, LeftParen, RightParen, LeftBrace, RightBrace,
-        LeftBracket, RightBracket, Comma, Dot, Underscore,
+        LeftBracket, RightBracket, Comma, Dot, DoubleColon, Underscore,
 
         // Etc...
     };

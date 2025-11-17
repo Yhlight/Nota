@@ -5,7 +5,9 @@
 #include "AST/Stmt.h"
 #include "Environment.h"
 #include "Value.h"
+#include "ModuleManager.h"
 #include <any>
+#include <variant>
 #include <memory>
 #include <vector>
 
@@ -13,7 +15,7 @@ namespace nota {
 
 class Interpreter : public ast::ExprVisitor, public ast::StmtVisitor {
   public:
-    Interpreter();
+    Interpreter(ModuleManager &module_manager);
 
     void interpret(const std::vector<std::unique_ptr<ast::Stmt>> &statements);
 
@@ -43,17 +45,21 @@ class Interpreter : public ast::ExprVisitor, public ast::StmtVisitor {
     std::any visit(ast::FuncDeclStmt &stmt) override;
     std::any visit(ast::ReturnStmt &stmt) override;
     std::any visit(ast::ClassDeclStmt &stmt) override;
+    std::any visit(ast::ImportStmt &stmt) override;
 
     void execute_block(const std::vector<std::unique_ptr<ast::Stmt>> &statements,
                        std::shared_ptr<Environment> environment);
+    Value evaluate_in_environment(ast::Expr &expr, std::shared_ptr<Environment> environment);
 
   private:
     friend class NotaFunction;
+    friend class NotaLambda;
     Value evaluate(ast::Expr &expr);
     void execute(ast::Stmt &stmt);
 
     bool is_truthy(const Value &value);
 
+    ModuleManager &module_manager;
     std::shared_ptr<Environment> globals;
     std::shared_ptr<Environment> environment;
 };

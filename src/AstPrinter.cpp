@@ -256,5 +256,14 @@ namespace ast {
         return ss.str();
     }
 
+    std::any AstPrinter::visit(ImportStmt &stmt) {
+        std::string s = "(import " + stmt.path.lexeme;
+        if (stmt.alias) {
+            s += " as " + stmt.alias->lexeme;
+        }
+        s += ")";
+        return s;
+    }
+
 } // namespace ast
 } // namespace nota

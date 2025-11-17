@@ -5,7 +5,7 @@
 using namespace nota;
 
 TEST(LexerOperatorsTest, AllOperators) {
-    std::string source = "+ - * / % == != > >= < <= ! & | ^ ~ << >> += -= *= /= %= && || ++ --";
+    std::string source = "+ - * / % == != > >= < <= ! & | ^ ~ << >> += -= *= /= %= && || ++ -- ::";
     Lexer lexer(source);
 
     TokenType expected[] = {
@@ -15,7 +15,7 @@ TEST(LexerOperatorsTest, AllOperators) {
         TokenType::Caret, TokenType::Tilde, TokenType::LessLess, TokenType::GreaterGreater,
         TokenType::PlusEqual, TokenType::MinusEqual, TokenType::StarEqual, TokenType::SlashEqual,
         TokenType::PercentEqual, TokenType::AmpersandAmpersand, TokenType::PipePipe,
-        TokenType::PlusPlus, TokenType::MinusMinus, TokenType::Eof
+        TokenType::PlusPlus, TokenType::MinusMinus, TokenType::DoubleColon, TokenType::Eof
     };
 
     for (auto expected_type : expected) {

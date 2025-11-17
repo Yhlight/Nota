@@ -68,10 +68,10 @@ This document outlines the development roadmap for the Nota programming language
 
 ## Phase 5: Modules and Packaging
 
-- [ ] **Modules**
-    - [ ] `import` statements
-    - [ ] Module aliasing (`as`)
-    - [ ] Namespace resolution (`::`)
+- [x] **Modules**
+    - [x] `import` statements
+    - [x] Module aliasing (`as`)
+    - [x] Namespace resolution (`::`)
 - [ ] **Packages**
     - [ ] `package` declaration
 

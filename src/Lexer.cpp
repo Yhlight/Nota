@@ -107,7 +107,9 @@ namespace nota {
             case '|': return make_token(match('|') ? TokenType::PipePipe : TokenType::Pipe, source.substr(start, current - start));
             case '^': return make_token(TokenType::Caret, "^");
             case '~': return make_token(TokenType::Tilde, "~");
-            case ':': return make_token(TokenType::Colon, ":");
+            case ':':
+                if (match(':')) return make_token(TokenType::DoubleColon, "::");
+                return make_token(TokenType::Colon, ":");
             case '_': return make_token(TokenType::Underscore, "_");
 
             // One or two character tokens

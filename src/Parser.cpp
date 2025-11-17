@@ -16,6 +16,7 @@ namespace nota {
             {TokenType::RightBracket, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Comma, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Dot, {nullptr, &Parser::get, PREC_CALL}},
+            {TokenType::DoubleColon, {nullptr, &Parser::get, PREC_CALL}},
             {TokenType::Semicolon, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Minus, {&Parser::unary, &Parser::binary, PREC_TERM}},
             {TokenType::Plus, {nullptr, &Parser::binary, PREC_TERM}},
@@ -99,6 +100,9 @@ namespace nota {
         }
         if (match(TokenType::Class)) {
             return class_declaration();
+        }
+        if (match(TokenType::Import)) {
+            return import_statement();
         }
         if (match(TokenType::Return)) {
             auto value = expression();
@@ -254,6 +258,20 @@ namespace nota {
         if (current_token.type == TokenType::Newline) advance();
 
         return std::make_unique<ast::ClassDeclStmt>(name, std::move(methods));
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::import_statement() {
+        consume(TokenType::String, "Expect module path.");
+        Token path = previous_token;
+
+        std::optional<Token> alias;
+        if (match(TokenType::As)) {
+            consume(TokenType::Identifier, "Expect alias name.");
+            alias = previous_token;
+        }
+
+        consume(TokenType::Newline, "Expect newline after import statement.");
+        return std::make_unique<ast::ImportStmt>(path, alias);
     }
 
     std::unique_ptr<ast::Stmt> Parser::for_statement() {

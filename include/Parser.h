@@ -58,6 +58,7 @@ namespace nota {
         std::unique_ptr<ast::Stmt> match_statement();
         std::unique_ptr<ast::Stmt> func_declaration();
         std::unique_ptr<ast::Stmt> class_declaration();
+        std::unique_ptr<ast::Stmt> import_statement();
         std::unique_ptr<ast::Stmt> expression_statement();
         std::unique_ptr<ast::Stmt> block();
         std::unique_ptr<ast::Expr> expression();

@@ -257,12 +257,17 @@ namespace ast {
     }
 
     std::any AstPrinter::visit(ImportStmt &stmt) {
-        std::string s = "(import " + stmt.path.lexeme;
+        std::string path_str = std::any_cast<std::string>(stmt.path->accept(*this));
+        std::string s = "(import " + path_str;
         if (stmt.alias) {
             s += " as " + stmt.alias->lexeme;
         }
         s += ")";
         return s;
+    }
+
+    std::any AstPrinter::visit(PackageDeclStmt &stmt) {
+        return "(package " + stmt.name.lexeme + ")";
     }
 
 } // namespace ast

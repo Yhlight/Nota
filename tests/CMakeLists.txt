@@ -11,6 +11,7 @@ add_executable(run_tests
     ClassTest.cpp
     StaticArrayTest.cpp
     ModuleTest.cpp
+    PackageTest.cpp
 )
 
 target_link_libraries(run_tests nota gtest_main)

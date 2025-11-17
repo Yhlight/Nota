@@ -25,7 +25,8 @@ Interpreter::Interpreter(ModuleManager &module_manager) : module_manager(module_
 }
 
 void Interpreter::interpret(
-    const std::vector<std::unique_ptr<ast::Stmt>> &statements) {
+    const std::vector<std::unique_ptr<ast::Stmt>> &statements, const std::string &path) {
+    this->path = path;
     for (const auto &statement : statements) {
         execute(*statement);
     }
@@ -512,9 +513,22 @@ std::any Interpreter::visit(ast::ReturnStmt &stmt) {
     throw Return(value);
 }
 
+std::string get_path(ast::Expr *expr) {
+    if (auto *literal = dynamic_cast<ast::LiteralExpr *>(expr)) {
+        return literal->value.lexeme.substr(1, literal->value.lexeme.length() - 2);
+    }
+    if (auto *get = dynamic_cast<ast::GetExpr *>(expr)) {
+        return get_path(get->object.get()) + "::" + get->name.lexeme;
+    }
+    if (auto *variable = dynamic_cast<ast::VariableExpr *>(expr)) {
+        return variable->name.lexeme;
+    }
+    throw std::runtime_error("Invalid import path.");
+}
+
 std::any Interpreter::visit(ast::ImportStmt &stmt) {
-    std::string path = stmt.path.lexeme.substr(1, stmt.path.lexeme.length() - 2);
-    const auto &stmts = module_manager.load_module(path);
+    std::string path = get_path(stmt.path.get());
+    const auto &stmts = module_manager.resolve_import(path);
 
     auto module_env = std::make_shared<Environment>();
     execute_block(stmts, module_env);
@@ -523,16 +537,28 @@ std::any Interpreter::visit(ast::ImportStmt &stmt) {
     if (stmt.alias) {
         name = stmt.alias->lexeme;
     } else {
-        size_t last_slash = path.find_last_of("/\\");
-        size_t last_dot = path.find_last_of('.');
-        if (last_dot != std::string::npos && (last_slash == std::string::npos || last_dot > last_slash)) {
-            name = path.substr(last_slash == std::string::npos ? 0 : last_slash + 1, last_dot - (last_slash == std::string::npos ? 0 : last_slash + 1));
+        size_t double_colon_pos = path.find("::");
+        if (double_colon_pos != std::string::npos) {
+            name = path.substr(double_colon_pos + 2);
         } else {
-            name = path;
+            size_t last_slash = path.find_last_of("/\\");
+            size_t last_dot = path.find_last_of('.');
+            if (last_dot != std::string::npos && (last_slash == std::string::npos || last_dot > last_slash)) {
+                name = path.substr(last_slash == std::string::npos ? 0 : last_slash + 1, last_dot - (last_slash == std::string::npos ? 0 : last_slash + 1));
+            } else {
+                name = path;
+            }
         }
     }
     environment->define(name, module_env);
 
+    return {};
+}
+
+std::any Interpreter::visit(ast::PackageDeclStmt &stmt) {
+    size_t last_slash = path.find_last_of("/\\");
+    std::string dir = path.substr(0, last_slash);
+    module_manager.register_package(stmt.name.lexeme, dir);
     return {};
 }
 

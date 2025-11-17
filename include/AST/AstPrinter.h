@@ -26,6 +26,7 @@ namespace ast {
         std::any visit(class ReturnStmt& stmt) override;
         std::any visit(class ClassDeclStmt& stmt) override;
         std::any visit(ImportStmt &stmt) override;
+        std::any visit(PackageDeclStmt &stmt) override;
 
         std::any visit(class LiteralExpr& expr) override;
         std::any visit(class UnaryExpr& expr) override;

@@ -17,7 +17,7 @@ class Interpreter : public ast::ExprVisitor, public ast::StmtVisitor {
   public:
     Interpreter(ModuleManager &module_manager);
 
-    void interpret(const std::vector<std::unique_ptr<ast::Stmt>> &statements);
+    void interpret(const std::vector<std::unique_ptr<ast::Stmt>> &statements, const std::string &path);
 
     std::any visit(ast::LiteralExpr &expr) override;
     std::any visit(ast::UnaryExpr &expr) override;
@@ -46,12 +46,14 @@ class Interpreter : public ast::ExprVisitor, public ast::StmtVisitor {
     std::any visit(ast::ReturnStmt &stmt) override;
     std::any visit(ast::ClassDeclStmt &stmt) override;
     std::any visit(ast::ImportStmt &stmt) override;
+    std::any visit(ast::PackageDeclStmt &stmt) override;
 
     void execute_block(const std::vector<std::unique_ptr<ast::Stmt>> &statements,
                        std::shared_ptr<Environment> environment);
     Value evaluate_in_environment(ast::Expr &expr, std::shared_ptr<Environment> environment);
 
   private:
+    std::string path;
     friend class NotaFunction;
     friend class NotaLambda;
     Value evaluate(ast::Expr &expr);

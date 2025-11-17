@@ -104,6 +104,9 @@ namespace nota {
         if (match(TokenType::Import)) {
             return import_statement();
         }
+        if (match(TokenType::Package)) {
+            return package_declaration();
+        }
         if (match(TokenType::Return)) {
             auto value = expression();
             consume(TokenType::Newline, "Expect newline after return value.");
@@ -261,8 +264,7 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Stmt> Parser::import_statement() {
-        consume(TokenType::String, "Expect module path.");
-        Token path = previous_token;
+        auto path = expression();
 
         std::optional<Token> alias;
         if (match(TokenType::As)) {
@@ -271,7 +273,14 @@ namespace nota {
         }
 
         consume(TokenType::Newline, "Expect newline after import statement.");
-        return std::make_unique<ast::ImportStmt>(path, alias);
+        return std::make_unique<ast::ImportStmt>(std::move(path), alias);
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::package_declaration() {
+        consume(TokenType::Identifier, "Expect package name.");
+        Token name = previous_token;
+        consume(TokenType::Newline, "Expect newline after package name.");
+        return std::make_unique<ast::PackageDeclStmt>(name);
     }
 
     std::unique_ptr<ast::Stmt> Parser::for_statement() {

@@ -11,10 +11,13 @@ namespace nota {
 
 class ModuleManager {
 public:
-    const std::vector<std::unique_ptr<ast::Stmt>> &load_module(const std::string &path);
+    const std::vector<std::unique_ptr<ast::Stmt>> &resolve_import(const std::string &path);
+    void register_package(const std::string &name, const std::string &path);
 
 private:
+    const std::vector<std::unique_ptr<ast::Stmt>> &load_module(const std::string &path);
     std::map<std::string, std::vector<std::unique_ptr<ast::Stmt>>> modules;
+    std::map<std::string, std::string> packages;
 };
 
 } // namespace nota

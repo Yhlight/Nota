@@ -3,6 +3,7 @@
 
 #include "../Token.h"
 #include "Expr.h"
+#include "Type.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -35,16 +36,16 @@ namespace ast {
 
     class VarDeclStmt : public Stmt {
     public:
-        VarDeclStmt(Token name, std::optional<Token> type,
+        VarDeclStmt(Token name, std::unique_ptr<Type> type,
                     std::unique_ptr<Expr> initializer)
-            : name(name), type(type), initializer(std::move(initializer)) {}
+            : name(name), type(std::move(type)), initializer(std::move(initializer)) {}
 
         std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
         Token name;
-        std::optional<Token> type;
+        std::unique_ptr<Type> type;
         std::unique_ptr<Expr> initializer;
     };
 
@@ -179,9 +180,9 @@ namespace ast {
     class FuncDeclStmt : public Stmt {
     public:
         FuncDeclStmt(Token name, std::vector<Param> params,
-                     std::unique_ptr<Stmt> body, std::optional<Token> return_type)
+                     std::unique_ptr<Stmt> body, std::unique_ptr<Type> return_type)
             : name(name), params(std::move(params)), body(std::move(body)),
-              return_type(return_type) {}
+              return_type(std::move(return_type)) {}
 
         std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
@@ -190,7 +191,7 @@ namespace ast {
         Token name;
         std::vector<Param> params;
         std::unique_ptr<Stmt> body;
-        std::optional<Token> return_type;
+        std::unique_ptr<Type> return_type;
     };
 
     class ReturnStmt : public Stmt {

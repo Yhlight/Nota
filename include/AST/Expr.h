@@ -2,6 +2,7 @@
 #define NOTA_AST_EXPR_H
 
 #include "../Token.h"
+#include "Type.h"
 #include <any>
 #include <memory>
 #include <optional>
@@ -15,7 +16,7 @@ namespace ast {
 
     struct Param {
         Token name;
-        std::optional<Token> type;
+        std::unique_ptr<Type> type;
     };
 
     class ExprVisitor {

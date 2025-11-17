@@ -113,10 +113,9 @@ namespace nota {
         consume(TokenType::Identifier, "Expect variable name.");
         Token name = previous_token;
 
-        std::optional<Token> type;
+        std::unique_ptr<ast::Type> type = nullptr;
         if (match(TokenType::Colon)) {
-            consume(TokenType::Identifier, "Expect type name.");
-            type = previous_token;
+            type = parse_type();
         }
 
         std::unique_ptr<ast::Expr> initializer = nullptr;
@@ -124,7 +123,7 @@ namespace nota {
             initializer = expression();
         }
 
-        return std::make_unique<ast::VarDeclStmt>(name, type, std::move(initializer));
+        return std::make_unique<ast::VarDeclStmt>(name, std::move(type), std::move(initializer));
     }
 
     std::unique_ptr<ast::Stmt> Parser::if_statement() {
@@ -219,20 +218,18 @@ namespace nota {
             do {
                 consume(TokenType::Identifier, "Expect parameter name.");
                 Token param_name = previous_token;
-                std::optional<Token> param_type;
+                std::unique_ptr<ast::Type> param_type = nullptr;
                 if (match(TokenType::Colon)) {
-                    consume(TokenType::Identifier, "Expect parameter type.");
-                    param_type = previous_token;
+                    param_type = parse_type();
                 }
-                params.push_back({param_name, param_type});
+                params.push_back({param_name, std::move(param_type)});
             } while (match(TokenType::Comma));
         }
         consume(TokenType::RightParen, "Expect ')' after parameters.");
 
-        std::optional<Token> return_type;
+        std::unique_ptr<ast::Type> return_type = nullptr;
         if (match(TokenType::Colon)) {
-            consume(TokenType::Identifier, "Expect return type.");
-            return_type = previous_token;
+            return_type = parse_type();
         }
 
         consume(TokenType::Newline, "Expect newline after function signature.");
@@ -240,7 +237,7 @@ namespace nota {
         consume(TokenType::End, "Expect 'end' after function body.");
         if (current_token.type == TokenType::Newline) advance();
 
-        return std::make_unique<ast::FuncDeclStmt>(name, std::move(params), std::move(body), return_type);
+        return std::make_unique<ast::FuncDeclStmt>(name, std::move(params), std::move(body), std::move(return_type));
     }
 
     std::unique_ptr<ast::Stmt> Parser::class_declaration() {
@@ -330,6 +327,22 @@ namespace nota {
         return parse_precedence(PREC_ASSIGNMENT);
     }
 
+    std::unique_ptr<ast::Type> Parser::parse_type() {
+        consume(TokenType::Identifier, "Expect type name.");
+        std::unique_ptr<ast::Type> type = std::make_unique<ast::BaseType>(previous_token);
+
+        while(match(TokenType::LeftBracket)) {
+            std::unique_ptr<ast::Expr> size = nullptr;
+            if (current_token.type != TokenType::RightBracket) {
+                size = expression();
+            }
+            consume(TokenType::RightBracket, "Expect ']' after array size.");
+            type = std::make_unique<ast::ArrayType>(std::move(type), std::move(size));
+        }
+
+        return type;
+    }
+
     std::unique_ptr<ast::Expr> Parser::parse_precedence(Precedence precedence) {
         advance();
         PrefixParseFn prefix_rule = get_rule(previous_token.type).prefix;
@@ -387,6 +400,9 @@ namespace nota {
         if (dynamic_cast<ast::VariableExpr*>(left.get()) || dynamic_cast<ast::SubscriptExpr*>(left.get()) || dynamic_cast<ast::GetExpr*>(left.get())) {
             auto value = expression();
             return std::make_unique<ast::AssignExpr>(std::move(left), std::move(value));
+        } else if (dynamic_cast<ast::SetExpr*>(left.get())) {
+            auto value = expression();
+            return std::make_unique<ast::AssignExpr>(std::move(left), std::move(value));
         }
 
         throw std::runtime_error("Invalid assignment target.");
@@ -414,12 +430,11 @@ namespace nota {
             do {
                 consume(TokenType::Identifier, "Expect parameter name.");
                 Token param_name = previous_token;
-                std::optional<Token> param_type;
+                std::unique_ptr<ast::Type> param_type = nullptr;
                 if (match(TokenType::Colon)) {
-                    consume(TokenType::Identifier, "Expect parameter type.");
-                    param_type = previous_token;
+                    param_type = parse_type();
                 }
-                params.push_back({param_name, param_type});
+                params.push_back({param_name, std::move(param_type)});
             } while (match(TokenType::Comma));
         }
         consume(TokenType::RightParen, "Expect ')' after parameters.");

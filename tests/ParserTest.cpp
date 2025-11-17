@@ -35,8 +35,10 @@ TEST(ParserTest, VarDeclWithType) {
     auto* var_decl = dynamic_cast<nota::ast::VarDeclStmt*>(stmts[0].get());
     ASSERT_NE(var_decl, nullptr);
     EXPECT_EQ(var_decl->name.lexeme, "x");
-    ASSERT_TRUE(var_decl->type.has_value());
-    EXPECT_EQ(var_decl->type->lexeme, "int");
+    ASSERT_NE(var_decl->type, nullptr);
+    auto* base_type = dynamic_cast<nota::ast::BaseType*>(var_decl->type.get());
+    ASSERT_NE(base_type, nullptr);
+    EXPECT_EQ(base_type->name.lexeme, "int");
 }
 
 TEST(ParserTest, UnaryExpr) {

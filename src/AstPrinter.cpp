@@ -16,7 +16,7 @@ namespace ast {
         std::stringstream ss;
         ss << "(var-decl " << stmt.name.lexeme;
         if (stmt.type) {
-            ss << " " << stmt.type->lexeme;
+            ss << " " << std::any_cast<std::string>(stmt.type->accept(*this));
         }
         if (stmt.initializer) {
             ss << " " << std::any_cast<std::string>(stmt.initializer->accept(*this));
@@ -116,7 +116,7 @@ namespace ast {
         for (size_t i = 0; i < stmt.params.size(); ++i) {
             ss << stmt.params[i].name.lexeme;
             if (stmt.params[i].type) {
-                ss << ": " << stmt.params[i].type->lexeme;
+                ss << ": " << std::any_cast<std::string>(stmt.params[i].type->accept(*this));
             }
             if (i < stmt.params.size() - 1) {
                 ss << " ";
@@ -124,7 +124,7 @@ namespace ast {
         }
         ss << ") ";
         if (stmt.return_type) {
-            ss << stmt.return_type->lexeme << " ";
+            ss << std::any_cast<std::string>(stmt.return_type->accept(*this)) << " ";
         }
         ss << std::any_cast<std::string>(stmt.body->accept(*this)) << ")";
         return ss.str();
@@ -194,7 +194,7 @@ namespace ast {
         for (size_t i = 0; i < expr.params.size(); ++i) {
             ss << expr.params[i].name.lexeme;
             if (expr.params[i].type) {
-                ss << ": " << expr.params[i].type->lexeme;
+                ss << ": " << std::any_cast<std::string>(expr.params[i].type->accept(*this));
             }
             if (i < expr.params.size() - 1) {
                 ss << " ";
@@ -240,6 +240,20 @@ namespace ast {
 
     std::any AstPrinter::visit(class ThisExpr& expr) {
         return "this";
+    }
+
+    std::any AstPrinter::visit(class BaseType& type) {
+        return type.name.lexeme;
+    }
+
+    std::any AstPrinter::visit(class ArrayType& type) {
+        std::stringstream ss;
+        ss << "(array-type " << std::any_cast<std::string>(type.base->accept(*this));
+        if (type.size) {
+            ss << " " << std::any_cast<std::string>(type.size->accept(*this));
+        }
+        ss << ")";
+        return ss.str();
     }
 
 } // namespace ast

@@ -19,4 +19,8 @@ void NotaArray::set(long long index, Value value) {
     elements[index] = value;
 }
 
+long long NotaArray::size() {
+    return elements.size();
+}
+
 } // namespace nota

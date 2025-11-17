@@ -322,6 +322,32 @@ std::any Interpreter::visit(ast::VarDeclStmt &stmt) {
     if (stmt.initializer) {
         value = evaluate(*stmt.initializer);
     }
+
+    if (stmt.type) {
+        if (ast::ArrayType* array_type = dynamic_cast<ast::ArrayType*>(stmt.type.get())) {
+            if (array_type->size) {
+                Value size_val = evaluate(*array_type->size);
+                if (std::holds_alternative<long long>(size_val)) {
+                    long long size = std::get<long long>(size_val);
+                    if (std::holds_alternative<NotaArray *>(value)) {
+                        if (std::get<NotaArray *>(value)->size() > size) {
+                            throw std::runtime_error("Array initializer too large for static array.");
+                        }
+                    }
+                    std::vector<Value> elements(size, std::monostate());
+                    if (std::holds_alternative<NotaArray *>(value)) {
+                        for(int i = 0; i < std::get<NotaArray *>(value)->size(); ++i) {
+                            elements[i] = std::get<NotaArray *>(value)->get(i);
+                        }
+                    }
+                    value = new NotaArray(elements);
+                } else {
+                    throw std::runtime_error("Array size must be an integer.");
+                }
+            }
+        }
+    }
+
     environment->define(stmt.name.lexeme, value);
     return {};
 }

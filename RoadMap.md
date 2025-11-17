@@ -57,7 +57,7 @@ This document outlines the development roadmap for the Nota programming language
 
 - [x] **Arrays**
     - [x] Dynamic arrays (`int[]`)
-    - [ ] Static arrays (`int[10]`)
+    - [x] Static arrays (`int[10]`)
 - [x] **Classes**
     - [x] Class declaration (`class`)
     - [x] Member variables

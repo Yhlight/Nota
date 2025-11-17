@@ -12,6 +12,7 @@ class NotaArray {
 
     Value get(long long index);
     void set(long long index, Value value);
+    long long size();
 
   private:
     std::vector<Value> elements;

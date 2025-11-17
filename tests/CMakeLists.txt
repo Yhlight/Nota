@@ -9,6 +9,7 @@ add_executable(run_tests
     ArrayTest.cpp
     TestHelper.cpp
     ClassTest.cpp
+    StaticArrayTest.cpp
 )
 
 target_link_libraries(run_tests nota gtest_main)

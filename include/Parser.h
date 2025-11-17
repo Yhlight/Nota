@@ -61,6 +61,7 @@ namespace nota {
         std::unique_ptr<ast::Stmt> expression_statement();
         std::unique_ptr<ast::Stmt> block();
         std::unique_ptr<ast::Expr> expression();
+        std::unique_ptr<ast::Type> parse_type();
 
         // Pratt parser methods
         std::unique_ptr<ast::Expr> parse_precedence(Precedence precedence);

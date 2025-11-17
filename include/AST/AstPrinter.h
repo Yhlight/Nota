@@ -3,12 +3,13 @@
 
 #include "Stmt.h"
 #include "Expr.h"
+#include "Type.h"
 #include <string>
 
 namespace nota {
 namespace ast {
 
-    class AstPrinter : public StmtVisitor, public ExprVisitor {
+    class AstPrinter : public StmtVisitor, public ExprVisitor, public TypeVisitor {
     public:
         std::string print(const std::vector<std::unique_ptr<Stmt>>& statements);
 
@@ -38,6 +39,9 @@ namespace ast {
         std::any visit(class GetExpr& expr) override;
         std::any visit(class SetExpr& expr) override;
         std::any visit(class ThisExpr& expr) override;
+
+        std::any visit(class BaseType& type) override;
+        std::any visit(class ArrayType& type) override;
     };
 
 } // namespace ast

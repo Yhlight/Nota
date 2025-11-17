@@ -51,7 +51,7 @@ This document outlines the development roadmap for the Nota programming language
 - [x] **Scope Management**
     - [x] Global scope
     - [x] Block scope
-    - [ ] Function scope
+    - [x] Function scope
 
 ## Phase 4: Advanced Data Structures & OOP
 

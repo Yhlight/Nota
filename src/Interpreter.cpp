@@ -1,9 +1,24 @@
 #include "Interpreter.h"
+#include "NotaFunction.h"
+#include "Return.h"
+#include <chrono>
 #include <stdexcept>
 
 namespace nota {
 
-Interpreter::Interpreter() : globals(new Environment()), environment(globals) {}
+class Clock : public Callable {
+  public:
+    int arity() override { return 0; }
+    Value call(Interpreter &interpreter, std::vector<Value> arguments) override {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    }
+};
+
+Interpreter::Interpreter() : globals(new Environment()), environment(globals) {
+    globals->define("clock", new Clock());
+}
 
 void Interpreter::interpret(
     const std::vector<std::unique_ptr<ast::Stmt>> &statements) {
@@ -193,7 +208,25 @@ std::any Interpreter::visit(ast::PostfixExpr &expr) {
 }
 
 std::any Interpreter::visit(ast::CallExpr &expr) {
-    return Value{std::monostate()};
+    Value callee = evaluate(*expr.callee);
+
+    std::vector<Value> arguments;
+    for (const auto &arg : expr.arguments) {
+        arguments.push_back(evaluate(*arg));
+    }
+
+    if (std::holds_alternative<Callable *>(callee)) {
+        auto *function = std::get<Callable *>(callee);
+        if (arguments.size() != function->arity()) {
+            throw std::runtime_error("Expected " +
+                                     std::to_string(function->arity()) +
+                                     " arguments but got " +
+                                     std::to_string(arguments.size()) + ".");
+        }
+        return function->call(*this, arguments);
+    } else {
+        throw std::runtime_error("Can only call functions and classes.");
+    }
 }
 
 std::any Interpreter::visit(ast::LambdaExpr &expr) {
@@ -255,11 +288,17 @@ std::any Interpreter::visit(ast::MatchStmt &stmt) {
 }
 
 std::any Interpreter::visit(ast::FuncDeclStmt &stmt) {
+    auto function = new NotaFunction(&stmt, environment);
+    environment->define(stmt.name.lexeme, function);
     return {};
 }
 
 std::any Interpreter::visit(ast::ReturnStmt &stmt) {
-    return {};
+    Value value = std::monostate();
+    if (stmt.value) {
+        value = evaluate(*stmt.value);
+    }
+    throw Return(value);
 }
 
 } // namespace nota

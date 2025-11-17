@@ -6,6 +6,8 @@ add_library(nota
     AstPrinter.cpp
     Environment.cpp
     Interpreter.cpp
+    NotaFunction.cpp
+    Return.cpp
 )
 
 # Link the include directory to the library

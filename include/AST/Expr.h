@@ -3,6 +3,7 @@
 
 #include "../Token.h"
 #include <memory>
+#include <vector>
 
 namespace nota {
 namespace ast {
@@ -16,6 +17,7 @@ namespace ast {
         virtual R visit(class VariableExpr& expr) = 0;
         virtual R visit(class AssignExpr& expr) = 0;
         virtual R visit(class PostfixExpr& expr) = 0;
+        virtual R visit(class CallExpr& expr) = 0;
     };
 
     class Expr {
@@ -97,6 +99,19 @@ namespace ast {
 
         std::unique_ptr<Expr> left;
         Token op;
+    };
+
+    class CallExpr : public Expr {
+    public:
+        CallExpr(std::unique_ptr<Expr> callee, std::vector<std::unique_ptr<Expr>> arguments)
+            : callee(std::move(callee)), arguments(std::move(arguments)) {}
+
+        std::string accept(ExprVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> callee;
+        std::vector<std::unique_ptr<Expr>> arguments;
     };
 
 } // namespace ast

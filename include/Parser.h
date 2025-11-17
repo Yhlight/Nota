@@ -56,6 +56,7 @@ namespace nota {
         std::unique_ptr<ast::Stmt> do_while_statement();
         std::unique_ptr<ast::Stmt> for_statement();
         std::unique_ptr<ast::Stmt> match_statement();
+        std::unique_ptr<ast::Stmt> func_declaration();
         std::unique_ptr<ast::Stmt> expression_statement();
         std::unique_ptr<ast::Stmt> block();
         std::unique_ptr<ast::Expr> expression();
@@ -74,6 +75,7 @@ namespace nota {
         std::unique_ptr<ast::Expr> binary(std::unique_ptr<ast::Expr> left);
         std::unique_ptr<ast::Expr> assignment(std::unique_ptr<ast::Expr> left);
         std::unique_ptr<ast::Expr> postfix(std::unique_ptr<ast::Expr> left);
+        std::unique_ptr<ast::Expr> call(std::unique_ptr<ast::Expr> left);
 
         std::map<TokenType, ParseRule> rules;
     };

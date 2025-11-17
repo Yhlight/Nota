@@ -38,10 +38,10 @@ This document outlines the development roadmap for the Nota programming language
 
 ## Phase 3: Functions and Scope
 
-- [ ] **Functions**
-    - [ ] Function declaration and calls (`func`)
-    - [ ] Return statements
-    - [ ] Parameter lists with type annotations
+- [x] **Functions**
+    - [x] Function declaration and calls (`func`)
+    - [x] Return statements
+    - [x] Parameter lists with type annotations
 - [ ] **Lambda Functions**
     - [ ] Basic lambda syntax (`=>`)
 - [ ] **Scope Management**

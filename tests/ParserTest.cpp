@@ -342,3 +342,29 @@ TEST(ParserTest, MatchStmt) {
     std::string expected = "(match x (case 1 2 (block (var-decl a 1))) (case 3 (block (var-decl b 2))) (block (var-decl c 3)))";
     EXPECT_EQ(result, expected);
 }
+
+TEST(ParserTest, FuncDecl) {
+    std::string source = "func add(a: int, b: int): int\n return a + b\n end\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+    ast::AstPrinter printer;
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    std::string result = printer.print(statements);
+
+    std::string expected = "(func-decl add (a: int b: int) int (block (return (+ a b))))";
+    EXPECT_EQ(result, expected);
+}
+
+TEST(ParserTest, CallExpr) {
+    std::string source = "add(1, 2)\n";
+    Lexer lexer(source);
+    Parser parser(lexer);
+    ast::AstPrinter printer;
+
+    std::vector<std::unique_ptr<ast::Stmt>> statements = parser.parse();
+    std::string result = printer.print(statements);
+
+    std::string expected = "(call add 1 2)";
+    EXPECT_EQ(result, expected);
+}

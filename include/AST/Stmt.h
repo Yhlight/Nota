@@ -22,6 +22,8 @@ namespace ast {
         virtual R visit(class ForEachStmt& stmt) = 0;
         virtual R visit(class ForStmt& stmt) = 0;
         virtual R visit(class MatchStmt& stmt) = 0;
+        virtual R visit(class FuncDeclStmt& stmt) = 0;
+        virtual R visit(class ReturnStmt& stmt) = 0;
     };
 
     class Stmt {
@@ -158,6 +160,38 @@ namespace ast {
         std::unique_ptr<Expr> expression;
         std::vector<MatchCase> cases;
         std::unique_ptr<Stmt> else_branch;
+    };
+
+    struct Param {
+        Token name;
+        std::optional<Token> type;
+    };
+
+    class FuncDeclStmt : public Stmt {
+    public:
+        FuncDeclStmt(Token name, std::vector<Param> params, std::unique_ptr<Stmt> body, std::optional<Token> return_type)
+            : name(name), params(std::move(params)), body(std::move(body)), return_type(return_type) {}
+
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
+        }
+
+        Token name;
+        std::vector<Param> params;
+        std::unique_ptr<Stmt> body;
+        std::optional<Token> return_type;
+    };
+
+    class ReturnStmt : public Stmt {
+    public:
+        ReturnStmt(std::unique_ptr<Expr> value)
+            : value(std::move(value)) {}
+
+        std::string accept(StmtVisitor<std::string>& visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> value;
     };
 
 } // namespace ast

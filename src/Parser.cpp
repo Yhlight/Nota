@@ -8,7 +8,7 @@ namespace nota {
 
         // Initialize the rules map
         rules = {
-            {TokenType::LeftParen, {&Parser::grouping, nullptr, PREC_NONE}},
+            {TokenType::LeftParen, {&Parser::grouping, &Parser::call, PREC_CALL}},
             {TokenType::RightParen, {nullptr, nullptr, PREC_NONE}},
             {TokenType::LeftBrace, {nullptr, nullptr, PREC_NONE}},
             {TokenType::RightBrace, {nullptr, nullptr, PREC_NONE}},
@@ -90,6 +90,14 @@ namespace nota {
         }
         if (match(TokenType::Match)) {
             return match_statement();
+        }
+        if (match(TokenType::Func)) {
+            return func_declaration();
+        }
+        if (match(TokenType::Return)) {
+            auto value = expression();
+            consume(TokenType::Newline, "Expect newline after return value.");
+            return std::make_unique<ast::ReturnStmt>(std::move(value));
         }
 
         return expression_statement();
@@ -193,6 +201,40 @@ namespace nota {
         if (current_token.type == TokenType::Newline) advance();
 
         return std::make_unique<ast::MatchStmt>(std::move(expression), std::move(cases), std::move(else_branch));
+    }
+
+    std::unique_ptr<ast::Stmt> Parser::func_declaration() {
+        consume(TokenType::Identifier, "Expect function name.");
+        Token name = previous_token;
+
+        consume(TokenType::LeftParen, "Expect '(' after function name.");
+        std::vector<ast::Param> params;
+        if (current_token.type != TokenType::RightParen) {
+            do {
+                consume(TokenType::Identifier, "Expect parameter name.");
+                Token param_name = previous_token;
+                std::optional<Token> param_type;
+                if (match(TokenType::Colon)) {
+                    consume(TokenType::Identifier, "Expect parameter type.");
+                    param_type = previous_token;
+                }
+                params.push_back({param_name, param_type});
+            } while (match(TokenType::Comma));
+        }
+        consume(TokenType::RightParen, "Expect ')' after parameters.");
+
+        std::optional<Token> return_type;
+        if (match(TokenType::Colon)) {
+            consume(TokenType::Identifier, "Expect return type.");
+            return_type = previous_token;
+        }
+
+        consume(TokenType::Newline, "Expect newline after function signature.");
+        auto body = block();
+        consume(TokenType::End, "Expect 'end' after function body.");
+        if (current_token.type == TokenType::Newline) advance();
+
+        return std::make_unique<ast::FuncDeclStmt>(name, std::move(params), std::move(body), return_type);
     }
 
     std::unique_ptr<ast::Stmt> Parser::for_statement() {
@@ -324,6 +366,17 @@ namespace nota {
     std::unique_ptr<ast::Expr> Parser::postfix(std::unique_ptr<ast::Expr> left) {
         Token op = previous_token;
         return std::make_unique<ast::PostfixExpr>(std::move(left), op);
+    }
+
+    std::unique_ptr<ast::Expr> Parser::call(std::unique_ptr<ast::Expr> left) {
+        std::vector<std::unique_ptr<ast::Expr>> arguments;
+        if (current_token.type != TokenType::RightParen) {
+            do {
+                arguments.push_back(expression());
+            } while (match(TokenType::Comma));
+        }
+        consume(TokenType::RightParen, "Expect ')' after arguments.");
+        return std::make_unique<ast::CallExpr>(std::move(left), std::move(arguments));
     }
 
 } // namespace nota

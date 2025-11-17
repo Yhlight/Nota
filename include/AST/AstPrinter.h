@@ -21,6 +21,8 @@ namespace ast {
         std::string visit(class ForEachStmt& stmt) override;
         std::string visit(class ForStmt& stmt) override;
         std::string visit(class MatchStmt& stmt) override;
+        std::string visit(class FuncDeclStmt& stmt) override;
+        std::string visit(class ReturnStmt& stmt) override;
 
         std::string visit(class LiteralExpr& expr) override;
         std::string visit(class UnaryExpr& expr) override;
@@ -28,6 +30,7 @@ namespace ast {
         std::string visit(class VariableExpr& expr) override;
         std::string visit(class AssignExpr& expr) override;
         std::string visit(class PostfixExpr& expr) override;
+        std::string visit(class CallExpr& expr) override;
     };
 
 } // namespace ast

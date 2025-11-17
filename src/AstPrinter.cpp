@@ -142,5 +142,41 @@ namespace ast {
         return ss.str();
     }
 
+    std::string AstPrinter::visit(class FuncDeclStmt& stmt) {
+        std::stringstream ss;
+        ss << "(func-decl " << stmt.name.lexeme << " (";
+        for (size_t i = 0; i < stmt.params.size(); ++i) {
+            ss << stmt.params[i].name.lexeme;
+            if (stmt.params[i].type) {
+                ss << ": " << stmt.params[i].type->lexeme;
+            }
+            if (i < stmt.params.size() - 1) {
+                ss << " ";
+            }
+        }
+        ss << ") ";
+        if (stmt.return_type) {
+            ss << stmt.return_type->lexeme << " ";
+        }
+        ss << stmt.body->accept(*this) << ")";
+        return ss.str();
+    }
+
+    std::string AstPrinter::visit(class ReturnStmt& stmt) {
+        std::stringstream ss;
+        ss << "(return " << stmt.value->accept(*this) << ")";
+        return ss.str();
+    }
+
+    std::string AstPrinter::visit(class CallExpr& expr) {
+        std::stringstream ss;
+        ss << "(call " << expr.callee->accept(*this);
+        for (const auto& arg : expr.arguments) {
+            ss << " " << arg->accept(*this);
+        }
+        ss << ")";
+        return ss.str();
+    }
+
 } // namespace ast
 } // namespace nota

@@ -13,6 +13,8 @@ add_library(nota
     NotaArray.cpp
     NotaInstance.cpp
     NotaClass.cpp
+    Compiler.cpp
+    VM.cpp
 )
 
 # Link the include directory to the library

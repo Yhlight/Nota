@@ -77,10 +77,10 @@ This document outlines the development roadmap for the Nota programming language
 
 ## Phase 6: Bytecode VM
 
-- [ ] **Bytecode Generation**
-    - [ ] Design instruction set
+- [x] **Bytecode Generation**
+    - [x] Design instruction set
     - [ ] Compile AST to bytecode
-- [ ] **Virtual Machine**
-    - [ ] Stack-based execution
-    - [ ] Instruction dispatch loop
+- [x] **Virtual Machine**
+    - [x] Stack-based execution
+    - [x] Instruction dispatch loop
     - [ ] Garbage Collection (if needed)

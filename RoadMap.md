@@ -83,4 +83,4 @@ This document outlines the development roadmap for the Nota programming language
 - [x] **Virtual Machine**
     - [x] Stack-based execution
     - [x] Instruction dispatch loop
-    - [ ] Garbage Collection (if needed)
+    - [ ] Garbage Collection

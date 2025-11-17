@@ -41,10 +41,10 @@ std::any Compiler::visit(ast::LiteralExpr &expr) {
             emit_constant(expr.value.lexeme);
             break;
         case TokenType::True:
-            emit_constant(true);
+            emit_byte((uint8_t)OpCode::True);
             break;
         case TokenType::False:
-            emit_constant(false);
+            emit_byte((uint8_t)OpCode::False);
             break;
         default:
             break;
@@ -69,6 +69,24 @@ std::any Compiler::visit(ast::BinaryExpr &expr) {
         case TokenType::Slash:
             emit_byte((uint8_t)OpCode::Divide);
             break;
+        case TokenType::BangEqual:
+            emit_byte((uint8_t)OpCode::NotEqual);
+            break;
+        case TokenType::EqualEqual:
+            emit_byte((uint8_t)OpCode::Equal);
+            break;
+        case TokenType::Greater:
+            emit_byte((uint8_t)OpCode::Greater);
+            break;
+        case TokenType::GreaterEqual:
+            emit_byte((uint8_t)OpCode::GreaterEqual);
+            break;
+        case TokenType::Less:
+            emit_byte((uint8_t)OpCode::Less);
+            break;
+        case TokenType::LessEqual:
+            emit_byte((uint8_t)OpCode::LessEqual);
+            break;
         default:
             break;
     }
@@ -81,6 +99,9 @@ std::any Compiler::visit(ast::UnaryExpr &expr) {
     switch (expr.op.type) {
         case TokenType::Minus:
             emit_byte((uint8_t)OpCode::Negate);
+            break;
+        case TokenType::Bang:
+            emit_byte((uint8_t)OpCode::Not);
             break;
         default:
             break;

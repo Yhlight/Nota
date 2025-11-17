@@ -15,6 +15,15 @@ enum class OpCode : uint8_t {
     Subtract,
     Multiply,
     Divide,
+    True,
+    False,
+    Not,
+    Equal,
+    NotEqual,
+    Greater,
+    Less,
+    GreaterEqual,
+    LessEqual,
 };
 
 struct Chunk {

@@ -16,6 +16,7 @@ enum class InterpretResult {
 class VM {
 public:
     InterpretResult interpret(const Chunk &chunk);
+    Value pop();
 
 private:
     Chunk chunk;

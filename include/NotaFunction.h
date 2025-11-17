@@ -13,14 +13,16 @@ namespace nota {
 class NotaFunction : public Callable {
   public:
     NotaFunction(ast::FuncDeclStmt *declaration,
-                 std::shared_ptr<Environment> closure);
+                 std::shared_ptr<Environment> closure, bool is_initializer);
 
     int arity() override;
     Value call(Interpreter &interpreter, std::vector<Value> arguments) override;
+    NotaFunction *bind(class NotaInstance *instance);
 
   private:
     ast::FuncDeclStmt *declaration;
     std::shared_ptr<Environment> closure;
+    bool is_initializer;
 };
 
 } // namespace nota

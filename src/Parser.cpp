@@ -10,12 +10,12 @@ namespace nota {
         rules = {
             {TokenType::LeftParen, {&Parser::grouping, &Parser::call, PREC_CALL}},
             {TokenType::RightParen, {nullptr, nullptr, PREC_NONE}},
-            {TokenType::LeftBrace, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::LeftBrace, {nullptr, &Parser::initializer_list, PREC_CALL}},
             {TokenType::RightBrace, {nullptr, nullptr, PREC_NONE}},
             {TokenType::LeftBracket, {&Parser::array_literal, &Parser::subscript, PREC_CALL}},
             {TokenType::RightBracket, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Comma, {nullptr, nullptr, PREC_NONE}},
-            {TokenType::Dot, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::Dot, {nullptr, &Parser::get, PREC_CALL}},
             {TokenType::Semicolon, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Minus, {&Parser::unary, &Parser::binary, PREC_TERM}},
             {TokenType::Plus, {nullptr, &Parser::binary, PREC_TERM}},
@@ -39,6 +39,7 @@ namespace nota {
             {TokenType::Float, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::True, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::False, {&Parser::literal, nullptr, PREC_NONE}},
+            {TokenType::This, {&Parser::this_, nullptr, PREC_NONE}},
             {TokenType::Eof, {nullptr, nullptr, PREC_NONE}},
         };
 
@@ -95,6 +96,9 @@ namespace nota {
         }
         if (match(TokenType::Func)) {
             return func_declaration();
+        }
+        if (match(TokenType::Class)) {
+            return class_declaration();
         }
         if (match(TokenType::Return)) {
             auto value = expression();
@@ -239,6 +243,22 @@ namespace nota {
         return std::make_unique<ast::FuncDeclStmt>(name, std::move(params), std::move(body), return_type);
     }
 
+    std::unique_ptr<ast::Stmt> Parser::class_declaration() {
+        consume(TokenType::Identifier, "Expect class name.");
+        Token name = previous_token;
+        consume(TokenType::Newline, "Expect newline after class name.");
+
+        std::vector<std::unique_ptr<ast::FuncDeclStmt>> methods;
+        while(match(TokenType::Func)) {
+            methods.push_back(std::unique_ptr<ast::FuncDeclStmt>(dynamic_cast<ast::FuncDeclStmt*>(func_declaration().release())));
+        }
+
+        consume(TokenType::End, "Expect 'end' after class body.");
+        if (current_token.type == TokenType::Newline) advance();
+
+        return std::make_unique<ast::ClassDeclStmt>(name, std::move(methods));
+    }
+
     std::unique_ptr<ast::Stmt> Parser::for_statement() {
         bool is_let = match(TokenType::Let);
         if ((is_let || current_token.type == TokenType::Identifier) && lexer.peek() == ':') {
@@ -364,7 +384,7 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Expr> Parser::assignment(std::unique_ptr<ast::Expr> left) {
-        if (dynamic_cast<ast::VariableExpr*>(left.get()) || dynamic_cast<ast::SubscriptExpr*>(left.get())) {
+        if (dynamic_cast<ast::VariableExpr*>(left.get()) || dynamic_cast<ast::SubscriptExpr*>(left.get()) || dynamic_cast<ast::GetExpr*>(left.get())) {
             auto value = expression();
             return std::make_unique<ast::AssignExpr>(std::move(left), std::move(value));
         }
@@ -431,6 +451,27 @@ namespace nota {
         auto index = expression();
         consume(TokenType::RightBracket, "Expect ']' after subscript index.");
         return std::make_unique<ast::SubscriptExpr>(std::move(left), std::move(index));
+    }
+
+    std::unique_ptr<ast::Expr> Parser::get(std::unique_ptr<ast::Expr> left) {
+        consume(TokenType::Identifier, "Expect property name after '.'.");
+        Token name = previous_token;
+        return std::make_unique<ast::GetExpr>(std::move(left), name);
+    }
+
+    std::unique_ptr<ast::Expr> Parser::this_() {
+        return std::make_unique<ast::ThisExpr>(previous_token);
+    }
+
+    std::unique_ptr<ast::Expr> Parser::initializer_list(std::unique_ptr<ast::Expr> left) {
+        std::vector<std::unique_ptr<ast::Expr>> arguments;
+        if (current_token.type != TokenType::RightBrace) {
+            do {
+                arguments.push_back(expression());
+            } while (match(TokenType::Comma));
+        }
+        consume(TokenType::RightBrace, "Expect '}' after arguments.");
+        return std::make_unique<ast::CallExpr>(std::move(left), std::move(arguments));
     }
 
 } // namespace nota

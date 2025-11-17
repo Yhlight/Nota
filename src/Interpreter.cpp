@@ -1,6 +1,8 @@
 #include "Interpreter.h"
 #include "NotaFunction.h"
 #include "NotaArray.h"
+#include "NotaClass.h"
+#include "NotaInstance.h"
 #include "Return.h"
 #include <chrono>
 #include <stdexcept>
@@ -199,10 +201,17 @@ std::any Interpreter::visit(ast::VariableExpr &expr) {
 }
 
 std::any Interpreter::visit(ast::AssignExpr &expr) {
-    if (ast::SubscriptExpr *subscript = dynamic_cast<ast::SubscriptExpr *>(expr.name.get())) {
+    Value value = evaluate(*expr.value);
+    if (ast::GetExpr *get = dynamic_cast<ast::GetExpr *>(expr.name.get())) {
+        Value object = evaluate(*get->object);
+        if (std::holds_alternative<NotaInstance *>(object)) {
+            std::get<NotaInstance *>(object)->set(get->name, value);
+            return value;
+        }
+        throw std::runtime_error("Only instances have fields.");
+    } else if (ast::SubscriptExpr *subscript = dynamic_cast<ast::SubscriptExpr *>(expr.name.get())) {
         Value callee = evaluate(*subscript->callee);
         Value index = evaluate(*subscript->index);
-        Value value = evaluate(*expr.value);
 
         if (std::holds_alternative<NotaArray *>(callee)) {
             if (std::holds_alternative<long long>(index)) {
@@ -215,7 +224,6 @@ std::any Interpreter::visit(ast::AssignExpr &expr) {
             throw std::runtime_error("Can only subscript arrays.");
         }
     } else if (ast::VariableExpr *var = dynamic_cast<ast::VariableExpr *>(expr.name.get())) {
-        Value value = evaluate(*expr.value);
         environment->assign(var->name, value);
         return value;
     }
@@ -244,7 +252,16 @@ std::any Interpreter::visit(ast::CallExpr &expr) {
                                      std::to_string(arguments.size()) + ".");
         }
         return function->call(*this, arguments);
-    } else {
+    } else if(std::holds_alternative<NotaClass *>(callee)) {
+        auto *klass = std::get<NotaClass *>(callee);
+        if (arguments.size() != klass->arity()) {
+            throw std::runtime_error("Expected " +
+                                     std::to_string(klass->arity()) +
+                                     " arguments but got " +
+                                     std::to_string(arguments.size()) + ".");
+        }
+        return klass->call(*this, arguments);
+    }else {
         throw std::runtime_error("Can only call functions and classes.");
     }
 }
@@ -274,6 +291,30 @@ std::any Interpreter::visit(ast::SubscriptExpr &expr) {
     } else {
         throw std::runtime_error("Can only subscript arrays.");
     }
+}
+
+std::any Interpreter::visit(ast::GetExpr &expr) {
+    Value object = evaluate(*expr.object);
+    if (std::holds_alternative<NotaInstance *>(object)) {
+        return std::get<NotaInstance *>(object)->get(expr.name);
+    }
+
+    throw std::runtime_error("Only instances have properties.");
+}
+
+std::any Interpreter::visit(ast::SetExpr &expr) {
+    Value object = evaluate(*expr.object);
+    if (std::holds_alternative<NotaInstance *>(object)) {
+        Value value = evaluate(*expr.value);
+        std::get<NotaInstance *>(object)->set(expr.name, value);
+        return value;
+    }
+
+    throw std::runtime_error("Only instances have fields.");
+}
+
+std::any Interpreter::visit(ast::ThisExpr &expr) {
+    return environment->get(expr.keyword);
 }
 
 std::any Interpreter::visit(ast::VarDeclStmt &stmt) {
@@ -331,8 +372,22 @@ std::any Interpreter::visit(ast::MatchStmt &stmt) {
 }
 
 std::any Interpreter::visit(ast::FuncDeclStmt &stmt) {
-    auto function = new NotaFunction(&stmt, environment);
+    auto function = new NotaFunction(&stmt, environment, false);
     environment->define(stmt.name.lexeme, function);
+    return {};
+}
+
+std::any Interpreter::visit(ast::ClassDeclStmt &stmt) {
+    environment->define(stmt.name.lexeme, std::monostate());
+
+    std::map<std::string, NotaFunction *> methods;
+    for (const auto &method : stmt.methods) {
+        auto function = new NotaFunction(method.get(), environment, method->name.lexeme == "new");
+        methods[method->name.lexeme] = function;
+    }
+
+    auto klass = new NotaClass(stmt.name.lexeme, methods);
+    environment->assign(stmt.name, klass);
     return {};
 }
 

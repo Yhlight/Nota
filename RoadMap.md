@@ -58,13 +58,13 @@ This document outlines the development roadmap for the Nota programming language
 - [x] **Arrays**
     - [x] Dynamic arrays (`int[]`)
     - [ ] Static arrays (`int[10]`)
-- [ ] **Classes**
-    - [ ] Class declaration (`class`)
-    - [ ] Member variables
-    - [ ] Member functions
-    - [ ] `this` keyword
-    - [ ] Constructors (`new`)
-    - [ ] Object instantiation (default, positional, named)
+- [x] **Classes**
+    - [x] Class declaration (`class`)
+    - [x] Member variables
+    - [x] Member functions
+    - [x] `this` keyword
+    - [x] Constructors (`new`)
+    - [x] Object instantiation (default, positional, named)
 
 ## Phase 5: Modules and Packaging
 

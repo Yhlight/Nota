@@ -24,6 +24,7 @@ namespace ast {
         virtual std::any visit(class MatchStmt &stmt) = 0;
         virtual std::any visit(class FuncDeclStmt &stmt) = 0;
         virtual std::any visit(class ReturnStmt &stmt) = 0;
+        virtual std::any visit(class ClassDeclStmt &stmt) = 0;
     };
 
     class Stmt {
@@ -201,6 +202,19 @@ namespace ast {
         }
 
         std::unique_ptr<Expr> value;
+    };
+
+    class ClassDeclStmt : public Stmt {
+    public:
+        ClassDeclStmt(Token name, std::vector<std::unique_ptr<FuncDeclStmt>> methods)
+            : name(name), methods(std::move(methods)) {}
+
+        std::any accept(StmtVisitor &visitor) override {
+            return visitor.visit(*this);
+        }
+
+        Token name;
+        std::vector<std::unique_ptr<FuncDeclStmt>> methods;
     };
 
 } // namespace ast

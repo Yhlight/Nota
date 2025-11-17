@@ -130,6 +130,16 @@ namespace ast {
         return ss.str();
     }
 
+    std::any AstPrinter::visit(class ClassDeclStmt& stmt) {
+        std::stringstream ss;
+        ss << "(class-decl " << stmt.name.lexeme;
+        for (const auto& method : stmt.methods) {
+            ss << " " << std::any_cast<std::string>(method->accept(*this));
+        }
+        ss << ")";
+        return ss.str();
+    }
+
     std::any AstPrinter::visit(class ReturnStmt& stmt) {
         std::stringstream ss;
         ss << "(return " << std::any_cast<std::string>(stmt.value->accept(*this)) << ")";
@@ -214,6 +224,22 @@ namespace ast {
         std::stringstream ss;
         ss << "(subscript " << std::any_cast<std::string>(expr.callee->accept(*this)) << " " << std::any_cast<std::string>(expr.index->accept(*this)) << ")";
         return ss.str();
+    }
+
+    std::any AstPrinter::visit(class GetExpr& expr) {
+        std::stringstream ss;
+        ss << "(. " << std::any_cast<std::string>(expr.object->accept(*this)) << " " << expr.name.lexeme << ")";
+        return ss.str();
+    }
+
+    std::any AstPrinter::visit(class SetExpr& expr) {
+        std::stringstream ss;
+        ss << "(.= " << std::any_cast<std::string>(expr.object->accept(*this)) << " " << expr.name.lexeme << " " << std::any_cast<std::string>(expr.value->accept(*this)) << ")";
+        return ss.str();
+    }
+
+    std::any AstPrinter::visit(class ThisExpr& expr) {
+        return "this";
     }
 
 } // namespace ast

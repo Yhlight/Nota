@@ -22,6 +22,7 @@ namespace nota {
         {"true", TokenType::True},
         {"false", TokenType::False},
         {"end", TokenType::End},
+        {"this", TokenType::This},
     };
 
     Lexer::Lexer(const std::string& source)

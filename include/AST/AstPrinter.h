@@ -23,6 +23,7 @@ namespace ast {
         std::any visit(class MatchStmt& stmt) override;
         std::any visit(class FuncDeclStmt& stmt) override;
         std::any visit(class ReturnStmt& stmt) override;
+        std::any visit(class ClassDeclStmt& stmt) override;
 
         std::any visit(class LiteralExpr& expr) override;
         std::any visit(class UnaryExpr& expr) override;
@@ -34,6 +35,9 @@ namespace ast {
         std::any visit(class LambdaExpr& expr) override;
         std::any visit(class ArrayLiteralExpr& expr) override;
         std::any visit(class SubscriptExpr& expr) override;
+        std::any visit(class GetExpr& expr) override;
+        std::any visit(class SetExpr& expr) override;
+        std::any visit(class ThisExpr& expr) override;
     };
 
 } // namespace ast

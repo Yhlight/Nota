@@ -30,6 +30,9 @@ namespace ast {
         virtual std::any visit(class LambdaExpr &expr) = 0;
         virtual std::any visit(class ArrayLiteralExpr &expr) = 0;
         virtual std::any visit(class SubscriptExpr &expr) = 0;
+        virtual std::any visit(class GetExpr &expr) = 0;
+        virtual std::any visit(class SetExpr &expr) = 0;
+        virtual std::any visit(class ThisExpr &expr) = 0;
     };
 
     class Expr {
@@ -166,6 +169,45 @@ namespace ast {
 
         std::unique_ptr<Expr> callee;
         std::unique_ptr<Expr> index;
+    };
+
+    class GetExpr : public Expr {
+    public:
+        GetExpr(std::unique_ptr<Expr> object, Token name)
+            : object(std::move(object)), name(name) {}
+
+        std::any accept(ExprVisitor &visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> object;
+        Token name;
+    };
+
+    class SetExpr : public Expr {
+    public:
+        SetExpr(std::unique_ptr<Expr> object, Token name,
+                std::unique_ptr<Expr> value)
+            : object(std::move(object)), name(name), value(std::move(value)) {}
+
+        std::any accept(ExprVisitor &visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> object;
+        Token name;
+        std::unique_ptr<Expr> value;
+    };
+
+    class ThisExpr : public Expr {
+    public:
+        ThisExpr(Token keyword) : keyword(keyword) {}
+
+        std::any accept(ExprVisitor &visitor) override {
+            return visitor.visit(*this);
+        }
+
+        Token keyword;
     };
 
 } // namespace ast

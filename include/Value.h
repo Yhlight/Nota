@@ -10,10 +10,12 @@ namespace nota {
 class Interpreter;
 class Callable;
 class NotaArray;
+class NotaClass;
+class NotaInstance;
 
 using Value =
     std::variant<std::monostate, bool, long long, double, std::string,
-                 Callable *, NotaArray *>;
+                 Callable *, NotaArray *, NotaClass *, NotaInstance *>;
 
 class Callable {
   public:

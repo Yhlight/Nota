@@ -4,8 +4,8 @@
 namespace nota {
 
 NotaFunction::NotaFunction(ast::FuncDeclStmt *declaration,
-                           std::shared_ptr<Environment> closure)
-    : declaration(declaration), closure(closure) {}
+                           std::shared_ptr<Environment> closure, bool is_initializer)
+    : declaration(declaration), closure(closure), is_initializer(is_initializer) {}
 
 int NotaFunction::arity() { return declaration->params.size(); }
 
@@ -24,7 +24,18 @@ Value NotaFunction::call(Interpreter &interpreter,
         return returnValue.value;
     }
 
+    if (is_initializer) {
+        Token this_token{TokenType::This, "this", 0, 0};
+        return closure->get(this_token);
+    }
+
     return std::monostate();
+}
+
+NotaFunction *NotaFunction::bind(NotaInstance *instance) {
+    auto environment = std::make_shared<Environment>(closure);
+    environment->define("this", instance);
+    return new NotaFunction(declaration, environment, is_initializer);
 }
 
 } // namespace nota

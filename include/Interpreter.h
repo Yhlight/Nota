@@ -27,6 +27,9 @@ class Interpreter : public ast::ExprVisitor, public ast::StmtVisitor {
     std::any visit(ast::LambdaExpr &expr) override;
     std::any visit(ast::ArrayLiteralExpr &expr) override;
     std::any visit(ast::SubscriptExpr &expr) override;
+    std::any visit(ast::GetExpr &expr) override;
+    std::any visit(ast::SetExpr &expr) override;
+    std::any visit(ast::ThisExpr &expr) override;
 
     std::any visit(ast::VarDeclStmt &stmt) override;
     std::any visit(ast::BlockStmt &stmt) override;
@@ -39,11 +42,13 @@ class Interpreter : public ast::ExprVisitor, public ast::StmtVisitor {
     std::any visit(ast::MatchStmt &stmt) override;
     std::any visit(ast::FuncDeclStmt &stmt) override;
     std::any visit(ast::ReturnStmt &stmt) override;
+    std::any visit(ast::ClassDeclStmt &stmt) override;
 
     void execute_block(const std::vector<std::unique_ptr<ast::Stmt>> &statements,
                        std::shared_ptr<Environment> environment);
 
   private:
+    friend class NotaFunction;
     Value evaluate(ast::Expr &expr);
     void execute(ast::Stmt &stmt);
 

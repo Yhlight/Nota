@@ -8,6 +8,7 @@ add_executable(run_tests
     InterpreterTest.cpp
     ArrayTest.cpp
     TestHelper.cpp
+    ClassTest.cpp
 )
 
 target_link_libraries(run_tests nota gtest_main)

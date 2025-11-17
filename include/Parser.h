@@ -71,12 +71,14 @@ namespace nota {
         std::unique_ptr<ast::Expr> grouping();
         std::unique_ptr<ast::Expr> variable();
         std::unique_ptr<ast::Expr> lambda_expression();
+        std::unique_ptr<ast::Expr> array_literal();
 
         // Infix parse functions
         std::unique_ptr<ast::Expr> binary(std::unique_ptr<ast::Expr> left);
         std::unique_ptr<ast::Expr> assignment(std::unique_ptr<ast::Expr> left);
         std::unique_ptr<ast::Expr> postfix(std::unique_ptr<ast::Expr> left);
         std::unique_ptr<ast::Expr> call(std::unique_ptr<ast::Expr> left);
+        std::unique_ptr<ast::Expr> subscript(std::unique_ptr<ast::Expr> left);
 
         std::map<TokenType, ParseRule> rules;
     };

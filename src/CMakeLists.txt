@@ -8,6 +8,7 @@ add_library(nota
     Interpreter.cpp
     NotaFunction.cpp
     Return.cpp
+    NotaArray.cpp
 )
 
 # Link the include directory to the library

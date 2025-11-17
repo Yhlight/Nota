@@ -32,6 +32,8 @@ namespace ast {
         std::any visit(class PostfixExpr& expr) override;
         std::any visit(class CallExpr& expr) override;
         std::any visit(class LambdaExpr& expr) override;
+        std::any visit(class ArrayLiteralExpr& expr) override;
+        std::any visit(class SubscriptExpr& expr) override;
     };
 
 } // namespace ast

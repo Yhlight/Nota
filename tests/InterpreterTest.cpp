@@ -1,16 +1,6 @@
 #include "gtest/gtest.h"
-#include "Lexer.h"
-#include "Parser.h"
-#include "Interpreter.h"
+#include "TestHelper.h"
 #include <vector>
-
-void interpret(const std::string& source) {
-    nota::Lexer lexer(source);
-    nota::Parser parser(lexer);
-    auto stmts = parser.parse();
-    nota::Interpreter interpreter;
-    interpreter.interpret(stmts);
-}
 
 TEST(InterpreterTest, VarDeclAndAssignment) {
     std::string source = "let a = 10\nlet b = a + 5\n";

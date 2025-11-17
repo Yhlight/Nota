@@ -158,7 +158,7 @@ namespace ast {
 
     std::any AstPrinter::visit(class AssignExpr& expr) {
         std::stringstream ss;
-        ss << "(assign " << expr.name.lexeme << " " << std::any_cast<std::string>(expr.value->accept(*this)) << ")";
+        ss << "(assign " << std::any_cast<std::string>(expr.name->accept(*this)) << " " << std::any_cast<std::string>(expr.value->accept(*this)) << ")";
         return ss.str();
     }
 
@@ -197,6 +197,22 @@ namespace ast {
             ss << std::any_cast<std::string>(std::get<std::unique_ptr<Stmt>>(expr.body)->accept(*this));
         }
         ss << ")";
+        return ss.str();
+    }
+
+    std::any AstPrinter::visit(class ArrayLiteralExpr& expr) {
+        std::stringstream ss;
+        ss << "(array";
+        for (const auto& element : expr.elements) {
+            ss << " " << std::any_cast<std::string>(element->accept(*this));
+        }
+        ss << ")";
+        return ss.str();
+    }
+
+    std::any AstPrinter::visit(class SubscriptExpr& expr) {
+        std::stringstream ss;
+        ss << "(subscript " << std::any_cast<std::string>(expr.callee->accept(*this)) << " " << std::any_cast<std::string>(expr.index->accept(*this)) << ")";
         return ss.str();
     }
 

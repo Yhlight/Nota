@@ -25,6 +25,8 @@ class Interpreter : public ast::ExprVisitor, public ast::StmtVisitor {
     std::any visit(ast::PostfixExpr &expr) override;
     std::any visit(ast::CallExpr &expr) override;
     std::any visit(ast::LambdaExpr &expr) override;
+    std::any visit(ast::ArrayLiteralExpr &expr) override;
+    std::any visit(ast::SubscriptExpr &expr) override;
 
     std::any visit(ast::VarDeclStmt &stmt) override;
     std::any visit(ast::BlockStmt &stmt) override;

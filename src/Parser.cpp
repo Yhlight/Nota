@@ -12,6 +12,8 @@ namespace nota {
             {TokenType::RightParen, {nullptr, nullptr, PREC_NONE}},
             {TokenType::LeftBrace, {nullptr, nullptr, PREC_NONE}},
             {TokenType::RightBrace, {nullptr, nullptr, PREC_NONE}},
+            {TokenType::LeftBracket, {&Parser::array_literal, &Parser::subscript, PREC_CALL}},
+            {TokenType::RightBracket, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Comma, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Dot, {nullptr, nullptr, PREC_NONE}},
             {TokenType::Semicolon, {nullptr, nullptr, PREC_NONE}},
@@ -296,6 +298,9 @@ namespace nota {
     std::unique_ptr<ast::Stmt> Parser::block() {
         std::vector<std::unique_ptr<ast::Stmt>> statements;
         while (current_token.type != TokenType::End && current_token.type != TokenType::Else && current_token.type != TokenType::While && current_token.type != TokenType::Eof) {
+            if (match(TokenType::Newline)) {
+                continue;
+            }
             statements.push_back(statement());
         }
         return std::make_unique<ast::BlockStmt>(std::move(statements));
@@ -359,9 +364,9 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Expr> Parser::assignment(std::unique_ptr<ast::Expr> left) {
-        if (auto var = dynamic_cast<ast::VariableExpr*>(left.get())) {
+        if (dynamic_cast<ast::VariableExpr*>(left.get()) || dynamic_cast<ast::SubscriptExpr*>(left.get())) {
             auto value = expression();
-            return std::make_unique<ast::AssignExpr>(var->name, std::move(value));
+            return std::make_unique<ast::AssignExpr>(std::move(left), std::move(value));
         }
 
         throw std::runtime_error("Invalid assignment target.");
@@ -409,6 +414,23 @@ namespace nota {
         }
 
         return std::make_unique<ast::LambdaExpr>(std::move(params), std::move(body));
+    }
+
+    std::unique_ptr<ast::Expr> Parser::array_literal() {
+        std::vector<std::unique_ptr<ast::Expr>> elements;
+        if (current_token.type != TokenType::RightBracket) {
+            do {
+                elements.push_back(expression());
+            } while (match(TokenType::Comma));
+        }
+        consume(TokenType::RightBracket, "Expect ']' after array elements.");
+        return std::make_unique<ast::ArrayLiteralExpr>(std::move(elements));
+    }
+
+    std::unique_ptr<ast::Expr> Parser::subscript(std::unique_ptr<ast::Expr> left) {
+        auto index = expression();
+        consume(TokenType::RightBracket, "Expect ']' after subscript index.");
+        return std::make_unique<ast::SubscriptExpr>(std::move(left), std::move(index));
     }
 
 } // namespace nota

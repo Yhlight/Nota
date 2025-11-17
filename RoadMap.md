@@ -55,8 +55,8 @@ This document outlines the development roadmap for the Nota programming language
 
 ## Phase 4: Advanced Data Structures & OOP
 
-- [ ] **Arrays**
-    - [ ] Dynamic arrays (`int[]`)
+- [x] **Arrays**
+    - [x] Dynamic arrays (`int[]`)
     - [ ] Static arrays (`int[10]`)
 - [ ] **Classes**
     - [ ] Class declaration (`class`)

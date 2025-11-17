@@ -1,5 +1,6 @@
 #include "Interpreter.h"
 #include "NotaFunction.h"
+#include "NotaArray.h"
 #include "Return.h"
 #include <chrono>
 #include <stdexcept>
@@ -198,9 +199,28 @@ std::any Interpreter::visit(ast::VariableExpr &expr) {
 }
 
 std::any Interpreter::visit(ast::AssignExpr &expr) {
-    Value value = evaluate(*expr.value);
-    environment->assign(expr.name, value);
-    return value;
+    if (ast::SubscriptExpr *subscript = dynamic_cast<ast::SubscriptExpr *>(expr.name.get())) {
+        Value callee = evaluate(*subscript->callee);
+        Value index = evaluate(*subscript->index);
+        Value value = evaluate(*expr.value);
+
+        if (std::holds_alternative<NotaArray *>(callee)) {
+            if (std::holds_alternative<long long>(index)) {
+                std::get<NotaArray *>(callee)->set(std::get<long long>(index), value);
+                return value;
+            } else {
+                throw std::runtime_error("Array index must be an integer.");
+            }
+        } else {
+            throw std::runtime_error("Can only subscript arrays.");
+        }
+    } else if (ast::VariableExpr *var = dynamic_cast<ast::VariableExpr *>(expr.name.get())) {
+        Value value = evaluate(*expr.value);
+        environment->assign(var->name, value);
+        return value;
+    }
+
+    throw std::runtime_error("Invalid assignment target.");
 }
 
 std::any Interpreter::visit(ast::PostfixExpr &expr) {
@@ -231,6 +251,29 @@ std::any Interpreter::visit(ast::CallExpr &expr) {
 
 std::any Interpreter::visit(ast::LambdaExpr &expr) {
     return Value{std::monostate()};
+}
+
+std::any Interpreter::visit(ast::ArrayLiteralExpr &expr) {
+    std::vector<Value> elements;
+    for (const auto &element : expr.elements) {
+        elements.push_back(evaluate(*element));
+    }
+    return Value{new NotaArray(elements)};
+}
+
+std::any Interpreter::visit(ast::SubscriptExpr &expr) {
+    Value callee = evaluate(*expr.callee);
+    Value index = evaluate(*expr.index);
+
+    if (std::holds_alternative<NotaArray *>(callee)) {
+        if (std::holds_alternative<long long>(index)) {
+            return Value{std::get<NotaArray *>(callee)->get(std::get<long long>(index))};
+        } else {
+            throw std::runtime_error("Array index must be an integer.");
+        }
+    } else {
+        throw std::runtime_error("Can only subscript arrays.");
+    }
 }
 
 std::any Interpreter::visit(ast::VarDeclStmt &stmt) {

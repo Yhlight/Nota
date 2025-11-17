@@ -28,6 +28,8 @@ namespace ast {
         virtual std::any visit(class PostfixExpr &expr) = 0;
         virtual std::any visit(class CallExpr &expr) = 0;
         virtual std::any visit(class LambdaExpr &expr) = 0;
+        virtual std::any visit(class ArrayLiteralExpr &expr) = 0;
+        virtual std::any visit(class SubscriptExpr &expr) = 0;
     };
 
     class Expr {
@@ -88,14 +90,14 @@ namespace ast {
 
     class AssignExpr : public Expr {
     public:
-        AssignExpr(Token name, std::unique_ptr<Expr> value)
-            : name(name), value(std::move(value)) {}
+        AssignExpr(std::unique_ptr<Expr> name, std::unique_ptr<Expr> value)
+            : name(std::move(name)), value(std::move(value)) {}
 
         std::any accept(ExprVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
-        Token name;
+        std::unique_ptr<Expr> name;
         std::unique_ptr<Expr> value;
     };
 
@@ -139,6 +141,31 @@ namespace ast {
 
         std::vector<Param> params;
         std::variant<std::unique_ptr<Expr>, std::unique_ptr<Stmt>> body;
+    };
+
+    class ArrayLiteralExpr : public Expr {
+    public:
+        ArrayLiteralExpr(std::vector<std::unique_ptr<Expr>> elements)
+            : elements(std::move(elements)) {}
+
+        std::any accept(ExprVisitor &visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::vector<std::unique_ptr<Expr>> elements;
+    };
+
+    class SubscriptExpr : public Expr {
+    public:
+        SubscriptExpr(std::unique_ptr<Expr> callee, std::unique_ptr<Expr> index)
+            : callee(std::move(callee)), index(std::move(index)) {}
+
+        std::any accept(ExprVisitor &visitor) override {
+            return visitor.visit(*this);
+        }
+
+        std::unique_ptr<Expr> callee;
+        std::unique_ptr<Expr> index;
     };
 
 } // namespace ast

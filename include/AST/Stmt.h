@@ -3,6 +3,7 @@
 
 #include "../Token.h"
 #include "Expr.h"
+#include <any>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -10,34 +11,34 @@
 namespace nota {
 namespace ast {
 
-    template<typename R>
     class StmtVisitor {
     public:
-        virtual R visit(class VarDeclStmt& stmt) = 0;
-        virtual R visit(class BlockStmt& stmt) = 0;
-        virtual R visit(class IfStmt& stmt) = 0;
-        virtual R visit(class WhileStmt& stmt) = 0;
-        virtual R visit(class DoWhileStmt& stmt) = 0;
-        virtual R visit(class ExpressionStmt& stmt) = 0;
-        virtual R visit(class ForEachStmt& stmt) = 0;
-        virtual R visit(class ForStmt& stmt) = 0;
-        virtual R visit(class MatchStmt& stmt) = 0;
-        virtual R visit(class FuncDeclStmt& stmt) = 0;
-        virtual R visit(class ReturnStmt& stmt) = 0;
+        virtual std::any visit(class VarDeclStmt &stmt) = 0;
+        virtual std::any visit(class BlockStmt &stmt) = 0;
+        virtual std::any visit(class IfStmt &stmt) = 0;
+        virtual std::any visit(class WhileStmt &stmt) = 0;
+        virtual std::any visit(class DoWhileStmt &stmt) = 0;
+        virtual std::any visit(class ExpressionStmt &stmt) = 0;
+        virtual std::any visit(class ForEachStmt &stmt) = 0;
+        virtual std::any visit(class ForStmt &stmt) = 0;
+        virtual std::any visit(class MatchStmt &stmt) = 0;
+        virtual std::any visit(class FuncDeclStmt &stmt) = 0;
+        virtual std::any visit(class ReturnStmt &stmt) = 0;
     };
 
     class Stmt {
     public:
         virtual ~Stmt() = default;
-        virtual std::string accept(StmtVisitor<std::string>& visitor) = 0;
+        virtual std::any accept(StmtVisitor &visitor) = 0;
     };
 
     class VarDeclStmt : public Stmt {
     public:
-        VarDeclStmt(Token name, std::optional<Token> type, std::unique_ptr<Expr> initializer)
+        VarDeclStmt(Token name, std::optional<Token> type,
+                    std::unique_ptr<Expr> initializer)
             : name(name), type(type), initializer(std::move(initializer)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -51,7 +52,7 @@ namespace ast {
         BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
             : statements(std::move(statements)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -60,10 +61,13 @@ namespace ast {
 
     class IfStmt : public Stmt {
     public:
-        IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> then_branch, std::unique_ptr<Stmt> else_branch)
-            : condition(std::move(condition)), then_branch(std::move(then_branch)), else_branch(std::move(else_branch)) {}
+        IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> then_branch,
+               std::unique_ptr<Stmt> else_branch)
+            : condition(std::move(condition)),
+              then_branch(std::move(then_branch)),
+              else_branch(std::move(else_branch)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -77,7 +81,7 @@ namespace ast {
         WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
             : condition(std::move(condition)), body(std::move(body)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -90,7 +94,7 @@ namespace ast {
         DoWhileStmt(std::unique_ptr<Stmt> body, std::unique_ptr<Expr> condition)
             : body(std::move(body)), condition(std::move(condition)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -103,7 +107,7 @@ namespace ast {
         ExpressionStmt(std::unique_ptr<Expr> expression)
             : expression(std::move(expression)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -112,10 +116,12 @@ namespace ast {
 
     class ForEachStmt : public Stmt {
     public:
-        ForEachStmt(Token variable, std::unique_ptr<Expr> container, std::unique_ptr<Stmt> body)
-            : variable(variable), container(std::move(container)), body(std::move(body)) {}
+        ForEachStmt(Token variable, std::unique_ptr<Expr> container,
+                    std::unique_ptr<Stmt> body)
+            : variable(variable), container(std::move(container)),
+              body(std::move(body)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -126,10 +132,14 @@ namespace ast {
 
     class ForStmt : public Stmt {
     public:
-        ForStmt(std::unique_ptr<Stmt> initializer, std::unique_ptr<Expr> condition, std::unique_ptr<Expr> increment, std::unique_ptr<Stmt> body)
-            : initializer(std::move(initializer)), condition(std::move(condition)), increment(std::move(increment)), body(std::move(body)) {}
+        ForStmt(std::unique_ptr<Stmt> initializer,
+                std::unique_ptr<Expr> condition, std::unique_ptr<Expr> increment,
+                std::unique_ptr<Stmt> body)
+            : initializer(std::move(initializer)),
+              condition(std::move(condition)), increment(std::move(increment)),
+              body(std::move(body)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -141,7 +151,8 @@ namespace ast {
 
     class MatchCase {
     public:
-        MatchCase(std::vector<std::unique_ptr<Expr>> values, std::unique_ptr<Stmt> body)
+        MatchCase(std::vector<std::unique_ptr<Expr>> values,
+                  std::unique_ptr<Stmt> body)
             : values(std::move(values)), body(std::move(body)) {}
 
         std::vector<std::unique_ptr<Expr>> values;
@@ -150,10 +161,12 @@ namespace ast {
 
     class MatchStmt : public Stmt {
     public:
-        MatchStmt(std::unique_ptr<Expr> expression, std::vector<MatchCase> cases, std::unique_ptr<Stmt> else_branch)
-            : expression(std::move(expression)), cases(std::move(cases)), else_branch(std::move(else_branch)) {}
+        MatchStmt(std::unique_ptr<Expr> expression, std::vector<MatchCase> cases,
+                  std::unique_ptr<Stmt> else_branch)
+            : expression(std::move(expression)), cases(std::move(cases)),
+              else_branch(std::move(else_branch)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -164,10 +177,12 @@ namespace ast {
 
     class FuncDeclStmt : public Stmt {
     public:
-        FuncDeclStmt(Token name, std::vector<Param> params, std::unique_ptr<Stmt> body, std::optional<Token> return_type)
-            : name(name), params(std::move(params)), body(std::move(body)), return_type(return_type) {}
+        FuncDeclStmt(Token name, std::vector<Param> params,
+                     std::unique_ptr<Stmt> body, std::optional<Token> return_type)
+            : name(name), params(std::move(params)), body(std::move(body)),
+              return_type(return_type) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 
@@ -179,10 +194,9 @@ namespace ast {
 
     class ReturnStmt : public Stmt {
     public:
-        ReturnStmt(std::unique_ptr<Expr> value)
-            : value(std::move(value)) {}
+        ReturnStmt(std::unique_ptr<Expr> value) : value(std::move(value)) {}
 
-        std::string accept(StmtVisitor<std::string>& visitor) override {
+        std::any accept(StmtVisitor &visitor) override {
             return visitor.visit(*this);
         }
 

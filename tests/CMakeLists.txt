@@ -5,6 +5,7 @@ add_executable(run_tests
     LexerOperatorsTest.cpp
     ParserTest.cpp
     LambdaParserTest.cpp
+    InterpreterTest.cpp
 )
 
 target_link_libraries(run_tests nota gtest_main)

@@ -4,6 +4,8 @@ add_library(nota
     Lexer.cpp
     Parser.cpp
     AstPrinter.cpp
+    Environment.cpp
+    Interpreter.cpp
 )
 
 # Link the include directory to the library

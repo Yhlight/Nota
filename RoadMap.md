@@ -36,7 +36,7 @@ This document outlines the development roadmap for the Nota programming language
     - [x] C-style `for` loops
     - [x] `for-each` loops
 
-## Phase 3: Functions and Scope
+## Phase 3: Functions, Scope, and Interpreter
 
 - [x] **Functions**
     - [x] Function declaration and calls (`func`)
@@ -44,10 +44,14 @@ This document outlines the development roadmap for the Nota programming language
     - [x] Parameter lists with type annotations
 - [x] **Lambda Functions**
     - [x] Basic lambda syntax (`=>`)
-- [ ] **Scope Management**
-    - [ ] Global scope
+- [x] **Interpreter**
+    - [x] Tree-walk interpreter foundation
+    - [x] Expression evaluation
+    - [x] Statement execution
+- [x] **Scope Management**
+    - [x] Global scope
+    - [x] Block scope
     - [ ] Function scope
-    - [ ] Block scope
 
 ## Phase 4: Advanced Data Structures & OOP
 

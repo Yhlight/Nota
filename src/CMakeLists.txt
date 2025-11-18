@@ -6,6 +6,8 @@ add_library(nota_core
     parser/Parser.cpp
     vm/Chunk.cpp
     vm/Disassembler.cpp
+    vm/Object.cpp
+    vm/Value.cpp
     vm/VM.cpp
 )
 

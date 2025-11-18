@@ -1,10 +1,8 @@
 #pragma once
 
 #include "OpCode.h"
+#include "Value.h"
 #include <vector>
-#include <variant>
-
-using Value = std::variant<double, bool, std::nullptr_t>;
 
 class Chunk {
 public:

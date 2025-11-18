@@ -3,6 +3,8 @@
 #include "Chunk.h"
 #include <vector>
 
+class Object;
+
 enum class InterpretResult {
     OK,
     COMPILE_ERROR,
@@ -12,9 +14,13 @@ enum class InterpretResult {
 class VM {
 public:
     VM();
+    ~VM();
     InterpretResult interpret(const Chunk& chunk);
 
 private:
+    template <typename T, typename... Args>
+    T* allocate_object(Args&&... args);
+
     InterpretResult run();
 
     void push(Value value);
@@ -23,4 +29,5 @@ private:
     const Chunk* chunk_;
     const uint8_t* ip_;
     std::vector<Value> stack_;
+    Object* objects_ = nullptr;
 };

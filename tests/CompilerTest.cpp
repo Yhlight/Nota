@@ -119,6 +119,28 @@ TEST_F(CompilerTest, TestGlobalVariable) {
     EXPECT_EQ(std::get<long long>(result), 10);
 }
 
+TEST_F(CompilerTest, TestLogicalAnd) {
+    nota::Value result = run_expr("true && false");
+    EXPECT_FALSE(std::get<bool>(result));
+}
+
+TEST_F(CompilerTest, TestLogicalAndShortCircuit) {
+    run_stmt("mut a = 10\nfalse && (a = 20)");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 10);
+}
+
+TEST_F(CompilerTest, TestLogicalOr) {
+    nota::Value result = run_expr("true || false");
+    EXPECT_TRUE(std::get<bool>(result));
+}
+
+TEST_F(CompilerTest, TestLogicalOrShortCircuit) {
+    run_stmt("mut a = 10\ntrue || (a = 20)");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 10);
+}
+
 TEST_F(CompilerTest, TestGlobalVariableAssignment) {
     run_stmt("mut a = 10");
     run_stmt("a = 20");

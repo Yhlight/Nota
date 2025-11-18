@@ -80,6 +80,29 @@ std::any Compiler::visit(ast::LiteralExpr &expr) {
 }
 
 std::any Compiler::visit(ast::BinaryExpr &expr) {
+    switch (expr.op.type) {
+        case TokenType::AmpersandAmpersand: {
+            expr.left->accept(*this);
+            size_t end_jump = emit_jump((uint8_t)OpCode::JumpIfFalse);
+            emit_byte((uint8_t)OpCode::Pop);
+            expr.right->accept(*this);
+            patch_jump(end_jump);
+            return {};
+        }
+        case TokenType::PipePipe: {
+            expr.left->accept(*this);
+            size_t else_jump = emit_jump((uint8_t)OpCode::JumpIfFalse);
+            size_t end_jump = emit_jump((uint8_t)OpCode::Jump);
+            patch_jump(else_jump);
+            emit_byte((uint8_t)OpCode::Pop);
+            expr.right->accept(*this);
+            patch_jump(end_jump);
+            return {};
+        }
+        default:
+            break;
+    }
+
     expr.left->accept(*this);
     expr.right->accept(*this);
 

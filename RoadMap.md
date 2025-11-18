@@ -80,7 +80,7 @@ This document outlines the development roadmap for the Nota programming language
 - [x] **Bytecode Generation**
     - [x] Design instruction set
     - [x] Compile AST to bytecode
-        - [x] Logical and comparison operators
+        - [x] Logical and comparison operators (including short-circuiting)
         - [x] Variable declaration and access (`let`, `mut`)
         - [x] Assignment expressions
         - [x] String operations

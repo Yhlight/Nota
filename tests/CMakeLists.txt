@@ -7,7 +7,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-add_executable(nota_tests main_test.cpp Lexer_test.cpp)
+add_executable(nota_tests
+    main_test.cpp
+    Lexer_test.cpp
+    AST_test.cpp
+)
+
 target_link_libraries(nota_tests
     GTest::gtest_main
     nota_core

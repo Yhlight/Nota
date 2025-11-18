@@ -78,7 +78,12 @@ InterpretResult VM::interpret(const Chunk &chunk) {
             case OpCode::Not: {
                 Value value = stack.back();
                 stack.pop_back();
-                stack.push_back(is_falsey(value));
+                stack.push_back(std::visit([](auto&& arg) -> Value {
+                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, bool>) {
+                        return !arg;
+                    }
+                    throw std::runtime_error("Operand must be a boolean.");
+                }, value));
                 break;
             }
             case OpCode::Add: {
@@ -241,7 +246,6 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 if (is_falsey(stack.back())) {
                     ip += offset;
                 }
-                stack.pop_back();
                 break;
             }
             case OpCode::Pop: {

@@ -160,3 +160,33 @@ TEST_F(CompilerTest, TestStringInequality) {
     nota::Value result = run_expr("\"hello\" != \"world\"");
     EXPECT_TRUE(std::get<bool>(result));
 }
+
+TEST_F(CompilerTest, TestIfStatement) {
+    run_stmt("mut a = 10\nif true\na = 20\nend");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 20);
+}
+
+TEST_F(CompilerTest, TestIfStatementFalse) {
+    run_stmt("mut a = 10\nif false\na = 20\nend");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 10);
+}
+
+TEST_F(CompilerTest, TestIfElseStatement) {
+    run_stmt("mut a = 10\nif true\na = 20\nelse\na = 30\nend");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 20);
+}
+
+TEST_F(CompilerTest, TestIfElseStatementFalse) {
+    run_stmt("mut a = 10\nif false\na = 20\nelse\na = 30\nend");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 30);
+}
+
+TEST_F(CompilerTest, TestElseIfStatement) {
+    run_stmt("mut a = 10\nif false\na = 20\nelse if true\na = 40\nelse\na = 30\nend");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 40);
+}

@@ -181,6 +181,7 @@ std::any Compiler::visit(ast::IfStmt &stmt) {
     stmt.condition->accept(*this);
 
     size_t then_jump = emit_jump((uint8_t)OpCode::JumpIfFalse);
+    emit_byte((uint8_t)OpCode::Pop); // Pop the condition
 
     stmt.then_branch->accept(*this);
 

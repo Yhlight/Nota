@@ -37,7 +37,7 @@ void Compiler::patch_jump(size_t offset) {
 }
 
 void Compiler::emit_loop(size_t loop_start) {
-    emit_byte((uint8_t)OpCode::Jump);
+    emit_byte((uint8_t)OpCode::Loop);
 
     size_t offset = chunk.code.size() - loop_start + 2;
     emit_byte((offset >> 8) & 0xff);
@@ -197,7 +197,20 @@ std::any Compiler::visit(ast::IfStmt &stmt) {
 
     return {};
 }
-std::any Compiler::visit(ast::WhileStmt &stmt) { return {}; }
+std::any Compiler::visit(ast::WhileStmt &stmt) {
+    size_t loop_start = chunk.code.size();
+    stmt.condition->accept(*this);
+
+    size_t exit_jump = emit_jump((uint8_t)OpCode::JumpIfFalse);
+    emit_byte((uint8_t)OpCode::Pop);
+
+    stmt.body->accept(*this);
+    emit_loop(loop_start);
+
+    patch_jump(exit_jump);
+
+    return {};
+}
 std::any Compiler::visit(ast::DoWhileStmt &stmt) { return {}; }
 std::any Compiler::visit(ast::ExpressionStmt &stmt) {
     stmt.expression->accept(*this);

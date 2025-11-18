@@ -41,7 +41,6 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 Value name_val = chunk.constants[READ_BYTE()];
                 std::string name = std::get<std::string>(name_val);
                 globals[name] = stack.back();
-                stack.pop_back();
                 break;
             }
             case OpCode::GetGlobal: {
@@ -246,6 +245,11 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 if (is_falsey(stack.back())) {
                     ip += offset;
                 }
+                break;
+            }
+            case OpCode::Loop: {
+                uint16_t offset = READ_SHORT();
+                ip -= offset;
                 break;
             }
             case OpCode::Pop: {

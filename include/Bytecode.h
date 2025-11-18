@@ -30,6 +30,7 @@ enum class OpCode : uint8_t {
     SetGlobal,
     Jump,
     JumpIfFalse,
+    Loop,
     Pop,
 };
 

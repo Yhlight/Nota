@@ -190,3 +190,9 @@ TEST_F(CompilerTest, TestElseIfStatement) {
     nota::Value result = vm.get_global("a");
     EXPECT_EQ(std::get<long long>(result), 40);
 }
+
+TEST_F(CompilerTest, TestWhileStatement) {
+    run_stmt("mut a = 0\nwhile a < 5\na = a + 1\nend");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 5);
+}

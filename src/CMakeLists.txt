@@ -7,6 +7,7 @@ add_library(nota_core
     vm/Chunk.cpp
     vm/Disassembler.cpp
     vm/VM.cpp
+    compiler/Compiler.cpp
 )
 
 # Public include directories
@@ -18,4 +19,5 @@ target_include_directories(nota_core
         ${CMAKE_CURRENT_SOURCE_DIR}/ast
         ${CMAKE_CURRENT_SOURCE_DIR}/parser
         ${CMAKE_CURRENT_SOURCE_DIR}/vm
+        ${CMAKE_CURRENT_SOURCE_DIR}/compiler
 )

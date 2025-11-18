@@ -2,6 +2,8 @@
 
 #include "Chunk.h"
 #include <vector>
+#include <unordered_map>
+#include <string>
 
 enum class InterpretResult {
     OK,
@@ -19,8 +21,10 @@ private:
 
     void push(Value value);
     Value pop();
+    Value peek(int distance = 0);
 
     const Chunk* chunk_;
     const uint8_t* ip_;
     std::vector<Value> stack_;
+    std::unordered_map<std::string, Value> globals_;
 };

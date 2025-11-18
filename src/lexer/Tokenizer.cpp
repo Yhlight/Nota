@@ -20,7 +20,8 @@ static const std::unordered_map<std::string, TokenType> KEYWORDS = {
     {"as", TokenType::AS},
     {"none", TokenType::NONE},
     {"true", TokenType::BOOL},
-    {"false", TokenType::BOOL}
+    {"false", TokenType::BOOL},
+    {"print", TokenType::PRINT}
 };
 
 Tokenizer::Tokenizer(const std::string& source) : source_(source) {}

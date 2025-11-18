@@ -3,8 +3,9 @@
 #include "OpCode.h"
 #include <vector>
 #include <variant>
+#include <string>
 
-using Value = std::variant<double, bool, std::nullptr_t>;
+using Value = std::variant<double, bool, std::nullptr_t, std::string>;
 
 class Chunk {
 public:

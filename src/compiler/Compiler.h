@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Visitor.h"
-#include "Expr.h"
+#include "Chunk.h"
 #include "Stmt.h"
-#include <string>
-#include <any>
+#include <vector>
+#include <memory>
 
-class PrettyPrinter : public Visitor {
+class Compiler : public Visitor {
 public:
-    std::string print(Expr& expr);
+    Chunk compile(const std::vector<std::unique_ptr<Stmt>>& statements);
 
     std::any visit(BinaryExpr& expr) override;
     std::any visit(UnaryExpr& expr) override;
@@ -20,6 +20,5 @@ public:
     std::any visit(ExprStmt& stmt) override;
 
 private:
-    std::string parenthesize(const std::string& name, Expr& expr);
-    std::string parenthesize(const std::string& name, Expr& left, Expr& right);
+    Chunk chunk_;
 };

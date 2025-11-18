@@ -62,6 +62,7 @@ enum class TokenType {
     PACKAGE,        // package
     AS,             // as
     NONE,           // none
+    PRINT,          // print
 
     // Literals
     IDENTIFIER,

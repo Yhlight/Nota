@@ -3,13 +3,48 @@
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens_(tokens) {}
 
-std::unique_ptr<Expr> Parser::parse() {
-    try {
-        return expression();
-    } catch (const std::runtime_error& e) {
-        // In the future, we can add more sophisticated error reporting here.
-        return nullptr;
+std::vector<std::unique_ptr<Stmt>> Parser::parse() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+    while (!is_at_end()) {
+        statements.push_back(declaration());
     }
+    return statements;
+}
+
+std::unique_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::PRINT})) {
+        return print_statement();
+    }
+    return expression_statement();
+}
+
+std::unique_ptr<Stmt> Parser::declaration() {
+    if (match({TokenType::LET})) {
+        return var_declaration();
+    }
+    return statement();
+}
+
+std::unique_ptr<Stmt> Parser::var_declaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+    std::unique_ptr<Expr> initializer = nullptr;
+    if (match({TokenType::ASSIGN})) {
+        initializer = expression();
+    }
+    consume(TokenType::NEWLINE, "Expect newline after variable declaration.");
+    return std::make_unique<VarDeclStmt>(name, std::move(initializer));
+}
+
+std::unique_ptr<Stmt> Parser::print_statement() {
+    auto value = expression();
+    consume(TokenType::NEWLINE, "Expect newline after value.");
+    return std::make_unique<PrintStmt>(std::move(value));
+}
+
+std::unique_ptr<Stmt> Parser::expression_statement() {
+    auto expr = expression();
+    consume(TokenType::NEWLINE, "Expect newline after expression.");
+    return std::make_unique<ExprStmt>(std::move(expr));
 }
 
 std::unique_ptr<Expr> Parser::expression() {
@@ -70,12 +105,13 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<LiteralExpr>(previous());
     }
 
+    if (match({TokenType::IDENTIFIER})) {
+        return std::make_unique<VariableExpr>(previous());
+    }
+
     if (match({TokenType::LPAREN})) {
         auto expr = expression();
-        if (peek().type != TokenType::RPAREN) {
-            throw std::runtime_error("Expected ')' after expression.");
-        }
-        advance(); // consume ')'
+        consume(TokenType::RPAREN, "Expect ')' after expression.");
         return expr;
     }
 
@@ -91,6 +127,13 @@ bool Parser::match(const std::vector<TokenType>& types) {
         }
     }
     return false;
+}
+
+Token Parser::consume(TokenType type, const std::string& message) {
+    if (peek().type == type) {
+        return advance();
+    }
+    throw std::runtime_error(message);
 }
 
 Token Parser::advance() {

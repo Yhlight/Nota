@@ -42,3 +42,14 @@ public:
 
     Token value;
 };
+
+class VariableExpr : public Expr {
+public:
+    VariableExpr(Token name) : name(name) {}
+
+    std::any accept(Visitor& visitor) override {
+        return visitor.visit(*this);
+    }
+
+    Token name;
+};

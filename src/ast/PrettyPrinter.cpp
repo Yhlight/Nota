@@ -16,6 +16,22 @@ std::any PrettyPrinter::visit(LiteralExpr& expr) {
     return expr.value.lexeme;
 }
 
+std::any PrettyPrinter::visit(VariableExpr& expr) {
+    return expr.name.lexeme;
+}
+
+std::any PrettyPrinter::visit(VarDeclStmt& stmt) {
+    return "";
+}
+
+std::any PrettyPrinter::visit(PrintStmt& stmt) {
+    return "";
+}
+
+std::any PrettyPrinter::visit(ExprStmt& stmt) {
+    return "";
+}
+
 std::string PrettyPrinter::parenthesize(const std::string& name, Expr& expr) {
     return "(" + name + " " + std::any_cast<std::string>(expr.accept(*this)) + ")";
 }

@@ -6,3 +6,5 @@ class Stmt : public ASTNode {
 public:
     virtual ~Stmt() = default;
 };
+
+#include "StmtNodes.h"

@@ -29,6 +29,12 @@ enum class OpCode : uint8_t {
     OP_TRUE,
     OP_FALSE,
 
+    // Variables
+    OP_DEFINE_GLOBAL,
+    OP_GET_GLOBAL,
+
     // Misc
+    OP_PRINT,
+    OP_POP,
     OP_RETURN,
 };

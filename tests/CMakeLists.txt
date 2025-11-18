@@ -11,6 +11,7 @@ add_executable(nota_tests
     test_parser.cpp
     test_bytecode.cpp
     test_vm.cpp
+    test_end_to_end.cpp
 )
 
 target_link_libraries(nota_tests

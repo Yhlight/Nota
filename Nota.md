@@ -1,5 +1,5 @@
 ## Nota
-Nota是一门通用范畴的解析型语言，Nota将使用基于字节码的虚拟机作为运行时环境  
+Nota是一门通用范畴的解析型语言，Nota将使用基于字节码的虚拟机作为运行时环境，并且带有垃圾回收  
 Nota的文件名称使用.nota作为文件扩展名，而字节码文件则是使用.n作为文件扩展名  
 
 nota基于C++17 / C++20开发  
@@ -72,16 +72,13 @@ match
 ```nota
 if 表达式
 
-end
-
 else if 表达式
-
-end
 
 else 表达式
 
 end
 ```
+
 
 ```nota
 match 表达式
@@ -211,4 +208,184 @@ import packageName::math
 import packageName2::math
 
 packageName::math::add(1, 2)  // 冲突时需要这样使用
+```
+
+## 未定义值
+在Nota中，任意类型都可以被赋值为none，表示未定义  
+一旦被赋予none值的变量被不当使用，将发生错误  
+
+## 类型转换
+Nota支持类型转换，你只需要像常规的编程语言的强制类型转换一样进行转换  
+对于Nota来说，类型转换往往是具有主观性的，这种行为不视为强制  
+注意，对于自定义对象，如果需要转换为字符串类型，请实现to_string()方法  
+
+nota通常情况下支持下述的类型转换  
+int -> float  隐式转换  
+float -> int  隐式转换  // 遵循截断
+int -> bool  隐式转换  
+bool -> int  隐式转换  
+flot -> bool  隐式转换  
+bool -> float  隐式转换  
+
+所有的字符串操作都应该显性进行  
+string -> int  显式转换  
+int -> string  显式转换  
+string -> float  显式转换  
+float -> string  显式转换  
+string -> bool  显式转换  
+bool -> string  显式转换  
+
+数组，函数不适用转换  
+对象仅支持字符串转换  
+
+```nota
+let a: int = (int)10.0
+let b: int = (int)"10"
+```
+
+## 溢出
+Nota与lua一致，采用静默回绕处理溢出值  
+
+## 复制，引用，拷贝
+对于基本数据类型，Nota的默认行为是复制，这是不会发生改变的做法  
+对于引用数据类型，Nota的默认行为是不可变引用，如果你需要可变引用，你需要使用&操作符  
+对于引用数据类型，如果你想要进行拷贝操作，你需要使用*操作符  
+注意！let和mut类型的变量能够直接传递给函数的不可变引用参数  
+但是只有mut类型的变量能够传递给函数的可变引用参数  
+而对于函数的拷贝参数，无论你是let还是mut，都将进行拷贝操作  
+对于需要使用*操作符的自定义对象，你必须实现clone()方法  
+
+这些操作应该被用于函数参数  
+
+```nota
+func add(a: string, b: &string, c: *string): int
+    // a 是不可变引用
+    // b 是可变引用
+    // c 是拷贝操作
+end
+```
+
+FFI不需要写入语法规范之中  
+## FFI
+这是一个常见的现代化做法的FFI接口实现，仅供参考  
+
+### 类型转换器
+```cpp
+template<typename T>
+NotaValue Marshal(T value)
+{
+
+}
+
+template<typename T>
+T Unmarshal(const NotaValue& value)
+{
+    
+}
+
+template<>
+NotaValue Marshal(int value)
+{
+    return NotaValue::CreateInt(static_cast<long long>(value));
+}
+
+template<>
+int Unmarshal(const NotaValue& value)
+{
+    if (value.GetType() != NotaValue::TypeTag::NOTA_INT)
+    {
+        throw std::runtime_error("Type mismatch: Expected int");
+    }
+    return static_cast<int>(value.GetInt());
+}
+
+// 对象类型往往需要GC句柄
+template<>
+NotaValue Marshal(const std::string& value)
+{
+    NotaObject* obj = VM::GetCurrent()->AllocateString(value);
+    return NotaValue::CreateObject(obj);
+}
+```
+
+### 函数包装器
+```cpp
+template<typename R, typename... Args>
+class NativeCaller {
+public:
+    static NotaValue Call(R (*func)(Args...), const std::vector<NotaValue>& args_from_vm)
+    {
+        if (args_from_vm.size() != sizeof...(Args))
+        {
+            throw std::runtime_error("Native function argument count mismatch.");
+        }
+
+        return [&]<size_t... Is>(std::index_sequence<Is...>) -> NotaValue
+        {
+            R result = func(Unmarshal<Args>(args_from_vm[Is])...);
+            return Marshal(result);
+        }(std::make_index_sequence<sizeof...(Args)>{});
+    }
+};
+
+template<typename... Args>
+class NativeCaller<void, Args...>
+{
+public:
+    static NotaValue Call(void (*func)(Args...), const std::vector<NotaValue>& args_from_vm)
+    {
+        [&]<size_t... Is>(std::index_sequence<Is...>)
+        {
+            func(Unmarshal<Args>(args_from_vm[Is])...);
+        }(std::make_index_sequence<sizeof...(Args)>{});
+
+        return NotaValue::CreateNull();
+    }
+};
+```
+
+### 注册
+```cpp
+using NativeFuncPtr = std::function<NotaValue(const std::vector<NotaValue>&)>;
+
+template<typename R, typename... Args>
+void RegisterNative(VM* vm, const std::string& name, R (*func)(Args...))
+{
+    NativeFuncPtr wrapper = [func](const std::vector<NotaValue>& args) -> NotaValue
+    {
+        try
+        {
+            return NativeCaller<R, Args...>::Call(func, args);
+        } catch (const std::exception& e)
+        {
+            vm->RaiseError(e.what());
+            return NotaValue::CreateNull();
+        }
+    };
+
+    vm->RegisterName(name, wrapper);
+}
+```
+
+### 示例
+```cpp
+int native_add(int a, int b)
+{
+    return a + b;
+}
+
+void native_print_message(std::string msg)
+{
+    std::cout << "Nota Message: " << msg << std::endl;
+}
+
+VM nota_vm;
+
+RegisterNative(&nota_vm, "add", &native_add);
+RegisterNative(&nota_vm, "print", &native_print_message);
+```
+
+```nota
+let result = add(10, 20)
+print("Hello from Nota")
 ```

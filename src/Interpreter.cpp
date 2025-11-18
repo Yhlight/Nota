@@ -515,7 +515,7 @@ std::any Interpreter::visit(ast::ReturnStmt &stmt) {
 
 std::string get_path(ast::Expr *expr) {
     if (auto *literal = dynamic_cast<ast::LiteralExpr *>(expr)) {
-        return literal->value.lexeme.substr(1, literal->value.lexeme.length() - 2);
+        return literal->value.lexeme;
     }
     if (auto *get = dynamic_cast<ast::GetExpr *>(expr)) {
         return get_path(get->object.get()) + "::" + get->name.lexeme;

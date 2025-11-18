@@ -6,6 +6,7 @@
 #include <any>
 
 // Forward declarations for all AST node classes
+struct Assign;
 struct Binary;
 struct Grouping;
 struct Literal;
@@ -15,6 +16,7 @@ struct Variable;
 // Visitor interface for expressions
 template <typename R>
 struct ExprVisitor {
+    virtual R visit(const Assign& expr) = 0;
     virtual R visit(const Binary& expr) = 0;
     virtual R visit(const Grouping& expr) = 0;
     virtual R visit(const Literal& expr) = 0;
@@ -29,6 +31,18 @@ struct Expr {
 };
 
 // Concrete expression classes
+struct Assign final : Expr {
+    const Token name;
+    const std::unique_ptr<Expr> value;
+
+    Assign(Token name, std::unique_ptr<Expr> value)
+        : name(std::move(name)), value(std::move(value)) {}
+
+    std::any accept(ExprVisitor<std::any>& visitor) const override {
+        return visitor.visit(*this);
+    }
+};
+
 struct Binary final : Expr {
     const std::unique_ptr<Expr> left;
     const Token op;

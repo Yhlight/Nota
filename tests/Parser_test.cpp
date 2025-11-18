@@ -55,3 +55,8 @@ TEST(ParserTest, ParsesVariableDeclarationWithoutInitializer) {
     std::string result = parseAndPrint("let x");
     EXPECT_EQ(result, "(var x)");
 }
+
+TEST(ParserTest, ParsesAssignment) {
+    std::string result = parseAndPrint("a = 10");
+    EXPECT_EQ(result, "(; (a = 10))");
+}

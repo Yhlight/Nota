@@ -10,6 +10,7 @@ public:
     std::string print(const Stmt& stmt);
 
     // Expression visitors
+    std::any visit(const Assign& expr) override;
     std::any visit(const Binary& expr) override;
     std::any visit(const Grouping& expr) override;
     std::any visit(const Literal& expr) override;

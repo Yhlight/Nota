@@ -10,6 +10,10 @@ std::string ASTPrinter::print(const Stmt& stmt) {
     return std::any_cast<std::string>(stmt.accept(*this));
 }
 
+std::any ASTPrinter::visit(const Assign& expr) {
+    return parenthesize(expr.name.lexeme + " =", {expr.value.get()});
+}
+
 std::any ASTPrinter::visit(const Binary& expr) {
     return parenthesize(expr.op.lexeme, {expr.left.get(), expr.right.get()});
 }

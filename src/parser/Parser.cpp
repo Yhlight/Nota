@@ -44,9 +44,28 @@ std::unique_ptr<Stmt> Parser::expressionStatement() {
     return std::make_unique<ExpressionStmt>(std::move(expr));
 }
 
-// expression -> equality
+// expression -> assignment
 std::unique_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
+}
+
+// assignment -> IDENTIFIER "=" assignment | equality
+std::unique_ptr<Expr> Parser::assignment() {
+    auto expr = equality();
+
+    if (match({TokenType::ASSIGN})) {
+        Token equals = previous();
+        auto value = assignment();
+
+        if (auto* var = dynamic_cast<Variable*>(expr.get())) {
+            Token name = var->name;
+            return std::make_unique<Assign>(std::move(name), std::move(value));
+        }
+
+        error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
 }
 
 // equality -> comparison ( ( "!=" | "==" ) comparison )*
@@ -131,6 +150,10 @@ std::unique_ptr<Expr> Parser::primary() {
         auto expr = expression();
         consume(TokenType::RPAREN, "Expect ')' after expression.");
         return std::make_unique<Grouping>(std::move(expr));
+    }
+
+    if (match({TokenType::IDENTIFIER})) {
+        return std::make_unique<Variable>(previous());
     }
 
     throw error(peek(), "Expect expression.");

@@ -1,4 +1,4 @@
-#include "ASTPrinter.h"
+#include "ast/ASTPrinter.h"
 #include <sstream>
 #include <vector>
 
@@ -11,11 +11,11 @@ std::string ASTPrinter::print(const Stmt& stmt) {
 }
 
 std::any ASTPrinter::visit(const Binary& expr) {
-    return parenthesize(expr.op.lexeme, {expr.left.get(), expr.right.get()});
+    return parenthesize(expr.op.lexeme, {expr.left.get(), expr.right.get()}, {});
 }
 
 std::any ASTPrinter::visit(const Grouping& expr) {
-    return parenthesize("group", {expr.expression.get()});
+    return parenthesize("group", {expr.expression.get()}, {});
 }
 
 std::any ASTPrinter::visit(const Literal& expr) {
@@ -37,7 +37,7 @@ std::any ASTPrinter::visit(const Literal& expr) {
 }
 
 std::any ASTPrinter::visit(const Unary& expr) {
-    return parenthesize(expr.op.lexeme, {expr.right.get()});
+    return parenthesize(expr.op.lexeme, {expr.right.get()}, {});
 }
 
 std::any ASTPrinter::visit(const Variable& expr) {
@@ -45,16 +45,22 @@ std::any ASTPrinter::visit(const Variable& expr) {
 }
 
 std::any ASTPrinter::visit(const ExpressionStmt& stmt) {
-    return parenthesize(";", {stmt.expression.get()});
+    return parenthesize(";", {stmt.expression.get()}, {});
 }
 
 std::any ASTPrinter::visit(const VarStmt& stmt) {
     if (stmt.initializer) {
-        return parenthesize("var " + stmt.name.lexeme, {stmt.initializer.get()});
+        return parenthesize("var " + stmt.name.lexeme, {stmt.initializer.get()}, {});
     }
     return "(var " + stmt.name.lexeme + ")";
 }
 
+std::any ASTPrinter::visit(const IfStmt& stmt) {
+    if (stmt.elseBranch) {
+        return parenthesize("if-else", {stmt.condition.get()}, {stmt.thenBranch.get(), stmt.elseBranch.get()});
+    }
+    return parenthesize("if", {stmt.condition.get()}, {stmt.thenBranch.get()});
+}
 
 std::string ASTPrinter::parenthesize(const std::string& name, const std::vector<const Expr*>& exprs) {
     std::stringstream ss;
@@ -62,6 +68,21 @@ std::string ASTPrinter::parenthesize(const std::string& name, const std::vector<
     for (const auto& expr : exprs) {
         ss << " ";
         ss << std::any_cast<std::string>(expr->accept(*this));
+    }
+    ss << ")";
+    return ss.str();
+}
+
+std::string ASTPrinter::parenthesize(const std::string& name, const std::vector<const Expr*>& exprs, const std::vector<const Stmt*>& stmts) {
+    std::stringstream ss;
+    ss << "(" << name;
+    for (const auto& expr : exprs) {
+        ss << " ";
+        ss << std::any_cast<std::string>(expr->accept(*this));
+    }
+    for (const auto& stmt : stmts) {
+        ss << " ";
+        ss << std::any_cast<std::string>(stmt->accept(*this));
     }
     ss << ")";
     return ss.str();

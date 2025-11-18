@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "AST.h"
-#include "ASTPrinter.h"
-#include "Token.h"
+#include "ast/AST.h"
+#include "ast/ASTPrinter.h"
+#include "lexer/Token.h"
 
 TEST(ASTPrinterTest, PrintsSimpleBinaryExpression) {
     auto expression = std::make_unique<Binary>(

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "AST.h"
+#include "ast/AST.h"
 #include <string>
+#include <vector>
 
 // Note: This class now implements both expression and statement visitors.
 class ASTPrinter : public ExprVisitor<std::any>, public StmtVisitor<std::any> {
@@ -19,8 +20,10 @@ public:
     // Statement visitors
     std::any visit(const ExpressionStmt& stmt) override;
     std::any visit(const VarStmt& stmt) override;
+    std::any visit(const IfStmt& stmt) override;
 
 
 private:
     std::string parenthesize(const std::string& name, const std::vector<const Expr*>& exprs);
+    std::string parenthesize(const std::string& name, const std::vector<const Expr*>& exprs, const std::vector<const Stmt*>& stmts);
 };

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "Lexer.h"
-#include "Token.h"
+#include "lexer/Lexer.h"
+#include "lexer/Token.h"
 
 TEST(LexerTest, TokenizesBasicOperators) {
     Lexer lexer("+ - * /");

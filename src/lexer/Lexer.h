@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Token.h"
+#include "lexer/Token.h"
 #include <string>
 #include <vector>
 #include <unordered_map>

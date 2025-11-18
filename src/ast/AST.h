@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Token.h"
+#include "lexer/Token.h"
 #include <memory>
 #include <vector>
 #include <any>
@@ -89,12 +89,14 @@ struct Variable final : Expr {
 // Forward declarations for all statement classes
 struct ExpressionStmt;
 struct VarStmt;
+struct IfStmt;
 
 // Visitor interface for statements
 template <typename R>
 struct StmtVisitor {
     virtual R visit(const ExpressionStmt& stmt) = 0;
     virtual R visit(const VarStmt& stmt) = 0;
+    virtual R visit(const IfStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -121,6 +123,19 @@ struct VarStmt final : Stmt {
 
     VarStmt(Token name, std::unique_ptr<Expr> initializer)
         : name(std::move(name)), initializer(std::move(initializer)) {}
+
+    std::any accept(StmtVisitor<std::any>& visitor) const override {
+        return visitor.visit(*this);
+    }
+};
+
+struct IfStmt final : Stmt {
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> thenBranch;
+    const std::unique_ptr<Stmt> elseBranch;
+
+    IfStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> thenBranch, std::unique_ptr<Stmt> elseBranch)
+        : condition(std::move(condition)), thenBranch(std::move(thenBranch)), elseBranch(std::move(elseBranch)) {}
 
     std::any accept(StmtVisitor<std::any>& visitor) const override {
         return visitor.visit(*this);

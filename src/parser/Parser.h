@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AST.h"
-#include "Token.h"
+#include "ast/AST.h"
+#include "lexer/Token.h"
 #include <vector>
 #include <memory>
 #include <stdexcept>
@@ -25,6 +25,7 @@ private:
     std::unique_ptr<Stmt> varDeclaration();
     std::unique_ptr<Stmt> statement();
     std::unique_ptr<Stmt> expressionStatement();
+    std::unique_ptr<Stmt> ifStatement();
 
     // Parsing methods for different expression types
     std::unique_ptr<Expr> expression();

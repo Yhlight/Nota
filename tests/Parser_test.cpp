@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "Lexer.h"
-#include "Parser.h"
-#include "ASTPrinter.h"
+#include "lexer/Lexer.h"
+#include "parser/Parser.h"
+#include "ast/ASTPrinter.h"
 #include <string>
 
 std::string parseAndPrint(const std::string& source) {
@@ -54,4 +54,14 @@ TEST(ParserTest, ParsesVariableDeclaration) {
 TEST(ParserTest, ParsesVariableDeclarationWithoutInitializer) {
     std::string result = parseAndPrint("let x");
     EXPECT_EQ(result, "(var x)");
+}
+
+TEST(ParserTest, ParsesIfStatement) {
+    std::string result = parseAndPrint("if true 1");
+    EXPECT_EQ(result, "(if true (; 1))");
+}
+
+TEST(ParserTest, ParsesIfElseStatement) {
+    std::string result = parseAndPrint("if true 1 else 2");
+    EXPECT_EQ(result, "(if-else true (; 1) (; 2))");
 }

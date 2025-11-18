@@ -1,4 +1,4 @@
-#include "Parser.h"
+#include "parser/Parser.h"
 #include <variant>
 #include <vector>
 
@@ -30,17 +30,28 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
         initializer = expression();
     }
 
-    // consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
     return std::make_unique<VarStmt>(std::move(name), std::move(initializer));
 }
 
 std::unique_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::IF})) return ifStatement();
     return expressionStatement();
+}
+
+std::unique_ptr<Stmt> Parser::ifStatement() {
+    auto condition = expression();
+
+    std::unique_ptr<Stmt> thenBranch = statement();
+    std::unique_ptr<Stmt> elseBranch = nullptr;
+    if (match({TokenType::ELSE})) {
+        elseBranch = statement();
+    }
+
+    return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
 }
 
 std::unique_ptr<Stmt> Parser::expressionStatement() {
     auto expr = expression();
-    // consume(TokenType::SEMICOLON, "Expect ';' after expression.");
     return std::make_unique<ExpressionStmt>(std::move(expr));
 }
 

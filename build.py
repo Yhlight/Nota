@@ -21,7 +21,7 @@ def build():
 def run():
     """Runs the main executable."""
     print("--- Running Application ---")
-    executable_path = os.path.join("build", "src", "nota")
+    executable_path = os.path.join("build", "app", "nota")
     if not os.path.exists(executable_path):
         print(f"Executable not found at {executable_path}. Please build the project first.")
         sys.exit(1)

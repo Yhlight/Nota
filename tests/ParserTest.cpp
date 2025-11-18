@@ -234,3 +234,48 @@ TEST(ParserTest, CallExpr) {
     auto stmts = parser.parse();
     ASSERT_EQ(stmts.size(), 1);
 }
+
+TEST(ParserTest, ReportsConsumeError) {
+    std::string source = "let x: int = (5\n";
+    nota::Lexer lexer(source);
+    nota::Parser parser(lexer);
+    auto stmts = parser.parse();
+    EXPECT_TRUE(parser.has_errors());
+    auto errors = parser.get_errors();
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_NE(errors[0].find("Expect ')' after expression."), std::string::npos);
+}
+
+TEST(ParserTest, ReportsInvalidAssignmentTarget) {
+    std::string source = "5 = 10\n";
+    nota::Lexer lexer(source);
+    nota::Parser parser(lexer);
+    auto stmts = parser.parse();
+    EXPECT_TRUE(parser.has_errors());
+    auto errors = parser.get_errors();
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_NE(errors[0].find("Invalid assignment target."), std::string::npos);
+}
+
+TEST(ParserTest, ReportsExpectExpression) {
+    std::string source = "let x = \n";
+    nota::Lexer lexer(source);
+    nota::Parser parser(lexer);
+    auto stmts = parser.parse();
+    EXPECT_TRUE(parser.has_errors());
+    auto errors = parser.get_errors();
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_NE(errors[0].find("Expect expression."), std::string::npos);
+}
+
+TEST(ParserTest, ReportsMultipleErrors) {
+    std::string source = "let x = ;\nlet y = 10;\n";
+    nota::Lexer lexer(source);
+    nota::Parser parser(lexer);
+    auto stmts = parser.parse();
+    EXPECT_TRUE(parser.has_errors());
+    auto errors = parser.get_errors();
+    ASSERT_EQ(errors.size(), 2);
+    EXPECT_NE(errors[0].find("Expect expression."), std::string::npos);
+    EXPECT_NE(errors[1].find("Expect newline after expression."), std::string::npos);
+}

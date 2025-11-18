@@ -58,7 +58,8 @@ namespace nota {
             advance();
             return;
         }
-        throw std::runtime_error(message);
+        error_at_token(current_token, message);
+        had_error = true;
     }
 
     bool Parser::match(TokenType type) {
@@ -75,8 +76,18 @@ namespace nota {
             if (match(TokenType::Newline)) {
                 continue;
             }
-            statements.push_back(statement());
+            auto stmt = statement();
+            if (had_error) {
+                synchronize();
+            } else if(stmt) {
+                statements.push_back(std::move(stmt));
+            }
         }
+
+        if (!errors.empty()) {
+            return {};
+        }
+
         return statements;
     }
 
@@ -110,6 +121,7 @@ namespace nota {
         }
         if (match(TokenType::Return)) {
             auto value = expression();
+            if (had_error) return nullptr;
             consume(TokenType::Newline, "Expect newline after return value.");
             return std::make_unique<ast::ReturnStmt>(std::move(value));
         }
@@ -124,11 +136,13 @@ namespace nota {
         std::unique_ptr<ast::Type> type = nullptr;
         if (match(TokenType::Colon)) {
             type = parse_type();
+            if (had_error) return nullptr;
         }
 
         std::unique_ptr<ast::Expr> initializer = nullptr;
         if (match(TokenType::Equal)) {
             initializer = expression();
+            if (had_error) return nullptr;
         }
 
         return std::make_unique<ast::VarDeclStmt>(name, std::move(type), std::move(initializer));
@@ -136,6 +150,7 @@ namespace nota {
 
     std::unique_ptr<ast::Stmt> Parser::if_statement() {
         auto first_condition = expression();
+        if (had_error) return nullptr;
         consume(TokenType::Newline, "Expect newline after if condition.");
         auto first_then = block();
 
@@ -146,6 +161,7 @@ namespace nota {
             if (match(TokenType::If)) {
                 // This is an 'else if'
                 auto condition = expression();
+                if (had_error) return nullptr;
                 consume(TokenType::Newline, "Expect newline after if condition.");
                 auto then_branch = block();
                 auto new_if = std::make_unique<ast::IfStmt>(std::move(condition), std::move(then_branch), nullptr);
@@ -168,6 +184,7 @@ namespace nota {
 
     std::unique_ptr<ast::Stmt> Parser::while_statement() {
         auto condition = expression();
+        if (had_error) return nullptr;
         consume(TokenType::Newline, "Expect newline after while condition.");
         auto body = block();
         consume(TokenType::End, "Expect 'end' after while block.");
@@ -182,6 +199,7 @@ namespace nota {
         auto body = block();
         consume(TokenType::While, "Expect 'while' after do block.");
         auto condition = expression();
+        if (had_error) return nullptr;
         consume(TokenType::Newline, "Expect newline after do-while condition.");
 
         return std::make_unique<ast::DoWhileStmt>(std::move(body), std::move(condition));
@@ -189,6 +207,7 @@ namespace nota {
 
     std::unique_ptr<ast::Stmt> Parser::match_statement() {
         auto expression = this->expression();
+        if (had_error) return nullptr;
         consume(TokenType::Newline, "Expect newline after match expression.");
 
         std::vector<ast::MatchCase> cases;
@@ -207,6 +226,7 @@ namespace nota {
             std::vector<std::unique_ptr<ast::Expr>> values;
             do {
                 values.push_back(this->expression());
+                if (had_error) return nullptr;
             } while (match(TokenType::Comma));
 
             consume(TokenType::Colon, "Expect ':' after match case values.");
@@ -238,6 +258,7 @@ namespace nota {
                 std::unique_ptr<ast::Type> param_type = nullptr;
                 if (match(TokenType::Colon)) {
                     param_type = parse_type();
+                    if (had_error) return nullptr;
                 }
                 params.push_back({param_name, std::move(param_type)});
             } while (match(TokenType::Comma));
@@ -247,6 +268,7 @@ namespace nota {
         std::unique_ptr<ast::Type> return_type = nullptr;
         if (match(TokenType::Colon)) {
             return_type = parse_type();
+            if (had_error) return nullptr;
         }
 
         consume(TokenType::Newline, "Expect newline after function signature.");
@@ -265,6 +287,7 @@ namespace nota {
         std::vector<std::unique_ptr<ast::FuncDeclStmt>> methods;
         while(match(TokenType::Func)) {
             methods.push_back(std::unique_ptr<ast::FuncDeclStmt>(dynamic_cast<ast::FuncDeclStmt*>(func_declaration().release())));
+            if (had_error) return nullptr;
         }
 
         consume(TokenType::End, "Expect 'end' after class body.");
@@ -275,6 +298,7 @@ namespace nota {
 
     std::unique_ptr<ast::Stmt> Parser::import_statement() {
         auto path = expression();
+        if (had_error) return nullptr;
 
         std::optional<Token> alias;
         if (match(TokenType::As)) {
@@ -302,6 +326,7 @@ namespace nota {
             Token variable = previous_token;
             consume(TokenType::Colon, "Expect ':' after variable name.");
             auto container = expression();
+            if (had_error) return nullptr;
             consume(TokenType::Newline, "Expect newline after for-each container.");
             auto body = block();
             consume(TokenType::End, "Expect 'end' after for-each block.");
@@ -312,8 +337,10 @@ namespace nota {
         std::unique_ptr<ast::Stmt> initializer = nullptr;
         if (is_let) {
             initializer = var_declaration();
+            if (had_error) return nullptr;
         } else if (!match(TokenType::Semicolon)) {
             initializer = std::make_unique<ast::ExpressionStmt>(expression());
+            if (had_error) return nullptr;
         }
         if (initializer) {
             consume(TokenType::Semicolon, "Expect ';' after loop initializer.");
@@ -322,12 +349,14 @@ namespace nota {
         std::unique_ptr<ast::Expr> condition = nullptr;
         if (!match(TokenType::Semicolon)) {
             condition = expression();
+            if (had_error) return nullptr;
             consume(TokenType::Semicolon, "Expect ';' after loop condition.");
         }
 
         std::unique_ptr<ast::Expr> increment = nullptr;
         if (!match(TokenType::Newline)) {
             increment = expression();
+            if (had_error) return nullptr;
         }
         consume(TokenType::Newline, "Expect newline after for clauses.");
 
@@ -341,10 +370,12 @@ namespace nota {
     std::unique_ptr<ast::Stmt> Parser::expression_statement() {
         if (match(TokenType::Let) || match(TokenType::Mut)) {
             auto decl = var_declaration();
+            if (had_error) return nullptr;
             consume(TokenType::Newline, "Expect newline after variable declaration.");
             return decl;
         }
         auto expr = expression();
+        if (had_error) return nullptr;
         consume(TokenType::Newline, "Expect newline after expression.");
         return std::make_unique<ast::ExpressionStmt>(std::move(expr));
     }
@@ -356,6 +387,7 @@ namespace nota {
                 continue;
             }
             statements.push_back(statement());
+            if (had_error) return nullptr;
         }
         return std::make_unique<ast::BlockStmt>(std::move(statements));
     }
@@ -372,6 +404,7 @@ namespace nota {
             std::unique_ptr<ast::Expr> size = nullptr;
             if (current_token.type != TokenType::RightBracket) {
                 size = expression();
+                if (had_error) return nullptr;
             }
             consume(TokenType::RightBracket, "Expect ']' after array size.");
             type = std::make_unique<ast::ArrayType>(std::move(type), std::move(size));
@@ -384,15 +417,19 @@ namespace nota {
         advance();
         PrefixParseFn prefix_rule = get_rule(previous_token.type).prefix;
         if (prefix_rule == nullptr) {
-            throw std::runtime_error("Expect expression.");
+            error_at_token(previous_token, "Expect expression.");
+            had_error = true;
+            return nullptr;
         }
 
         std::unique_ptr<ast::Expr> left_expr = (this->*prefix_rule)();
+        if (had_error) return nullptr;
 
         while (precedence <= get_rule(current_token.type).precedence) {
             advance();
             InfixParseFn infix_rule = get_rule(previous_token.type).infix;
             left_expr = (this->*infix_rule)(std::move(left_expr));
+            if (had_error) return nullptr;
         }
 
         return left_expr;
@@ -405,6 +442,7 @@ namespace nota {
     std::unique_ptr<ast::Expr> Parser::unary() {
         Token op = previous_token;
         std::unique_ptr<ast::Expr> right = parse_precedence(PREC_UNARY);
+        if (had_error) return nullptr;
         return std::make_unique<ast::UnaryExpr>(op, std::move(right));
     }
 
@@ -422,6 +460,7 @@ namespace nota {
             return lambda_expression();
         }
         auto expr = expression();
+        if (had_error) return nullptr;
         consume(TokenType::RightParen, "Expect ')' after expression.");
         return expr;
     }
@@ -430,19 +469,24 @@ namespace nota {
         Token op = previous_token;
         ParseRule& rule = get_rule(op.type);
         std::unique_ptr<ast::Expr> right = parse_precedence((Precedence)(rule.precedence + 1));
+        if (had_error) return nullptr;
         return std::make_unique<ast::BinaryExpr>(std::move(left), op, std::move(right));
     }
 
     std::unique_ptr<ast::Expr> Parser::assignment(std::unique_ptr<ast::Expr> left) {
         if (dynamic_cast<ast::VariableExpr*>(left.get()) || dynamic_cast<ast::SubscriptExpr*>(left.get()) || dynamic_cast<ast::GetExpr*>(left.get())) {
             auto value = expression();
+            if (had_error) return nullptr;
             return std::make_unique<ast::AssignExpr>(std::move(left), std::move(value));
         } else if (dynamic_cast<ast::SetExpr*>(left.get())) {
             auto value = expression();
+            if (had_error) return nullptr;
             return std::make_unique<ast::AssignExpr>(std::move(left), std::move(value));
         }
 
-        throw std::runtime_error("Invalid assignment target.");
+        error_at_token(previous_token, "Invalid assignment target.");
+        had_error = true;
+        return left;
     }
 
     std::unique_ptr<ast::Expr> Parser::postfix(std::unique_ptr<ast::Expr> left) {
@@ -455,6 +499,7 @@ namespace nota {
         if (current_token.type != TokenType::RightParen) {
             do {
                 arguments.push_back(expression());
+                if (had_error) return nullptr;
             } while (match(TokenType::Comma));
         }
         consume(TokenType::RightParen, "Expect ')' after arguments.");
@@ -470,6 +515,7 @@ namespace nota {
                 std::unique_ptr<ast::Type> param_type = nullptr;
                 if (match(TokenType::Colon)) {
                     param_type = parse_type();
+                    if (had_error) return nullptr;
                 }
                 params.push_back({param_name, std::move(param_type)});
             } while (match(TokenType::Comma));
@@ -480,9 +526,11 @@ namespace nota {
         std::variant<std::unique_ptr<ast::Expr>, std::unique_ptr<ast::Stmt>> body;
         if (match(TokenType::Newline)) {
             body = block();
+            if (had_error) return nullptr;
             consume(TokenType::End, "Expect 'end' after lambda body.");
         } else {
             body = expression();
+            if (had_error) return nullptr;
         }
 
         return std::make_unique<ast::LambdaExpr>(std::move(params), std::move(body));
@@ -493,6 +541,7 @@ namespace nota {
         if (current_token.type != TokenType::RightBracket) {
             do {
                 elements.push_back(expression());
+                if (had_error) return nullptr;
             } while (match(TokenType::Comma));
         }
         consume(TokenType::RightBracket, "Expect ']' after array elements.");
@@ -501,6 +550,7 @@ namespace nota {
 
     std::unique_ptr<ast::Expr> Parser::subscript(std::unique_ptr<ast::Expr> left) {
         auto index = expression();
+        if (had_error) return nullptr;
         consume(TokenType::RightBracket, "Expect ']' after subscript index.");
         return std::make_unique<ast::SubscriptExpr>(std::move(left), std::move(index));
     }
@@ -520,10 +570,59 @@ namespace nota {
         if (current_token.type != TokenType::RightBrace) {
             do {
                 arguments.push_back(expression());
+                if (had_error) return nullptr;
             } while (match(TokenType::Comma));
         }
         consume(TokenType::RightBrace, "Expect '}' after arguments.");
         return std::make_unique<ast::CallExpr>(std::move(left), std::move(arguments));
+    }
+
+    const std::vector<std::string>& Parser::get_errors() const {
+        return errors;
+    }
+
+    bool Parser::has_errors() const {
+        return !errors.empty();
+    }
+
+    void Parser::error_at_token(const Token& token, const std::string& message) {
+        if (had_error) return;
+        std::string error_message = "[line " + std::to_string(token.line) + ":" + std::to_string(token.column) + "] Error";
+        if (token.type == TokenType::Eof) {
+            error_message += " at end";
+        } else {
+            error_message += " at '" + token.lexeme + "'";
+        }
+        error_message += ": " + message;
+        errors.push_back(error_message);
+    }
+
+    void Parser::synchronize() {
+        had_error = false;
+
+        while (current_token.type != TokenType::Eof) {
+            if (previous_token.type == TokenType::Newline) {
+                return;
+            }
+
+            switch (current_token.type) {
+                case TokenType::Class:
+                case TokenType::Func:
+                case TokenType::Let:
+                case TokenType::Mut:
+                case TokenType::For:
+                case TokenType::If:
+                case TokenType::While:
+                case TokenType::Match:
+                case TokenType::Return:
+                case TokenType::Import:
+                case TokenType::Package:
+                    return;
+                default:
+                    ;
+            }
+            advance();
+        }
     }
 
 } // namespace nota

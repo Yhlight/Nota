@@ -40,13 +40,20 @@ namespace nota {
 
         std::vector<std::unique_ptr<ast::Stmt>> parse();
 
+        const std::vector<std::string>& get_errors() const;
+        bool has_errors() const;
+
     private:
         Lexer& lexer;
         Token current_token;
         Token previous_token;
+        std::vector<std::string> errors;
+        bool had_error = false;
 
         void advance();
         void consume(TokenType type, const std::string& message);
+        void error_at_token(const Token& token, const std::string& message);
+        void synchronize();
         bool match(TokenType type);
 
         std::unique_ptr<ast::Stmt> statement();

@@ -72,13 +72,9 @@ match
 ```nota
 if 表达式
 
-end
-
 else if 表达式
 
-end
-
-else 表达式
+else
 
 end
 ```

@@ -196,3 +196,9 @@ TEST_F(CompilerTest, TestWhileStatement) {
     nota::Value result = vm.get_global("a");
     EXPECT_EQ(std::get<long long>(result), 5);
 }
+
+TEST_F(CompilerTest, TestForStatement) {
+    run_stmt("mut a = 0\nfor let i = 0; i < 10; i = i + 1\na = a + 1\nend");
+    nota::Value result = vm.get_global("a");
+    EXPECT_EQ(std::get<long long>(result), 10);
+}

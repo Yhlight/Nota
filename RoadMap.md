@@ -84,7 +84,7 @@ This document outlines the development roadmap for the Nota programming language
         - [x] Variable declaration and access (`let`, `mut`)
         - [x] Assignment expressions
         - [x] String operations
-        - [x] Control flow (if statements, while loops)
+        - [x] Control flow (if statements, while loops, for loops)
 - [x] **Virtual Machine**
     - [x] Stack-based execution
     - [x] Instruction dispatch loop

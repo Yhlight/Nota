@@ -218,7 +218,33 @@ std::any Compiler::visit(ast::ExpressionStmt &stmt) {
     return {};
 }
 std::any Compiler::visit(ast::ForEachStmt &stmt) { return {}; }
-std::any Compiler::visit(ast::ForStmt &stmt) { return {}; }
+std::any Compiler::visit(ast::ForStmt &stmt) {
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    }
+
+    size_t loop_start = chunk.code.size();
+
+    if (stmt.condition) {
+        stmt.condition->accept(*this);
+    } else {
+        emit_byte((uint8_t)OpCode::True);
+    }
+
+    size_t exit_jump = emit_jump((uint8_t)OpCode::JumpIfFalse);
+    emit_byte((uint8_t)OpCode::Pop);
+
+    stmt.body->accept(*this);
+
+    if (stmt.increment) {
+        stmt.increment->accept(*this);
+    }
+
+    emit_loop(loop_start);
+    patch_jump(exit_jump);
+
+    return {};
+}
 std::any Compiler::visit(ast::MatchStmt &stmt) { return {}; }
 std::any Compiler::visit(ast::FuncDeclStmt &stmt) { return {}; }
 std::any Compiler::visit(ast::ReturnStmt &stmt) { return {}; }

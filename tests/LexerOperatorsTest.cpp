@@ -46,5 +46,13 @@ TEST(LexerStringTest, SimpleString) {
     Lexer lexer(source);
     Token token = lexer.next_token();
     EXPECT_EQ(token.type, TokenType::String);
-    EXPECT_EQ(token.lexeme, "\"hello world\"");
+    EXPECT_EQ(token.lexeme, "hello world");
+}
+
+TEST(LexerStringTest, EmptyString) {
+    std::string source = "\"\"";
+    Lexer lexer(source);
+    Token token = lexer.next_token();
+    EXPECT_EQ(token.type, TokenType::String);
+    EXPECT_EQ(token.lexeme, "");
 }

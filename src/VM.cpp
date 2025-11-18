@@ -78,12 +78,7 @@ InterpretResult VM::interpret(const Chunk &chunk) {
             case OpCode::Not: {
                 Value value = stack.back();
                 stack.pop_back();
-                stack.push_back(std::visit([](auto&& arg) -> Value {
-                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, bool>) {
-                        return !arg;
-                    }
-                    throw std::runtime_error("Operand must be a boolean.");
-                }, value));
+                stack.push_back(is_falsey(value));
                 break;
             }
             case OpCode::Add: {
@@ -95,7 +90,10 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                     if constexpr (std::is_arithmetic_v<std::decay_t<decltype(arg1)>> && std::is_arithmetic_v<std::decay_t<decltype(arg2)>>) {
                         return arg1 + arg2;
                     }
-                    throw std::runtime_error("Operands must be numbers.");
+                    if constexpr (std::is_same_v<std::decay_t<decltype(arg1)>, std::string> && std::is_same_v<std::decay_t<decltype(arg2)>, std::string>) {
+                        return arg1 + arg2;
+                    }
+                    throw std::runtime_error("Operands must be numbers or strings.");
                 }, a, b));
                 break;
             }
@@ -258,6 +256,14 @@ Value VM::pop() {
     Value value = stack.back();
     stack.pop_back();
     return value;
+}
+
+Value VM::get_global(const std::string &name) {
+    auto it = globals.find(name);
+    if (it == globals.end()) {
+        throw std::runtime_error("Undefined variable '" + name + "'.");
+    }
+    return it->second;
 }
 
 } // namespace nota

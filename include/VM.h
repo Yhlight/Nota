@@ -19,6 +19,7 @@ public:
     InterpretResult interpret(const Chunk &chunk);
     Value pop();
     size_t stack_size() const { return stack.size(); }
+    Value get_global(const std::string &name);
 
 private:
     Chunk chunk;

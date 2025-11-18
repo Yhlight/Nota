@@ -142,7 +142,7 @@ namespace nota {
                     advance();
                 }
                 advance(); // Closing quote
-                return make_token(TokenType::String, source.substr(start, current - start));
+                return make_token(TokenType::String, source.substr(start + 1, current - start - 2));
             }
 
             default:

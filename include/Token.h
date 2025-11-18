@@ -14,7 +14,7 @@ namespace nota {
 
         // Keywords
         Let, Mut, If, Else, Match, While, For, Do, Func, Class, Import, As, Package,
-        Return, True, False, End, This,
+        Return, True, False, End, This, None,
 
         // Identifiers
         Identifier,

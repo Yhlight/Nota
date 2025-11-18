@@ -81,6 +81,8 @@ This document outlines the development roadmap for the Nota programming language
     - [x] Design instruction set
     - [ ] Compile AST to bytecode
         - [x] Logical and comparison operators
+        - [ ] Variable declaration and access (`let`, `mut`)
+        - [ ] Assignment expressions
 - [x] **Virtual Machine**
     - [x] Stack-based execution
     - [x] Instruction dispatch loop

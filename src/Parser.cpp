@@ -40,6 +40,7 @@ namespace nota {
             {TokenType::Float, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::True, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::False, {&Parser::literal, nullptr, PREC_NONE}},
+            {TokenType::None, {&Parser::literal, nullptr, PREC_NONE}},
             {TokenType::This, {&Parser::this_, nullptr, PREC_NONE}},
             {TokenType::Eof, {nullptr, nullptr, PREC_NONE}},
         };

@@ -15,6 +15,7 @@ enum class OpCode : uint8_t {
     Subtract,
     Multiply,
     Divide,
+    None,
     True,
     False,
     Not,
@@ -24,6 +25,9 @@ enum class OpCode : uint8_t {
     Less,
     GreaterEqual,
     LessEqual,
+    DefineGlobal,
+    GetGlobal,
+    SetGlobal,
 };
 
 struct Chunk {

@@ -26,6 +26,37 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 stack.push_back(false);
                 break;
             }
+            case OpCode::None: {
+                stack.push_back(NoneValue{});
+                break;
+            }
+            case OpCode::DefineGlobal: {
+                Value name_val = chunk.constants[*ip++];
+                std::string name = std::get<std::string>(name_val);
+                globals[name] = stack.back();
+                stack.pop_back();
+                break;
+            }
+            case OpCode::GetGlobal: {
+                Value name_val = chunk.constants[*ip++];
+                std::string name = std::get<std::string>(name_val);
+                auto it = globals.find(name);
+                if (it == globals.end()) {
+                    throw std::runtime_error("Undefined variable '" + name + "'.");
+                }
+                stack.push_back(it->second);
+                break;
+            }
+            case OpCode::SetGlobal: {
+                Value name_val = chunk.constants[*ip++];
+                std::string name = std::get<std::string>(name_val);
+                auto it = globals.find(name);
+                if (it == globals.end()) {
+                    throw std::runtime_error("Undefined variable '" + name + "'.");
+                }
+                it->second = stack.back();
+                break;
+            }
             case OpCode::Negate: {
                 Value value = stack.back();
                 stack.pop_back();
@@ -117,6 +148,9 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                     if constexpr (std::is_same_v<T1, bool> && std::is_same_v<T2, bool>) {
                         return arg1 == arg2;
                     }
+                    if constexpr (std::is_same_v<T1, NoneValue> && std::is_same_v<T2, NoneValue>) {
+                        return true;
+                    }
                     return false;
                 }, a, b));
                 break;
@@ -129,6 +163,9 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 stack.push_back(std::visit([](auto&& arg1, auto&& arg2) -> Value {
                     using T1 = std::decay_t<decltype(arg1)>;
                     using T2 = std::decay_t<decltype(arg2)>;
+                    if constexpr (std::is_same_v<T1, NoneValue> && std::is_same_v<T2, NoneValue>) {
+                        return false;
+                    }
                     if constexpr (std::is_same_v<T1, T2>) {
                         return arg1 != arg2;
                     }

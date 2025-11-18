@@ -46,6 +46,9 @@ std::any Compiler::visit(ast::LiteralExpr &expr) {
         case TokenType::False:
             emit_byte((uint8_t)OpCode::False);
             break;
+        case TokenType::None:
+            emit_byte((uint8_t)OpCode::None);
+            break;
         default:
             break;
     }
@@ -108,8 +111,22 @@ std::any Compiler::visit(ast::UnaryExpr &expr) {
     }
     return {};
 }
-std::any Compiler::visit(ast::VariableExpr &expr) { return {}; }
-std::any Compiler::visit(ast::AssignExpr &expr) { return {}; }
+std::any Compiler::visit(ast::VariableExpr &expr) {
+    uint8_t name_index = make_constant(expr.name.lexeme);
+    emit_bytes((uint8_t)OpCode::GetGlobal, name_index);
+    return {};
+}
+std::any Compiler::visit(ast::AssignExpr &expr) {
+    expr.value->accept(*this);
+
+    if (auto var = dynamic_cast<ast::VariableExpr*>(expr.name.get())) {
+        uint8_t name_index = make_constant(var->name.lexeme);
+        emit_bytes((uint8_t)OpCode::SetGlobal, name_index);
+    } else {
+        throw std::runtime_error("Invalid assignment target.");
+    }
+    return {};
+}
 std::any Compiler::visit(ast::PostfixExpr &expr) { return {}; }
 std::any Compiler::visit(ast::CallExpr &expr) { return {}; }
 std::any Compiler::visit(ast::LambdaExpr &expr) { return {}; }
@@ -119,7 +136,17 @@ std::any Compiler::visit(ast::GetExpr &expr) { return {}; }
 std::any Compiler::visit(ast::SetExpr &expr) { return {}; }
 std::any Compiler::visit(ast::ThisExpr &expr) { return {}; }
 
-std::any Compiler::visit(ast::VarDeclStmt &stmt) { return {}; }
+std::any Compiler::visit(ast::VarDeclStmt &stmt) {
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    } else {
+        emit_byte((uint8_t)OpCode::None);
+    }
+
+    uint8_t name_index = make_constant(stmt.name.lexeme);
+    emit_bytes((uint8_t)OpCode::DefineGlobal, name_index);
+    return {};
+}
 std::any Compiler::visit(ast::BlockStmt &stmt) { return {}; }
 std::any Compiler::visit(ast::IfStmt &stmt) { return {}; }
 std::any Compiler::visit(ast::WhileStmt &stmt) { return {}; }

@@ -4,6 +4,7 @@
 #include "Bytecode.h"
 #include "Value.h"
 #include <vector>
+#include <map>
 
 namespace nota {
 
@@ -21,6 +22,7 @@ public:
 private:
     Chunk chunk;
     std::vector<Value> stack;
+    std::map<std::string, Value> globals;
     uint8_t *ip;
 };
 

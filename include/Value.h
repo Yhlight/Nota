@@ -15,9 +15,14 @@ class NotaClass;
 class NotaInstance;
 class Environment;
 
+struct NoneValue {};
+
+inline bool operator==(const NoneValue&, const NoneValue&) { return true; }
+inline bool operator!=(const NoneValue&, const NoneValue&) { return false; }
+
 using Value =
     std::variant<std::monostate, bool, long long, double, std::string,
-                 Callable *, NotaArray *, NotaClass *, NotaInstance *, std::shared_ptr<Environment>>;
+                 Callable *, NotaArray *, NotaClass *, NotaInstance *, std::shared_ptr<Environment>, NoneValue>;
 
 class Callable {
   public:

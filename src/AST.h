@@ -88,14 +88,12 @@ struct Variable final : Expr {
 
 // Forward declarations for all statement classes
 struct ExpressionStmt;
-struct PrintStmt;
 struct VarStmt;
 
 // Visitor interface for statements
 template <typename R>
 struct StmtVisitor {
     virtual R visit(const ExpressionStmt& stmt) = 0;
-    virtual R visit(const PrintStmt& stmt) = 0;
     virtual R visit(const VarStmt& stmt) = 0;
 };
 
@@ -103,4 +101,28 @@ struct StmtVisitor {
 struct Stmt {
     virtual ~Stmt() = default;
     virtual std::any accept(StmtVisitor<std::any>& visitor) const = 0;
+};
+
+// Concrete statement classes
+struct ExpressionStmt final : Stmt {
+    const std::unique_ptr<Expr> expression;
+
+    explicit ExpressionStmt(std::unique_ptr<Expr> expression)
+        : expression(std::move(expression)) {}
+
+    std::any accept(StmtVisitor<std::any>& visitor) const override {
+        return visitor.visit(*this);
+    }
+};
+
+struct VarStmt final : Stmt {
+    const Token name;
+    const std::unique_ptr<Expr> initializer;
+
+    VarStmt(Token name, std::unique_ptr<Expr> initializer)
+        : name(std::move(name)), initializer(std::move(initializer)) {}
+
+    std::any accept(StmtVisitor<std::any>& visitor) const override {
+        return visitor.visit(*this);
+    }
 };

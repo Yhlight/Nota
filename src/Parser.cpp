@@ -1,15 +1,47 @@
 #include "Parser.h"
 #include <variant>
+#include <vector>
 
 Parser::Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
 
-std::unique_ptr<Expr> Parser::parse() {
+std::vector<std::unique_ptr<Stmt>> Parser::parse() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+    while (!isAtEnd()) {
+        statements.push_back(declaration());
+    }
+    return statements;
+}
+
+std::unique_ptr<Stmt> Parser::declaration() {
     try {
-        return expression();
-    } catch (const ParseError& error) {
-        // In the future, we can add more sophisticated error reporting here.
+        if (match({TokenType::LET, TokenType::MUT})) return varDeclaration();
+        return statement();
+    } catch (ParseError& error) {
+        // synchronize(); // Synchronization logic to be added later
         return nullptr;
     }
+}
+
+std::unique_ptr<Stmt> Parser::varDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+
+    std::unique_ptr<Expr> initializer = nullptr;
+    if (match({TokenType::ASSIGN})) {
+        initializer = expression();
+    }
+
+    // consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+    return std::make_unique<VarStmt>(std::move(name), std::move(initializer));
+}
+
+std::unique_ptr<Stmt> Parser::statement() {
+    return expressionStatement();
+}
+
+std::unique_ptr<Stmt> Parser::expressionStatement() {
+    auto expr = expression();
+    // consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+    return std::make_unique<ExpressionStmt>(std::move(expr));
 }
 
 // expression -> equality

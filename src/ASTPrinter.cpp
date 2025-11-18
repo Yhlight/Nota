@@ -6,6 +6,10 @@ std::string ASTPrinter::print(const Expr& expr) {
     return std::any_cast<std::string>(expr.accept(*this));
 }
 
+std::string ASTPrinter::print(const Stmt& stmt) {
+    return std::any_cast<std::string>(stmt.accept(*this));
+}
+
 std::any ASTPrinter::visit(const Binary& expr) {
     return parenthesize(expr.op.lexeme, {expr.left.get(), expr.right.get()});
 }
@@ -39,6 +43,18 @@ std::any ASTPrinter::visit(const Unary& expr) {
 std::any ASTPrinter::visit(const Variable& expr) {
     return expr.name.lexeme;
 }
+
+std::any ASTPrinter::visit(const ExpressionStmt& stmt) {
+    return parenthesize(";", {stmt.expression.get()});
+}
+
+std::any ASTPrinter::visit(const VarStmt& stmt) {
+    if (stmt.initializer) {
+        return parenthesize("var " + stmt.name.lexeme, {stmt.initializer.get()});
+    }
+    return "(var " + stmt.name.lexeme + ")";
+}
+
 
 std::string ASTPrinter::parenthesize(const std::string& name, const std::vector<const Expr*>& exprs) {
     std::stringstream ss;

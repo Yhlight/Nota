@@ -9,7 +9,7 @@
 class Parser {
 public:
     explicit Parser(std::vector<Token> tokens);
-    std::unique_ptr<Expr> parse();
+    std::vector<std::unique_ptr<Stmt>> parse();
 
 private:
     // Simple error struct for now.
@@ -19,6 +19,12 @@ private:
 
     std::vector<Token> tokens;
     int current = 0;
+
+    // Parsing methods for statements
+    std::unique_ptr<Stmt> declaration();
+    std::unique_ptr<Stmt> varDeclaration();
+    std::unique_ptr<Stmt> statement();
+    std::unique_ptr<Stmt> expressionStatement();
 
     // Parsing methods for different expression types
     std::unique_ptr<Expr> expression();

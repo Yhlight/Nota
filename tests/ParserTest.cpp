@@ -97,6 +97,24 @@ TEST(ParserTest, IfElseStmt) {
     ASSERT_NE(if_stmt, nullptr);
     EXPECT_NE(if_stmt->then_branch, nullptr);
     EXPECT_NE(if_stmt->else_branch, nullptr);
+    auto* else_block = dynamic_cast<nota::ast::BlockStmt*>(if_stmt->else_branch.get());
+    ASSERT_NE(else_block, nullptr);
+}
+
+TEST(ParserTest, IfElseIfStmt) {
+    std::string source = "if x > 5\n let y = 10\nelse if x < 5\n let y = 20\nend\n";
+    nota::Lexer lexer(source);
+    nota::Parser parser(lexer);
+    auto stmts = parser.parse();
+    ASSERT_EQ(stmts.size(), 1);
+    auto* if_stmt = dynamic_cast<nota::ast::IfStmt*>(stmts[0].get());
+    ASSERT_NE(if_stmt, nullptr);
+    EXPECT_NE(if_stmt->then_branch, nullptr);
+    EXPECT_NE(if_stmt->else_branch, nullptr);
+    auto* else_if_stmt = dynamic_cast<nota::ast::IfStmt*>(if_stmt->else_branch.get());
+    ASSERT_NE(else_if_stmt, nullptr);
+    EXPECT_NE(else_if_stmt->then_branch, nullptr);
+    EXPECT_EQ(else_if_stmt->else_branch, nullptr);
 }
 
 TEST(ParserTest, IfElseIfElseStmt) {
@@ -113,6 +131,8 @@ TEST(ParserTest, IfElseIfElseStmt) {
     ASSERT_NE(else_if_stmt, nullptr);
     EXPECT_NE(else_if_stmt->then_branch, nullptr);
     EXPECT_NE(else_if_stmt->else_branch, nullptr);
+    auto* else_block = dynamic_cast<nota::ast::BlockStmt*>(else_if_stmt->else_branch.get());
+    ASSERT_NE(else_block, nullptr);
 }
 
 TEST(ParserTest, WhileStmt) {

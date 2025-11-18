@@ -135,26 +135,35 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Stmt> Parser::if_statement() {
-        auto condition = expression();
+        auto first_condition = expression();
         consume(TokenType::Newline, "Expect newline after if condition.");
-        auto then_branch = block();
+        auto first_then = block();
 
-        std::unique_ptr<ast::Stmt> else_branch = nullptr;
-        if (match(TokenType::Else)) {
+        auto head = std::make_unique<ast::IfStmt>(std::move(first_condition), std::move(first_then), nullptr);
+        ast::IfStmt* current_if = head.get();
+
+        while (match(TokenType::Else)) {
             if (match(TokenType::If)) {
-                else_branch = if_statement();
+                // This is an 'else if'
+                auto condition = expression();
+                consume(TokenType::Newline, "Expect newline after if condition.");
+                auto then_branch = block();
+                auto new_if = std::make_unique<ast::IfStmt>(std::move(condition), std::move(then_branch), nullptr);
+                current_if->else_branch = std::move(new_if);
+                current_if = static_cast<ast::IfStmt*>(current_if->else_branch.get());
             } else {
+                // This is a final 'else'
                 consume(TokenType::Newline, "Expect newline after else.");
-                else_branch = block();
-                consume(TokenType::End, "Expect 'end' after else block.");
+                current_if->else_branch = block();
+                // After the final else, the chain is done, so we break to consume 'end'.
+                break;
             }
-        } else {
-            consume(TokenType::End, "Expect 'end' after if block.");
         }
 
-        if(current_token.type == TokenType::Newline) advance();
+        consume(TokenType::End, "Expect 'end' after if statement.");
+        if (current_token.type == TokenType::Newline) advance();
 
-        return std::make_unique<ast::IfStmt>(std::move(condition), std::move(then_branch), std::move(else_branch));
+        return head;
     }
 
     std::unique_ptr<ast::Stmt> Parser::while_statement() {

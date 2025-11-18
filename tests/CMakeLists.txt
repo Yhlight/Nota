@@ -9,6 +9,7 @@ add_executable(nota_tests
     test_tokenizer.cpp
     test_ast.cpp
     test_parser.cpp
+    test_bytecode.cpp
 )
 
 target_link_libraries(nota_tests

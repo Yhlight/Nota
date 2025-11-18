@@ -81,8 +81,8 @@ This document outlines the development roadmap for the Nota programming language
     - [x] Design instruction set
     - [ ] Compile AST to bytecode
         - [x] Logical and comparison operators
-        - [ ] Variable declaration and access (`let`, `mut`)
-        - [ ] Assignment expressions
+        - [x] Variable declaration and access (`let`, `mut`)
+        - [x] Assignment expressions
 - [x] **Virtual Machine**
     - [x] Stack-based execution
     - [x] Instruction dispatch loop
@@ -90,8 +90,8 @@ This document outlines the development roadmap for the Nota programming language
 
 ## Phase 7: Advanced Language Features
 
-- [ ] **Undefined Values**
-    - [ ] `none` keyword and value
+- [x] **Undefined Values**
+    - [x] `none` keyword and value
 - [ ] **Type Conversions**
     - [ ] Implicit and explicit type casting
 - [ ] **References and Copying**

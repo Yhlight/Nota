@@ -28,6 +28,9 @@ enum class OpCode : uint8_t {
     DefineGlobal,
     GetGlobal,
     SetGlobal,
+    Jump,
+    JumpIfFalse,
+    Pop,
 };
 
 struct Chunk {

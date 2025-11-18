@@ -3,18 +3,25 @@
 
 namespace nota {
 
+static bool is_falsey(const Value &value) {
+    return std::holds_alternative<NoneValue>(value) || (std::holds_alternative<bool>(value) && !std::get<bool>(value));
+}
+
 InterpretResult VM::interpret(const Chunk &chunk) {
     this->chunk = chunk;
     this->ip = &this->chunk.code[0];
 
+#define READ_BYTE() (*ip++)
+#define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
+
     for (;;) {
-        uint8_t instruction = *ip++;
+        uint8_t instruction = READ_BYTE();
         switch ((OpCode)instruction) {
             case OpCode::Return: {
                 return InterpretResult::Ok;
             }
             case OpCode::Constant: {
-                Value constant = chunk.constants[*ip++];
+                Value constant = chunk.constants[READ_BYTE()];
                 stack.push_back(constant);
                 break;
             }
@@ -31,14 +38,14 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 break;
             }
             case OpCode::DefineGlobal: {
-                Value name_val = chunk.constants[*ip++];
+                Value name_val = chunk.constants[READ_BYTE()];
                 std::string name = std::get<std::string>(name_val);
                 globals[name] = stack.back();
                 stack.pop_back();
                 break;
             }
             case OpCode::GetGlobal: {
-                Value name_val = chunk.constants[*ip++];
+                Value name_val = chunk.constants[READ_BYTE()];
                 std::string name = std::get<std::string>(name_val);
                 auto it = globals.find(name);
                 if (it == globals.end()) {
@@ -48,7 +55,7 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                 break;
             }
             case OpCode::SetGlobal: {
-                Value name_val = chunk.constants[*ip++];
+                Value name_val = chunk.constants[READ_BYTE()];
                 std::string name = std::get<std::string>(name_val);
                 auto it = globals.find(name);
                 if (it == globals.end()) {
@@ -224,6 +231,23 @@ InterpretResult VM::interpret(const Chunk &chunk) {
                     }
                     throw std::runtime_error("Operands must be numbers.");
                 }, a, b));
+                break;
+            }
+            case OpCode::Jump: {
+                uint16_t offset = READ_SHORT();
+                ip += offset;
+                break;
+            }
+            case OpCode::JumpIfFalse: {
+                uint16_t offset = READ_SHORT();
+                if (is_falsey(stack.back())) {
+                    ip += offset;
+                }
+                stack.pop_back();
+                break;
+            }
+            case OpCode::Pop: {
+                stack.pop_back();
                 break;
             }
         }

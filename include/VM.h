@@ -18,6 +18,7 @@ class VM {
 public:
     InterpretResult interpret(const Chunk &chunk);
     Value pop();
+    size_t stack_size() const { return stack.size(); }
 
 private:
     Chunk chunk;

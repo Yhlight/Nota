@@ -21,7 +21,31 @@ void Compiler::emit_constant(Value value) {
     emit_bytes((uint8_t)OpCode::Constant, make_constant(value));
 }
 
-Chunk Compiler::compile(const std::vector<std::unique_ptr<ast::Stmt>> &statements) {
+size_t Compiler::emit_jump(uint8_t instruction) {
+    emit_byte(instruction);
+    emit_byte(0xff);
+    emit_byte(0xff);
+    return chunk.code.size() - 2;
+}
+
+void Compiler::patch_jump(size_t offset) {
+    // -2 to adjust for the size of the jump offset itself.
+    size_t jump = chunk.code.size() - offset - 2;
+
+    chunk.code[offset] = (jump >> 8) & 0xff;
+    chunk.code[offset + 1] = jump & 0xff;
+}
+
+void Compiler::emit_loop(size_t loop_start) {
+    emit_byte((uint8_t)OpCode::Jump);
+
+    size_t offset = chunk.code.size() - loop_start + 2;
+    emit_byte((offset >> 8) & 0xff);
+    emit_byte(offset & 0xff);
+}
+
+
+Chunk Compiler::compile(const std::vector<std::unique_ptr<ast::Stmt>> &statements, bool is_repl) {
     for (const auto &stmt : statements) {
         stmt->accept(*this);
     }
@@ -147,12 +171,36 @@ std::any Compiler::visit(ast::VarDeclStmt &stmt) {
     emit_bytes((uint8_t)OpCode::DefineGlobal, name_index);
     return {};
 }
-std::any Compiler::visit(ast::BlockStmt &stmt) { return {}; }
-std::any Compiler::visit(ast::IfStmt &stmt) { return {}; }
+std::any Compiler::visit(ast::BlockStmt &stmt) {
+    for (const auto &s : stmt.statements) {
+        s->accept(*this);
+    }
+    return {};
+}
+std::any Compiler::visit(ast::IfStmt &stmt) {
+    stmt.condition->accept(*this);
+
+    size_t then_jump = emit_jump((uint8_t)OpCode::JumpIfFalse);
+
+    stmt.then_branch->accept(*this);
+
+    size_t else_jump = emit_jump((uint8_t)OpCode::Jump);
+
+    patch_jump(then_jump);
+
+    if (stmt.else_branch) {
+        stmt.else_branch->accept(*this);
+    }
+
+    patch_jump(else_jump);
+
+    return {};
+}
 std::any Compiler::visit(ast::WhileStmt &stmt) { return {}; }
 std::any Compiler::visit(ast::DoWhileStmt &stmt) { return {}; }
 std::any Compiler::visit(ast::ExpressionStmt &stmt) {
     stmt.expression->accept(*this);
+    emit_byte((uint8_t)OpCode::Pop);
     return {};
 }
 std::any Compiler::visit(ast::ForEachStmt &stmt) { return {}; }

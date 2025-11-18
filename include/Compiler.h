@@ -12,7 +12,7 @@ namespace nota {
 
 class Compiler : public ast::ExprVisitor, public ast::StmtVisitor {
 public:
-    Chunk compile(const std::vector<std::unique_ptr<ast::Stmt>> &statements);
+    Chunk compile(const std::vector<std::unique_ptr<ast::Stmt>> &statements, bool is_repl = false);
 
 private:
     Chunk chunk;
@@ -21,6 +21,9 @@ private:
     void emit_bytes(uint8_t byte1, uint8_t byte2);
     uint8_t make_constant(Value value);
     void emit_constant(Value value);
+    size_t emit_jump(uint8_t instruction);
+    void patch_jump(size_t offset);
+    void emit_loop(size_t loop_start);
 
     std::any visit(ast::LiteralExpr &expr) override;
     std::any visit(ast::UnaryExpr &expr) override;

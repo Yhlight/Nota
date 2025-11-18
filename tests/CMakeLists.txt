@@ -11,6 +11,7 @@ add_executable(nota_tests
     main_test.cpp
     Lexer_test.cpp
     AST_test.cpp
+    Parser_test.cpp
 )
 
 target_link_libraries(nota_tests

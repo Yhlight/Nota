@@ -52,3 +52,15 @@ TEST(LexerTest, TokenizesComparisonAndLogicalOperators) {
     EXPECT_EQ(tokens[6].type, TokenType::LOGICAL_NOT);
     EXPECT_EQ(tokens[7].type, TokenType::END_OF_FILE);
 }
+
+TEST(LexerTest, TokenizesFloatLiterals) {
+    Lexer lexer("123.456 0.5");
+    std::vector<Token> tokens = lexer.scanTokens();
+
+    ASSERT_EQ(tokens.size(), 3);
+    EXPECT_EQ(tokens[0].type, TokenType::FLOAT);
+    EXPECT_EQ(std::get<double>(tokens[0].literal), 123.456);
+    EXPECT_EQ(tokens[1].type, TokenType::FLOAT);
+    EXPECT_EQ(std::get<double>(tokens[1].literal), 0.5);
+    EXPECT_EQ(tokens[2].type, TokenType::END_OF_FILE);
+}

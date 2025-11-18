@@ -26,7 +26,7 @@ std::any ASTPrinter::visit(const Literal& expr) {
             return std::any_cast<std::string>(expr.value);
         }
         if (expr.value.type() == typeid(bool)) {
-            return std::any_cast<bool>(expr.value) ? "true" : "false";
+            return std::string(std::any_cast<bool>(expr.value) ? "true" : "false");
         }
     }
     return std::string("nil");

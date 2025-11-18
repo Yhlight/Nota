@@ -100,8 +100,24 @@ char Lexer::peek() {
     return source[current];
 }
 
+char Lexer::peekNext() {
+    if (current + 1 >= source.length()) return '\0';
+    return source[current + 1];
+}
+
 void Lexer::number() {
     while (isDigit(peek())) advance();
+
+    // Look for a fractional part.
+    if (peek() == '.' && isDigit(peekNext())) {
+        // Consume the "."
+        advance();
+
+        while (isDigit(peek())) advance();
+        addToken(TokenType::FLOAT, std::stod(source.substr(start, current - start)));
+        return;
+    }
+
     addToken(TokenType::INTEGER, std::stoi(source.substr(start, current - start)));
 }
 

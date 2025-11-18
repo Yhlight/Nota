@@ -26,6 +26,7 @@ private:
     void scanToken();
 
     char peek();
+    char peekNext();
     bool match(char expected);
     void number();
     void identifier();

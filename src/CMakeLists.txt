@@ -3,6 +3,7 @@ add_library(nota_core
     nota_core.cpp
     lexer/Tokenizer.cpp
     ast/PrettyPrinter.cpp
+    parser/Parser.cpp
 )
 
 # Public include directories
@@ -12,4 +13,5 @@ target_include_directories(nota_core
         ${CMAKE_CURRENT_SOURCE_DIR}/common
         ${CMAKE_CURRENT_SOURCE_DIR}/lexer
         ${CMAKE_CURRENT_SOURCE_DIR}/ast
+        ${CMAKE_CURRENT_SOURCE_DIR}/parser
 )

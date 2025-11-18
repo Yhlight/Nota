@@ -8,7 +8,7 @@
 ## 解析器
 - [x] Tokenizer
 - [x] AST
-- [ ] Parser
+- [x] Parser
 
 ## 虚拟机
 - [ ] 字节码

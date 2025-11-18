@@ -6,6 +6,7 @@ add_library(nota_core
     parser/Parser.cpp
     vm/Chunk.cpp
     vm/Disassembler.cpp
+    vm/VM.cpp
 )
 
 # Public include directories

@@ -10,6 +10,7 @@ add_executable(nota_tests
     test_ast.cpp
     test_parser.cpp
     test_bytecode.cpp
+    test_vm.cpp
 )
 
 target_link_libraries(nota_tests

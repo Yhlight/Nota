@@ -7,7 +7,7 @@
 
 ## 解析器
 - [x] Tokenizer
-- [ ] AST
+- [x] AST
 - [ ] Parser
 
 ## 虚拟机

@@ -1,3 +1,13 @@
-add_library(nota_core nota.cpp)
+# nota_core library
+add_library(nota_core
+    nota_core.cpp
+    lexer/Tokenizer.cpp
+)
 
-target_include_directories(nota_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# Public include directories
+target_include_directories(nota_core
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/lexer
+)

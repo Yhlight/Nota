@@ -1,12 +1,12 @@
 # RoadMap
 
 ## 核心
-- [ ] C++项目结构
-- [ ] CMake构建系统
-- [ ] Python构建脚本
+- [x] C++项目结构
+- [x] CMake构建系统
+- [x] Python构建脚本
 
 ## 解析器
-- [ ] Tokenizer
+- [x] Tokenizer
 - [ ] AST
 - [ ] Parser
 

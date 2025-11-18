@@ -5,7 +5,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-add_executable(nota_tests main.cpp)
+add_executable(nota_tests
+    test_tokenizer.cpp
+)
 
 target_link_libraries(nota_tests
     PRIVATE

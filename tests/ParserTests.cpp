@@ -86,6 +86,13 @@ public:
         }
     }
 
+    void visit(const WhileStmt& stmt) override {
+        oss << "while (";
+        stmt.condition->accept(*this);
+        oss << ") ";
+        stmt.body->accept(*this);
+    }
+
 
 private:
     void parenthesize(const std::string& name, const std::vector<std::shared_ptr<Expr>>& exprs) {
@@ -121,4 +128,9 @@ TEST(ParserTest, ParsesExpressionStatement) {
 TEST(ParserTest, ParsesIfStatement) {
     std::string expected = "if ((> 1 0)) {\nlet a = 2\n}\n";
     EXPECT_EQ(parseAndPrint("if 1 > 0\nlet a = 2\nend\n"), expected);
+}
+
+TEST(ParserTest, ParsesWhileStatement) {
+    std::string expected = "while ((< a 5)) {\n(a = (+ a 1))\n}\n";
+    EXPECT_EQ(parseAndPrint("while a < 5\na = a + 1\nend\n"), expected);
 }

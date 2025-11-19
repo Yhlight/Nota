@@ -10,6 +10,7 @@ struct ExpressionStmt;
 struct VarStmt;
 struct BlockStmt;
 struct IfStmt;
+struct WhileStmt;
 
 // Visitor interface
 class StmtVisitor {
@@ -19,6 +20,7 @@ public:
     virtual void visit(const VarStmt& stmt) = 0;
     virtual void visit(const BlockStmt& stmt) = 0;
     virtual void visit(const IfStmt& stmt) = 0;
+    virtual void visit(const WhileStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -77,4 +79,17 @@ struct IfStmt : Stmt {
     const std::shared_ptr<Expr> condition;
     const std::shared_ptr<Stmt> thenBranch;
     const std::shared_ptr<Stmt> elseBranch;
+};
+
+struct WhileStmt : Stmt {
+    WhileStmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> body)
+        : condition(std::move(condition)),
+          body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::shared_ptr<Expr> condition;
+    const std::shared_ptr<Stmt> body;
 };

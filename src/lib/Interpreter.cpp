@@ -140,6 +140,14 @@ void Interpreter::visit(const IfStmt& stmt) {
     }
 }
 
+void Interpreter::visit(const WhileStmt& stmt) {
+    evaluate(stmt.condition);
+    while (isTruthy(last_value)) {
+        execute(stmt.body);
+        evaluate(stmt.condition);
+    }
+}
+
 void Interpreter::execute(const std::shared_ptr<Stmt>& stmt) {
     stmt->accept(*this);
 }

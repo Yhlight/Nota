@@ -26,6 +26,7 @@ public:
     void visit(const VarStmt& stmt) override;
     void visit(const BlockStmt& stmt) override;
     void visit(const IfStmt& stmt) override;
+    void visit(const WhileStmt& stmt) override;
 
 private:
     std::shared_ptr<Environment> globals;

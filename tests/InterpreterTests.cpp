@@ -58,3 +58,16 @@ TEST(InterpreterTest, HandlesIfElseStatements) {
     auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
     EXPECT_EQ(std::get<int>(value), 3);
 }
+
+TEST(InterpreterTest, HandlesWhileStatements) {
+    std::string source = "mut a = 0\nwhile a < 5\na = a + 1\nend\n";
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+    Interpreter interpreter;
+    interpreter.interpret(statements);
+    auto globals = interpreter.getGlobals();
+    auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
+    EXPECT_EQ(std::get<int>(value), 5);
+}

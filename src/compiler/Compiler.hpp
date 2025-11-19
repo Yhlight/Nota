@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/AST.hpp"
 #include "core/Chunk.hpp"
 #include "parser/Parser.hpp"
 #include <string>
@@ -12,6 +13,15 @@ public:
     bool Compile(const std::string& source, core::Chunk& chunk);
 
 private:
+    void CompileProgram(const core::Program* program);
+    void CompileStatement(const core::Statement* stmt);
+    void CompileExpression(const core::Expression* expr);
+
+    void EmitByte(uint8_t byte);
+    void EmitReturn();
+    void EmitConstant(core::NotaValue value);
+
+    core::Chunk* compiling_chunk_ = nullptr;
 };
 
 } // namespace compiler

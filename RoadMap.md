@@ -8,7 +8,7 @@ This document outlines the development plan for the Nota programming language.
 - [x] Initialize CMake for the project.
 - [x] Create a Python build script.
 - [x] Set up Google Test for TDD.
-- [ ] Implement the core data structures for the language (e.g., `NotaValue`, `NotaObject`).
+- [x] Implement the core data structures for the language (e.g., `NotaValue`, `NotaObject`).
 - [ ] Implement a basic memory management system (garbage collection).
 
 ## Stage 2: Lexer and Parser

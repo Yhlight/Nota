@@ -114,6 +114,33 @@ void Interpreter::visit(const Assign& expr) {
     environment->assign(expr.name, last_value);
 }
 
+void Interpreter::visit(const Postfix& expr) {
+    if (auto var = std::dynamic_pointer_cast<Variable>(expr.left)) {
+        auto current_value = environment->get(var->name);
+        last_value = current_value; // The result of a postfix expression is the value *before* the operation.
+
+        if (std::holds_alternative<int>(current_value)) {
+            int int_val = std::get<int>(current_value);
+            if (expr.op.type == TokenType::PLUS_PLUS) {
+                environment->assign(var->name, int_val + 1);
+            } else {
+                environment->assign(var->name, int_val - 1);
+            }
+        } else if (std::holds_alternative<double>(current_value)) {
+            double double_val = std::get<double>(current_value);
+            if (expr.op.type == TokenType::PLUS_PLUS) {
+                environment->assign(var->name, double_val + 1.0);
+            } else {
+                environment->assign(var->name, double_val - 1.0);
+            }
+        } else {
+            throw std::runtime_error("Operand must be a number for postfix operators.");
+        }
+    } else {
+        throw std::runtime_error("Invalid target for postfix operator.");
+    }
+}
+
 void Interpreter::visit(const ExpressionStmt& stmt) {
     evaluate(stmt.expression);
 }
@@ -146,6 +173,31 @@ void Interpreter::visit(const WhileStmt& stmt) {
         execute(stmt.body);
         evaluate(stmt.condition);
     }
+}
+
+void Interpreter::visit(const ForStmt& stmt) {
+    auto previous = this->environment;
+    this->environment = std::make_shared<Environment>(previous);
+
+    if (stmt.initializer != nullptr) {
+        execute(stmt.initializer);
+    }
+
+    while (true) {
+        if (stmt.condition != nullptr) {
+            evaluate(stmt.condition);
+            if (!isTruthy(last_value)) {
+                break;
+            }
+        }
+
+        execute(stmt.body);
+
+        if (stmt.increment != nullptr) {
+            evaluate(stmt.increment);
+        }
+    }
+    this->environment = previous;
 }
 
 void Interpreter::execute(const std::shared_ptr<Stmt>& stmt) {

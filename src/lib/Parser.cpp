@@ -28,13 +28,18 @@ std::shared_ptr<Stmt> Parser::varDeclaration(bool isMutable) {
     if (match({TokenType::EQUAL})) {
         initializer = expression();
     }
-    consume(TokenType::NEWLINE, "Expect newline after variable declaration.");
+
+    if (peek().type == TokenType::NEWLINE) {
+        consume(TokenType::NEWLINE, "Expect newline after variable declaration.");
+    }
+
     return std::make_shared<VarStmt>(name, initializer, isMutable);
 }
 
 std::shared_ptr<Stmt> Parser::statement() {
     if (match({TokenType::IF})) return ifStatement();
     if (match({TokenType::WHILE})) return whileStatement();
+    if (match({TokenType::FOR})) return forStatement();
     return expressionStatement();
 }
 
@@ -69,9 +74,45 @@ std::shared_ptr<Stmt> Parser::whileStatement() {
     return std::make_shared<WhileStmt>(condition, std::make_shared<BlockStmt>(bodyStmts));
 }
 
+std::shared_ptr<Stmt> Parser::forStatement() {
+    std::shared_ptr<Stmt> initializer;
+    if (match({TokenType::LET})) {
+        initializer = varDeclaration(false);
+    } else if (match({TokenType::MUT})) {
+        initializer = varDeclaration(true);
+    } else if (!check(TokenType::SEMICOLON)) {
+        initializer = expressionStatement();
+    } else {
+        initializer = nullptr;
+    }
+
+    consume(TokenType::SEMICOLON, "Expect ';' after loop initializer.");
+
+    std::shared_ptr<Expr> condition = nullptr;
+    if (!check(TokenType::SEMICOLON)) {
+        condition = expression();
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+    std::shared_ptr<Expr> increment = nullptr;
+    if (!check(TokenType::NEWLINE)) {
+        increment = expression();
+    }
+    consume(TokenType::NEWLINE, "Expect newline after for clauses.");
+
+    std::shared_ptr<Stmt> body = std::make_shared<BlockStmt>(block());
+
+    consume(TokenType::END, "Expect 'end' after for statement.");
+    consume(TokenType::NEWLINE, "Expect newline after end.");
+
+    return std::make_shared<ForStmt>(initializer, condition, increment, body);
+}
+
 std::shared_ptr<Stmt> Parser::expressionStatement() {
     auto expr = expression();
-    consume(TokenType::NEWLINE, "Expect newline after expression.");
+    if (peek().type == TokenType::NEWLINE) {
+        consume(TokenType::NEWLINE, "Expect newline after expression.");
+    }
     return std::make_shared<ExpressionStmt>(expr);
 }
 
@@ -151,7 +192,18 @@ std::shared_ptr<Expr> Parser::unary() {
         return std::make_shared<Unary>(op, right);
     }
 
-    return primary();
+    return postfix();
+}
+
+std::shared_ptr<Expr> Parser::postfix() {
+    auto expr = primary();
+
+    while (match({TokenType::PLUS_PLUS, TokenType::MINUS_MINUS})) {
+        Token op = previous();
+        expr = std::make_shared<Postfix>(expr, op);
+    }
+
+    return expr;
 }
 
 std::shared_ptr<Expr> Parser::primary() {

@@ -18,7 +18,7 @@ This document outlines the development plan for the Nota programming language.
 
 - [x] Control flow (if/else)
 - [x] Control flow (while)
-- [ ] Control flow (for)
+- [x] Control flow (for)
 - [ ] Functions
 - [ ] Strings
 - [ ] Arrays

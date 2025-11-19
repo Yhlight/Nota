@@ -20,6 +20,7 @@ public:
     void visit(const Unary& expr) override;
     void visit(const Variable& expr) override;
     void visit(const Assign& expr) override;
+    void visit(const Postfix& expr) override;
 
     // Statement visitor methods
     void visit(const ExpressionStmt& stmt) override;
@@ -27,6 +28,7 @@ public:
     void visit(const BlockStmt& stmt) override;
     void visit(const IfStmt& stmt) override;
     void visit(const WhileStmt& stmt) override;
+    void visit(const ForStmt& stmt) override;
 
 private:
     std::shared_ptr<Environment> globals;

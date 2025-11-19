@@ -67,6 +67,12 @@ public:
         oss << ")";
     }
 
+    void visit(const Postfix& expr) override {
+        oss << "(";
+        expr.left->accept(*this);
+        oss << expr.op.lexeme << ")";
+    }
+
     void visit(const BlockStmt& stmt) override {
         oss << "{\n";
         for (const auto& s : stmt.statements) {
@@ -89,6 +95,23 @@ public:
     void visit(const WhileStmt& stmt) override {
         oss << "while (";
         stmt.condition->accept(*this);
+        oss << ") ";
+        stmt.body->accept(*this);
+    }
+
+    void visit(const ForStmt& stmt) override {
+        oss << "for (";
+        if (stmt.initializer) {
+            stmt.initializer->accept(*this);
+        }
+        oss << "; ";
+        if (stmt.condition) {
+            stmt.condition->accept(*this);
+        }
+        oss << "; ";
+        if (stmt.increment) {
+            stmt.increment->accept(*this);
+        }
         oss << ") ";
         stmt.body->accept(*this);
     }
@@ -133,4 +156,9 @@ TEST(ParserTest, ParsesIfStatement) {
 TEST(ParserTest, ParsesWhileStatement) {
     std::string expected = "while ((< a 5)) {\n(a = (+ a 1))\n}\n";
     EXPECT_EQ(parseAndPrint("while a < 5\na = a + 1\nend\n"), expected);
+}
+
+TEST(ParserTest, ParsesForStatement) {
+    std::string expected = "for (mut i = 0\n; (< i 5); (i++)) {\n(a = (+ a 1))\n}\n";
+    EXPECT_EQ(parseAndPrint("for mut i = 0; i < 5; i++\na = a + 1\nend\n"), expected);
 }

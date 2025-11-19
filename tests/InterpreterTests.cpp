@@ -112,7 +112,7 @@ TEST(InterpreterTest, HandlesImplicitLineContinuation) {
 }
 
 TEST(InterpreterTest, HandlesDoWhileStatements) {
-    std::string source = "mut a = 0\ndo\na = a + 1\nwhile a < 5\nend\n";
+    std::string source = "mut a = 0\ndo\na = a + 1\nwhile a < 5\n";
     Lexer lexer(source);
     auto tokens = lexer.scanTokens();
     Parser parser(tokens);

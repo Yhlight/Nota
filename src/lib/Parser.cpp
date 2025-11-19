@@ -122,10 +122,9 @@ std::shared_ptr<Stmt> Parser::doWhileStatement() {
     consume(TokenType::WHILE, "Expect 'while' after do-while body.");
 
     std::shared_ptr<Expr> condition = expression();
-    consume(TokenType::NEWLINE, "Expect newline after while condition.");
-
-    consume(TokenType::END, "Expect 'end' after do-while statement.");
-    consume(TokenType::NEWLINE, "Expect newline after end.");
+    if (peek().type == TokenType::NEWLINE) {
+        consume(TokenType::NEWLINE, "Expect newline after while condition.");
+    }
 
     return std::make_shared<DoWhileStmt>(body, condition);
 }

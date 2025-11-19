@@ -12,6 +12,7 @@ enum class ValueType {
     INT,
     FLOAT,
     OBJECT,
+    STRING,
 };
 
 class NotaValue {
@@ -22,6 +23,7 @@ public:
     explicit NotaValue(int64_t value) : type_(ValueType::INT), value_(value) {}
     explicit NotaValue(double value) : type_(ValueType::FLOAT), value_(value) {}
     explicit NotaValue(NotaObject* value) : type_(ValueType::OBJECT), value_(value) {}
+    explicit NotaValue(const std::string& value) : type_(ValueType::STRING), value_(value) {}
 
     ValueType GetType() const { return type_; }
 
@@ -31,14 +33,19 @@ public:
     bool IsFloat() const { return type_ == ValueType::FLOAT; }
     bool IsObject() const { return type_ == ValueType::OBJECT; }
 
+    bool IsString() const {
+        return type_ == ValueType::STRING;
+    }
+
     bool AsBool() const { return std::get<bool>(value_); }
     int64_t AsInt() const { return std::get<int64_t>(value_); }
     double AsFloat() const { return std::get<double>(value_); }
     NotaObject* AsObject() const { return std::get<NotaObject*>(value_); }
+    const std::string& AsString() const { return std::get<std::string>(value_); }
 
 private:
     ValueType type_;
-    std::variant<std::monostate, bool, int64_t, double, NotaObject*> value_;
+    std::variant<std::monostate, bool, int64_t, double, NotaObject*, std::string> value_;
 };
 
 } // namespace core

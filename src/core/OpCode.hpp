@@ -13,6 +13,10 @@ enum OpCode : uint8_t {
     OP_SUBTRACT,
     OP_MULTIPLY,
     OP_DIVIDE,
+    OP_DEFINE_IMMUTABLE_GLOBAL,
+    OP_DEFINE_MUTABLE_GLOBAL,
+    OP_GET_GLOBAL,
+    OP_SET_GLOBAL,
 };
 
 } // namespace core

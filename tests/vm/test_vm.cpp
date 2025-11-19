@@ -35,3 +35,43 @@ TEST(VMTest, ArithmeticExpression) {
         ASSERT_EQ(value.AsInt(), test.second);
     }
 }
+
+TEST(VMTest, LetStatement) {
+    VM vm;
+    VM::InterpretResult result = vm.Interpret("let a = 10\n a");
+    ASSERT_EQ(result, VM::INTERPRET_OK);
+    NotaValue value = vm.Pop();
+    ASSERT_TRUE(value.IsInt());
+    ASSERT_EQ(value.AsInt(), 10);
+}
+
+TEST(VMTest, LetStatementWithExpression) {
+    VM vm;
+    VM::InterpretResult result = vm.Interpret("let a = 5 + 5\n let b = a * 2\n b");
+    ASSERT_EQ(result, VM::INTERPRET_OK);
+    NotaValue value = vm.Pop();
+    ASSERT_TRUE(value.IsInt());
+    ASSERT_EQ(value.AsInt(), 20);
+}
+
+TEST(VMTest, StringInterning) {
+    VM vm;
+    VM::InterpretResult result = vm.Interpret("let a = 10\n let b = 10\n");
+    ASSERT_EQ(result, VM::INTERPRET_OK);
+    ASSERT_EQ(vm.interned_strings_.size(), 2);
+}
+
+TEST(VMTest, LetStatementImmutable) {
+    VM vm;
+    VM::InterpretResult result = vm.Interpret("let a = 10\n a = 20");
+    ASSERT_EQ(result, VM::INTERPRET_RUNTIME_ERROR);
+}
+
+TEST(VMTest, MutStatement) {
+    VM vm;
+    VM::InterpretResult result = vm.Interpret("mut a = 10\n a = 20\n a");
+    ASSERT_EQ(result, VM::INTERPRET_OK);
+    NotaValue value = vm.Pop();
+    ASSERT_TRUE(value.IsInt());
+    ASSERT_EQ(value.AsInt(), 20);
+}

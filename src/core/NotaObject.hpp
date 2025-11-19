@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <utility>
 
 namespace nota {
 namespace core {
@@ -20,6 +22,17 @@ public:
 private:
     ObjectType type_;
     // GC data would go here in the future
+};
+
+class NotaString : public NotaObject {
+public:
+    explicit NotaString(std::string chars)
+        : NotaObject(ObjectType::STRING), chars_(std::move(chars)) {}
+
+    const std::string& GetChars() const { return chars_; }
+
+private:
+    std::string chars_;
 };
 
 } // namespace core

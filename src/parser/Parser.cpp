@@ -25,8 +25,10 @@ Parser::Parser(lexer::Lexer& lexer) {
     RegisterInfix(core::TokenType::NOT_EQ, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::LT, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::GT, &Parser::ParseInfixExpression);
+    RegisterInfix(core::TokenType::ASSIGN, &Parser::ParseInfixExpression);
 
     precedences_ = {
+        {core::TokenType::ASSIGN, EQUALS},
         {core::TokenType::EQ, EQUALS},
         {core::TokenType::NOT_EQ, EQUALS},
         {core::TokenType::LT, LESSGREATER},

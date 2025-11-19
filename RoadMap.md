@@ -13,7 +13,7 @@ This document outlines the development plan for the Nota programming language.
 
 ## Stage 2: Lexer and Parser
 
-- [ ] Implement the lexer to tokenize the source code.
+- [x] Implement the lexer to tokenize the source code.
 - [ ] Implement the parser using a recursive descent algorithm.
 - [ ] Define the Abstract Syntax Tree (AST) nodes.
 - [ ] Implement the parser to generate an AST from the token stream.

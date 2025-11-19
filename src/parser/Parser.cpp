@@ -13,8 +13,11 @@ Parser::Parser(lexer::Lexer& lexer) {
 
     RegisterPrefix(core::TokenType::IDENTIFIER, &Parser::ParseIdentifier);
     RegisterPrefix(core::TokenType::INTEGER, &Parser::ParseIntegerLiteral);
+    RegisterPrefix(core::TokenType::LPAREN, &Parser::ParseGroupedExpression);
     RegisterPrefix(core::TokenType::BANG, &Parser::ParsePrefixExpression);
     RegisterPrefix(core::TokenType::MINUS, &Parser::ParsePrefixExpression);
+    RegisterPrefix(core::TokenType::TRUE, &Parser::ParseBoolean);
+    RegisterPrefix(core::TokenType::FALSE, &Parser::ParseBoolean);
 
     RegisterInfix(core::TokenType::PLUS, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::MINUS, &Parser::ParseInfixExpression);
@@ -173,6 +176,33 @@ std::unique_ptr<core::Expression> Parser::ParseIntegerLiteral() {
     return literal;
 }
 
+std::unique_ptr<core::Expression> Parser::ParseBoolean() {
+    auto boolean = std::make_unique<core::Boolean>();
+    boolean->token = cur_token_;
+    boolean->value = cur_token_.type == core::TokenType::TRUE;
+    return boolean;
+}
+
+std::unique_ptr<core::Expression> Parser::ParseGroupedExpression() {
+    NextToken();
+
+    while (cur_token_.type == core::TokenType::NEWLINE) {
+        NextToken();
+    }
+
+    auto expression = ParseExpression(LOWEST);
+
+    while (peek_token_.type == core::TokenType::NEWLINE) {
+        NextToken();
+    }
+
+    if (!ExpectPeek(core::TokenType::RPAREN)) {
+        return nullptr;
+    }
+
+    return expression;
+}
+
 std::unique_ptr<core::Expression> Parser::ParsePrefixExpression() {
     auto expression = std::make_unique<core::PrefixExpression>();
     expression->token = cur_token_;
@@ -204,6 +234,11 @@ std::unique_ptr<core::Expression> Parser::ParseInfixExpression(std::unique_ptr<c
 
     auto precedence = CurPrecedence();
     NextToken();
+
+    while (cur_token_.type == core::TokenType::NEWLINE) {
+        NextToken();
+    }
+
     expression->right = ParseExpression(precedence);
 
     return expression;

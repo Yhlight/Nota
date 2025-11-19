@@ -21,8 +21,8 @@ This document outlines the development plan for the Nota programming language.
 - [x] Control flow (for)
 - [x] Control flow (do-while)
 - [x] Functions
-- [ ] Strings
-- [ ] Arrays
+- [x] Strings
+- [x] Arrays
 - [ ] Classes and objects
 
 ## Phase 3: Standard Library

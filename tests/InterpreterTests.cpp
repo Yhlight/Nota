@@ -50,6 +50,18 @@ TEST(InterpreterTest, HandlesWhileStatements) {
     EXPECT_EQ(std::any_cast<int>(value), 5);
 }
 
+TEST(InterpreterTest, HandlesArrayCreationAndIndexing) {
+    std::string source = "let a = [1, \"two\", true]\na[1]\n";
+    auto value = interpret(source);
+    EXPECT_EQ(std::any_cast<std::string>(value), "two");
+}
+
+TEST(InterpreterTest, HandlesStringConcatenation) {
+    std::string source = "\"hello\" + \" \" + \"world\"\n";
+    auto value = interpret(source);
+    EXPECT_EQ(std::any_cast<std::string>(value), "hello world");
+}
+
 TEST(InterpreterTest, HandlesPostfixIncrement) {
     std::string source = "mut a = 0\na++\na\n";
     auto value = interpret(source);

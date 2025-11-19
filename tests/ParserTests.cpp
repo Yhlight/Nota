@@ -154,6 +154,24 @@ public:
         oss << "\n";
     }
 
+    void visit(const ArrayLiteral& expr) override {
+        oss << "[";
+        for (size_t i = 0; i < expr.elements.size(); ++i) {
+            expr.elements[i]->accept(*this);
+            if (i < expr.elements.size() - 1) {
+                oss << ", ";
+            }
+        }
+        oss << "]";
+    }
+
+    void visit(const Subscript& expr) override {
+        expr.name->accept(*this);
+        oss << "[";
+        expr.index->accept(*this);
+        oss << "]";
+    }
+
 
 private:
     void parenthesize(const std::string& name, const std::vector<std::shared_ptr<Expr>>& exprs) {
@@ -209,4 +227,14 @@ TEST(ParserTest, ParsesFunctionDeclaration) {
 TEST(ParserTest, ParsesFunctionCall) {
     std::string expected = "call(add, args=(+ 1 2) )\n";
     EXPECT_EQ(parseAndPrint("add(1 + 2)\n"), expected);
+}
+
+TEST(ParserTest, ParsesArrayLiteral) {
+    std::string expected = "[1, hello, true]\n";
+    EXPECT_EQ(parseAndPrint("[1, \"hello\", true]\n"), expected);
+}
+
+TEST(ParserTest, ParsesSubscriptExpression) {
+    std::string expected = "a[0]\n";
+    EXPECT_EQ(parseAndPrint("a[0]\n"), expected);
 }

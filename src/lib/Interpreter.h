@@ -5,6 +5,7 @@
 #include "Token.h"
 #include "Environment.h"
 #include "NotaFunction.h" // Include the new header
+#include "NotaArray.h"
 #include <vector>
 #include <memory>
 #include <any>
@@ -33,6 +34,8 @@ public:
     void visit(const Assign& expr) override;
     void visit(const Postfix& expr) override;
     void visit(const Call& expr) override;
+    void visit(const ArrayLiteral& expr) override;
+    void visit(const Subscript& expr) override;
 
     // Statement visitor methods
     void visit(const ExpressionStmt& stmt) override;

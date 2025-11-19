@@ -272,6 +272,10 @@ std::shared_ptr<Expr> Parser::postfix() {
     while (true) {
         if (match({TokenType::LEFT_PAREN})) {
             expr = finishCall(expr);
+        } else if (match({TokenType::LEFT_BRACKET})) {
+            auto index = expression();
+            Token bracket = consume(TokenType::RIGHT_BRACKET, "Expect ']' after index.");
+            expr = std::make_shared<Subscript>(expr, bracket, index);
         } else if (match({TokenType::PLUS_PLUS, TokenType::MINUS_MINUS})) {
             Token op = previous();
             expr = std::make_shared<Postfix>(expr, op);
@@ -296,6 +300,18 @@ std::shared_ptr<Expr> Parser::primary() {
         auto expr = expression();
         consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
         return std::make_shared<Grouping>(expr);
+    }
+
+    if (match({TokenType::LEFT_BRACKET})) {
+        Token token = previous();
+        std::vector<std::shared_ptr<Expr>> elements;
+        if (!check(TokenType::RIGHT_BRACKET)) {
+            do {
+                elements.push_back(expression());
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_BRACKET, "Expect ']' after array elements.");
+        return std::make_shared<ArrayLiteral>(token, elements);
     }
 
     if (match({TokenType::IDENTIFIER})) {

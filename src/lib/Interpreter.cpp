@@ -37,6 +37,8 @@ void Interpreter::visit(const Binary& expr) {
         case TokenType::PLUS:
             if (left.type() == typeid(int) && right.type() == typeid(int)) {
                 last_value = std::any_cast<int>(left) + std::any_cast<int>(right);
+            } else if (left.type() == typeid(std::string) && right.type() == typeid(std::string)) {
+                last_value = std::any_cast<std::string>(left) + std::any_cast<std::string>(right);
             } else {
                 last_value = toDouble(left) + toDouble(right);
             }
@@ -172,6 +174,37 @@ void Interpreter::visit(const Call& expr) {
     last_value = function->call(*this, arguments);
 }
 
+void Interpreter::visit(const ArrayLiteral& expr) {
+    auto array = std::make_shared<NotaArray>();
+    for (const auto& element : expr.elements) {
+        evaluate(element);
+        array->elements.push_back(last_value);
+    }
+    last_value = array;
+}
+
+void Interpreter::visit(const Subscript& expr) {
+    evaluate(expr.name);
+    auto object = last_value;
+
+    evaluate(expr.index);
+    auto index = last_value;
+
+    if (object.type() == typeid(std::shared_ptr<NotaArray>)) {
+        auto array = std::any_cast<std::shared_ptr<NotaArray>>(object);
+        if (index.type() == typeid(int)) {
+            int i = std::any_cast<int>(index);
+            if (i >= 0 && i < array->elements.size()) {
+                last_value = array->elements[i];
+                return;
+            }
+        }
+        throw std::runtime_error("Array index out of bounds or not an integer.");
+    }
+
+    throw std::runtime_error("Can only subscript arrays.");
+}
+
 void Interpreter::visit(const ExpressionStmt& stmt) {
     evaluate(stmt.expression);
 }
@@ -289,6 +322,15 @@ bool Interpreter::isEqual(const std::any& a, const std::any& b) {
     if (a.type() == typeid(double)) return std::any_cast<double>(a) == std::any_cast<double>(b);
     if (a.type() == typeid(bool)) return std::any_cast<bool>(a) == std::any_cast<bool>(b);
     if (a.type() == typeid(std::string)) return std::any_cast<std::string>(a) == std::any_cast<std::string>(b);
+    if (a.type() == typeid(std::shared_ptr<NotaArray>)) {
+        auto arr_a = std::any_cast<std::shared_ptr<NotaArray>>(a);
+        auto arr_b = std::any_cast<std::shared_ptr<NotaArray>>(b);
+        if (arr_a->elements.size() != arr_b->elements.size()) return false;
+        for (size_t i = 0; i < arr_a->elements.size(); ++i) {
+            if (!isEqual(arr_a->elements[i], arr_b->elements[i])) return false;
+        }
+        return true;
+    }
 
     return false;
 }

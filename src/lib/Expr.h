@@ -13,6 +13,8 @@ struct Variable;
 struct Assign;
 struct Postfix;
 struct Call;
+struct ArrayLiteral;
+struct Subscript;
 
 // Visitor interface
 class ExprVisitor {
@@ -26,6 +28,8 @@ public:
     virtual void visit(const Assign& expr) = 0;
     virtual void visit(const Postfix& expr) = 0;
     virtual void visit(const Call& expr) = 0;
+    virtual void visit(const ArrayLiteral& expr) = 0;
+    virtual void visit(const Subscript& expr) = 0;
 };
 
 // Base class for all expression nodes
@@ -129,4 +133,29 @@ struct Call : Expr {
     const std::shared_ptr<Expr> callee;
     const Token paren;
     const std::vector<std::shared_ptr<Expr>> arguments;
+};
+
+struct ArrayLiteral : Expr {
+    ArrayLiteral(Token token, std::vector<std::shared_ptr<Expr>> elements)
+        : token(std::move(token)), elements(std::move(elements)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token token;
+    const std::vector<std::shared_ptr<Expr>> elements;
+};
+
+struct Subscript : Expr {
+    Subscript(std::shared_ptr<Expr> name, Token bracket, std::shared_ptr<Expr> index)
+        : name(std::move(name)), bracket(std::move(bracket)), index(std::move(index)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::shared_ptr<Expr> name;
+    const Token bracket;
+    const std::shared_ptr<Expr> index;
 };

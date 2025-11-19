@@ -44,8 +44,6 @@ private:
     std::unique_ptr<core::Expression> ParsePrefixExpression();
     std::unique_ptr<core::Expression> ParseInfixExpression(std::unique_ptr<core::Expression> left);
     std::unique_ptr<core::Expression> ParseAssignmentExpression(std::unique_ptr<core::Expression> left);
-    std::unique_ptr<core::Statement> ParseIfStatement();
-    std::unique_ptr<core::BlockStatement> ParseBlockStatement();
 
     Precedence PeekPrecedence();
     Precedence CurPrecedence();

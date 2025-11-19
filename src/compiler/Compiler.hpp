@@ -4,6 +4,7 @@
 #include "core/Chunk.hpp"
 #include "parser/Parser.hpp"
 #include <string>
+#include <unordered_map>
 
 namespace nota {
 namespace compiler {

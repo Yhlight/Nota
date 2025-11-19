@@ -125,37 +125,6 @@ struct ExpressionStatement : public Statement {
     }
 };
 
-// A block of statements
-struct BlockStatement : public Statement {
-    Token token; // The first token of the block
-    std::vector<std::unique_ptr<Statement>> statements;
-
-    std::string ToString() const override {
-        std::string out;
-        for (const auto& s : statements) {
-            out += s->ToString();
-        }
-        return out;
-    }
-};
-
-// Statement for 'if...else' constructs
-struct IfStatement : public Statement {
-    Token token; // The 'if' token
-    std::unique_ptr<Expression> condition;
-    std::unique_ptr<BlockStatement> consequence;
-    std::unique_ptr<Statement> alternative; // Can be another IfStatement or a BlockStatement
-
-    std::string ToString() const override {
-        std::string out;
-        out += "if" + condition->ToString() + " " + consequence->ToString();
-        if (alternative) {
-            out += "else " + alternative->ToString();
-        }
-        return out;
-    }
-};
-
 // Expression for assignment (e.g., a = 10)
 struct AssignmentExpression : public Expression {
     Token token; // The '=' token

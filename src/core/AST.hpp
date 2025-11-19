@@ -53,14 +53,6 @@ struct IntegerLiteral : public Expression {
     std::string ToString() const override { return std::to_string(value); }
 };
 
-// Expression representing a boolean literal
-struct Boolean : public Expression {
-    Token token; // The TRUE or FALSE token
-    bool value;
-
-    std::string ToString() const override { return std::string(token.literal); }
-};
-
 // Expression for prefix operators (e.g., !, -)
 struct PrefixExpression : public Expression {
     Token token; // The operator token (e.g., !, -)
@@ -130,21 +122,6 @@ struct ExpressionStatement : public Statement {
             return expression->ToString();
         }
         return "";
-    }
-};
-
-// Expression for assignment (e.g., a = 10)
-struct AssignmentExpression : public Expression {
-    Token token; // The '=' token
-    std::unique_ptr<Identifier> name;
-    std::unique_ptr<Expression> value;
-
-    std::string ToString() const override {
-        std::string out;
-        out += name->ToString();
-        out += " = ";
-        out += value->ToString();
-        return out;
     }
 };
 

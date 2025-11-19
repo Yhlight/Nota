@@ -17,20 +17,8 @@ This document outlines the development plan for the Nota programming language.
 - [x] Implement the parser using a recursive descent algorithm.
 - [x] Define the Abstract Syntax Tree (AST) nodes.
 - [x] Implement the parser to generate an AST from the token stream.
-- [x] Implement implicit line continuation.
 
-## Stage 3: Language Features
-
-- [ ] Implement variable declarations (`let`, `mut`).
-- [ ] Implement basic data types (`int`, `float`, `bool`, `string`).
-- [ ] Implement arithmetic and logical operators.
-- [ ] Implement control flow structures (`if`, `else`, `match`).
-- [ ] Implement loop structures (`while`, `for`, `for-each`, `do-while`).
-- [ ] Implement functions and function calls.
-- [ ] Implement classes and objects.
-- [ ] Implement modules and packages.
-
-## Stage 4: Bytecode and Virtual Machine (VM)
+## Stage 3: Bytecode and Virtual Machine (VM)
 
 - [ ] Define the bytecode instruction set.
 - [ ] Implement a compiler to translate the AST into bytecode.

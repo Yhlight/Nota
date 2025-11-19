@@ -10,7 +10,6 @@ namespace parser {
 
 enum Precedence {
     LOWEST,
-    ASSIGNMENT,  // =
     EQUALS,      // ==
     LESSGREATER, // > or <
     SUM,         // +
@@ -41,11 +40,8 @@ private:
 
     std::unique_ptr<core::Expression> ParseIdentifier();
     std::unique_ptr<core::Expression> ParseIntegerLiteral();
-    std::unique_ptr<core::Expression> ParseBoolean();
-    std::unique_ptr<core::Expression> ParseGroupedExpression();
     std::unique_ptr<core::Expression> ParsePrefixExpression();
     std::unique_ptr<core::Expression> ParseInfixExpression(std::unique_ptr<core::Expression> left);
-    std::unique_ptr<core::Expression> ParseAssignmentExpression(std::unique_ptr<core::Expression> left);
 
     Precedence PeekPrecedence();
     Precedence CurPrecedence();

@@ -86,27 +86,6 @@ TEST(ParserTest, IntegerLiteralExpression) {
     EXPECT_EQ(literal->value, 5);
 }
 
-TEST(ParserTest, BooleanExpression) {
-    std::vector<std::pair<std::string, bool>> tests = {
-        {"true", true},
-        {"false", false},
-    };
-
-    for (const auto& test : tests) {
-        Lexer l(test.first);
-        Parser p(l);
-        auto program = p.ParseProgram();
-        ASSERT_NE(program, nullptr);
-        ASSERT_TRUE(p.Errors().empty());
-        ASSERT_EQ(program->statements.size(), 1);
-
-        auto stmt = static_cast<ExpressionStatement*>(program->statements[0].get());
-        auto boolean = static_cast<Boolean*>(stmt->expression.get());
-        ASSERT_NE(boolean, nullptr);
-        EXPECT_EQ(boolean->value, test.second);
-    }
-}
-
 TEST(ParserTest, PrefixExpressions) {
     std::vector<std::pair<std::string, std::string>> prefix_tests = {
         {"!5", "!"},
@@ -180,10 +159,6 @@ TEST(ParserTest, OperatorPrecedence) {
         {"5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"},
         {"5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"},
         {"3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"},
-        {"(5 + 5) * 2", "((5 + 5) * 2)"},
-        {"2 / (5 + 5)", "(2 / (5 + 5))"},
-        {"-(5 + 5)", "(-(5 + 5))"},
-        {"!(true == true)", "(!(true == true))"},
     };
 
     for (const auto& test : tests) {
@@ -195,50 +170,4 @@ TEST(ParserTest, OperatorPrecedence) {
 
         EXPECT_EQ(program->ToString(), test.second);
     }
-}
-
-TEST(ParserTest, MultiLineExpressions) {
-    std::string source = R"(
-        let a = 10 +
-                20 +
-                30
-        let b = (
-            10 +
-            20 +
-            30
-        )
-    )";
-
-    Lexer l(source);
-    Parser p(l);
-    auto program = p.ParseProgram();
-    ASSERT_NE(program, nullptr);
-    ASSERT_TRUE(p.Errors().empty());
-    ASSERT_EQ(program->statements.size(), 2);
-
-    auto stmt1 = static_cast<LetStatement*>(program->statements[0].get());
-    EXPECT_EQ(stmt1->name->value, "a");
-    auto infix_expr1 = static_cast<InfixExpression*>(stmt1->value.get());
-    EXPECT_EQ(infix_expr1->op, "+");
-    auto right1 = static_cast<IntegerLiteral*>(infix_expr1->right.get());
-    EXPECT_EQ(right1->value, 30);
-    auto left1 = static_cast<InfixExpression*>(infix_expr1->left.get());
-    EXPECT_EQ(left1->op, "+");
-    auto left1_left = static_cast<IntegerLiteral*>(left1->left.get());
-    EXPECT_EQ(left1_left->value, 10);
-    auto left1_right = static_cast<IntegerLiteral*>(left1->right.get());
-    EXPECT_EQ(left1_right->value, 20);
-
-    auto stmt2 = static_cast<LetStatement*>(program->statements[1].get());
-    EXPECT_EQ(stmt2->name->value, "b");
-    auto infix_expr2 = static_cast<InfixExpression*>(stmt2->value.get());
-    EXPECT_EQ(infix_expr2->op, "+");
-    auto right2 = static_cast<IntegerLiteral*>(infix_expr2->right.get());
-    EXPECT_EQ(right2->value, 30);
-    auto left2 = static_cast<InfixExpression*>(infix_expr2->left.get());
-    EXPECT_EQ(left2->op, "+");
-    auto left2_left = static_cast<IntegerLiteral*>(left2->left.get());
-    EXPECT_EQ(left2_left->value, 10);
-    auto left2_right = static_cast<IntegerLiteral*>(left2->right.get());
-    EXPECT_EQ(left2_right->value, 20);
 }

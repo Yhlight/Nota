@@ -16,7 +16,8 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # Core Library
-add_library(libnota src/lib/Lexer.cpp src/lib/Lexer.h src/lib/Token.h)
+file(GLOB LIBNOTA_SOURCES "src/lib/*.cpp" "src/lib/*.h")
+add_library(libnota ${LIBNOTA_SOURCES})
 target_include_directories(libnota PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 
 # Main Executable
@@ -24,7 +25,8 @@ add_executable(nota src/app/main.cpp)
 target_link_libraries(nota libnota)
 
 # Tests
-add_executable(nota_tests tests/main.cpp tests/LexerTests.cpp)
+file(GLOB TEST_SOURCES "tests/*.cpp")
+add_executable(nota_tests ${TEST_SOURCES})
 target_link_libraries(nota_tests libnota GTest::gtest_main)
 
 include(GoogleTest)

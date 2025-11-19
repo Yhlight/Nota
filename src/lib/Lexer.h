@@ -30,7 +30,7 @@ private:
     bool isAtEnd();
     char advance();
     void addToken(TokenType type);
-    void addToken(TokenType type, const std::variant<std::monostate, int, double, std::string>& literal);
+    void addToken(TokenType type, const std::variant<std::monostate, int, double, std::string, bool>& literal);
     void scanToken();
     void identifier();
     void number();

@@ -5,8 +5,8 @@ This document outlines the development plan for the Nota programming language.
 ## Phase 1: Core Language Features
 
 - [x] Lexer (Basic)
-- [ ] Parser (LL(k) recursive descent)
-- [ ] Abstract Syntax Tree (AST)
+- [x] Parser (LL(k) recursive descent) (Basic Expressions)
+- [x] Abstract Syntax Tree (AST) (Basic Expressions)
 - [ ] Bytecode generation
 - [ ] Virtual Machine (VM)
 - [ ] Basic data types (int, float, bool)

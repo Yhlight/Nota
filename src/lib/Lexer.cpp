@@ -52,7 +52,7 @@ void Lexer::addToken(TokenType type) {
     addToken(type, std::monostate{});
 }
 
-void Lexer::addToken(TokenType type, const std::variant<std::monostate, int, double, std::string>& literal) {
+void Lexer::addToken(TokenType type, const std::variant<std::monostate, int, double, std::string, bool>& literal) {
     std::string text = source.substr(start, current - start);
     tokens.push_back({type, text, literal, line});
 }

@@ -10,5 +10,5 @@ enable_testing()
 
 add_subdirectory(external/googletest)
 
-add_executable(NotaTests tests/main.cpp tests/core/test_nota_value.cpp tests/lexer/test_lexer.cpp)
+add_executable(NotaTests tests/main.cpp tests/core/test_nota_value.cpp tests/lexer/test_lexer.cpp tests/parser/test_parser.cpp)
 target_link_libraries(NotaTests PRIVATE gtest gmock NotaCore)

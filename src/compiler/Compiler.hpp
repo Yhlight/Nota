@@ -14,6 +14,7 @@ public:
 private:
     void CompileNode(const core::Node* node);
     void CompileIntegerLiteral(const core::IntegerLiteral* literal);
+    void CompileInfixExpression(const core::InfixExpression* expression);
 
     core::Chunk* compiling_chunk_ = nullptr;
 };

@@ -15,6 +15,7 @@ Parser::Parser(lexer::Lexer& lexer) {
     RegisterPrefix(core::TokenType::INTEGER, &Parser::ParseIntegerLiteral);
     RegisterPrefix(core::TokenType::BANG, &Parser::ParsePrefixExpression);
     RegisterPrefix(core::TokenType::MINUS, &Parser::ParsePrefixExpression);
+    RegisterPrefix(core::TokenType::LPAREN, &Parser::ParseGroupedExpression);
 
     RegisterInfix(core::TokenType::PLUS, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::MINUS, &Parser::ParseInfixExpression);
@@ -193,6 +194,15 @@ std::unique_ptr<core::Expression> Parser::ParseInfixExpression(std::unique_ptr<c
     expression->right = ParseExpression(precedence);
 
     return expression;
+}
+
+std::unique_ptr<core::Expression> Parser::ParseGroupedExpression() {
+    NextToken();
+    auto exp = ParseExpression(LOWEST);
+    if (!ExpectPeek(core::TokenType::RPAREN)) {
+        return nullptr;
+    }
+    return exp;
 }
 
 Precedence Parser::PeekPrecedence() {

@@ -20,16 +20,16 @@ This document outlines the development plan for the Nota programming language.
 
 ## Stage 3: Bytecode and Virtual Machine (VM)
 
-- [ ] Define the bytecode instruction set.
-- [ ] Implement a compiler to translate the AST into bytecode.
-- [ ] Implement the virtual machine to execute the bytecode.
+- [x] Define the bytecode instruction set.
+- [x] Implement a compiler to translate the AST into bytecode.
+- [x] Implement the virtual machine to execute the bytecode.
 - [ ] Implement the stack and frame management in the VM.
 
 ## Stage 4: Language Features
 
 - [ ] Implement variable declarations (`let`, `mut`).
 - [ ] Implement basic data types (`int`, `float`, `bool`, `string`).
-- [ ] Implement arithmetic and logical operators.
+- [x] Implement arithmetic and logical operators (arithmetic only).
 - [ ] Implement control flow structures (`if`, `else`, `match`).
 - [ ] Implement loop structures (`while`, `for`, `for-each`, `do-while`).
 - [ ] Implement functions and function calls.

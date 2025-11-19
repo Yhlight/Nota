@@ -42,6 +42,7 @@ private:
     std::unique_ptr<core::Expression> ParseIntegerLiteral();
     std::unique_ptr<core::Expression> ParsePrefixExpression();
     std::unique_ptr<core::Expression> ParseInfixExpression(std::unique_ptr<core::Expression> left);
+    std::unique_ptr<core::Expression> ParseGroupedExpression();
 
     Precedence PeekPrecedence();
     Precedence CurPrecedence();

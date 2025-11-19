@@ -19,6 +19,8 @@ void Compiler::CompileNode(const core::Node* node) {
         CompileNode(stmt->expression.get());
     } else if (auto literal = dynamic_cast<const core::IntegerLiteral*>(node)) {
         CompileIntegerLiteral(literal);
+    } else if (auto infix = dynamic_cast<const core::InfixExpression*>(node)) {
+        CompileInfixExpression(infix);
     }
 }
 
@@ -27,6 +29,21 @@ void Compiler::CompileIntegerLiteral(const core::IntegerLiteral* literal) {
     size_t const_idx = compiling_chunk_->AddConstant(value);
     compiling_chunk_->Write(core::OP_CONSTANT);
     compiling_chunk_->Write(const_idx);
+}
+
+void Compiler::CompileInfixExpression(const core::InfixExpression* expression) {
+    CompileNode(expression->left.get());
+    CompileNode(expression->right.get());
+
+    if (expression->op == "+") {
+        compiling_chunk_->Write(core::OP_ADD);
+    } else if (expression->op == "-") {
+        compiling_chunk_->Write(core::OP_SUBTRACT);
+    } else if (expression->op == "*") {
+        compiling_chunk_->Write(core::OP_MULTIPLY);
+    } else if (expression->op == "/") {
+        compiling_chunk_->Write(core::OP_DIVIDE);
+    }
 }
 
 } // namespace compiler

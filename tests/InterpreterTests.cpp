@@ -97,3 +97,16 @@ TEST(InterpreterTest, HandlesForStatements) {
     auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
     EXPECT_EQ(std::get<int>(value), 5);
 }
+
+TEST(InterpreterTest, HandlesImplicitLineContinuation) {
+    std::string source = "let a = 10 + \n 20\n";
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+    Interpreter interpreter;
+    interpreter.interpret(statements);
+    auto globals = interpreter.getGlobals();
+    auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
+    EXPECT_EQ(std::get<int>(value), 30);
+}

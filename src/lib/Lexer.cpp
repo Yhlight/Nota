@@ -36,8 +36,24 @@ std::vector<Token> Lexer::scanTokens() {
         scanToken();
     }
 
-    tokens.push_back({TokenType::END_OF_FILE, "", std::monostate{}, line});
-    return tokens;
+    std::vector<Token> filteredTokens;
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        if (tokens[i].type == TokenType::NEWLINE) {
+            if (i > 0) {
+                TokenType prevType = tokens[i - 1].type;
+                if (prevType == TokenType::PLUS || prevType == TokenType::MINUS ||
+                    prevType == TokenType::STAR || prevType == TokenType::SLASH ||
+                    prevType == TokenType::EQUAL || prevType == TokenType::LEFT_PAREN ||
+                    prevType == TokenType::LEFT_BRACKET) {
+                    continue;
+                }
+            }
+        }
+        filteredTokens.push_back(tokens[i]);
+    }
+
+    filteredTokens.push_back({TokenType::END_OF_FILE, "", std::monostate{}, line});
+    return filteredTokens;
 }
 
 bool Lexer::isAtEnd() {

@@ -130,3 +130,17 @@ TEST(LexerTest, HandlesUnexpectedCharacter) {
     EXPECT_EQ(errors[0].line, 1);
     EXPECT_EQ(errors[0].message, "Unexpected character.");
 }
+
+TEST(LexerTest, HandlesImplicitLineContinuation) {
+    Lexer lexer("10 + \n 20");
+    std::vector<Token> tokens = lexer.scanTokens();
+
+    std::vector<TokenType> expected = {
+        TokenType::NUMBER_INT, TokenType::PLUS, TokenType::NUMBER_INT, TokenType::END_OF_FILE
+    };
+
+    ASSERT_EQ(tokens.size(), expected.size());
+    for(size_t i = 0; i < expected.size(); ++i) {
+        EXPECT_EQ(tokens[i].type, expected[i]);
+    }
+}

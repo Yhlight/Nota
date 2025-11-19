@@ -14,6 +14,66 @@
 namespace nota {
 namespace vm {
 
+namespace {
+
+void ComparisonOp(VM* vm, core::OpCode op) {
+    core::NotaValue b = vm->Pop();
+    core::NotaValue a = vm->Pop();
+    bool result = false;
+
+    if (a.IsInt() && b.IsInt()) {
+        switch (op) {
+            case core::OP_EQUAL:    result = a.AsInt() == b.AsInt(); break;
+            case core::OP_NOT_EQUAL: result = a.AsInt() != b.AsInt(); break;
+            case core::OP_GREATER:  result = a.AsInt() > b.AsInt(); break;
+            case core::OP_GREATER_EQUAL: result = a.AsInt() >= b.AsInt(); break;
+            case core::OP_LESS:     result = a.AsInt() < b.AsInt(); break;
+            case core::OP_LESS_EQUAL: result = a.AsInt() <= b.AsInt(); break;
+            default: break;
+        }
+    } else if (a.IsFloat() && b.IsFloat()) {
+        switch (op) {
+            case core::OP_EQUAL:    result = a.AsFloat() == b.AsFloat(); break;
+            case core::OP_NOT_EQUAL: result = a.AsFloat() != b.AsFloat(); break;
+            case core::OP_GREATER:  result = a.AsFloat() > b.AsFloat(); break;
+            case core::OP_GREATER_EQUAL: result = a.AsFloat() >= b.AsFloat(); break;
+            case core::OP_LESS:     result = a.AsFloat() < b.AsFloat(); break;
+            case core::OP_LESS_EQUAL: result = a.AsFloat() <= b.AsFloat(); break;
+            default: break;
+        }
+    } else if (a.IsInt() && b.IsFloat()) {
+        switch (op) {
+            case core::OP_EQUAL:    result = a.AsInt() == b.AsFloat(); break;
+            case core::OP_NOT_EQUAL: result = a.AsInt() != b.AsFloat(); break;
+            case core::OP_GREATER:  result = a.AsInt() > b.AsFloat(); break;
+            case core::OP_GREATER_EQUAL: result = a.AsInt() >= b.AsFloat(); break;
+            case core::OP_LESS:     result = a.AsInt() < b.AsFloat(); break;
+            case core::OP_LESS_EQUAL: result = a.AsInt() <= b.AsFloat(); break;
+            default: break;
+        }
+    } else if (a.IsFloat() && b.IsInt()) {
+        switch (op) {
+            case core::OP_EQUAL:    result = a.AsFloat() == b.AsInt(); break;
+            case core::OP_NOT_EQUAL: result = a.AsFloat() != b.AsInt(); break;
+            case core::OP_GREATER:  result = a.AsFloat() > b.AsInt(); break;
+            case core::OP_GREATER_EQUAL: result = a.AsFloat() >= b.AsInt(); break;
+            case core::OP_LESS:     result = a.AsFloat() < b.AsInt(); break;
+            case core::OP_LESS_EQUAL: result = a.AsFloat() <= b.AsInt(); break;
+            default: break;
+        }
+    } else if (a.IsBool() && b.IsBool()) {
+        switch (op) {
+            case core::OP_EQUAL:    result = a.AsBool() == b.AsBool(); break;
+            case core::OP_NOT_EQUAL: result = a.AsBool() != b.AsBool(); break;
+            default: break;
+        }
+    }
+
+    vm->Push(core::NotaValue(result));
+}
+
+} // namespace
+
 VM::~VM() {
     for (auto& pair : interned_strings_) {
         delete pair.second;
@@ -49,6 +109,12 @@ VM::InterpretResult VM::Interpret(const std::string& source) {
             case core::OP_SUBTRACT: BINARY_OP(-); break;
             case core::OP_MULTIPLY: BINARY_OP(*); break;
             case core::OP_DIVIDE:   BINARY_OP(/); break;
+            case core::OP_EQUAL:    ComparisonOp(this, core::OP_EQUAL); break;
+            case core::OP_NOT_EQUAL: ComparisonOp(this, core::OP_NOT_EQUAL); break;
+            case core::OP_GREATER:  ComparisonOp(this, core::OP_GREATER); break;
+            case core::OP_GREATER_EQUAL: ComparisonOp(this, core::OP_GREATER_EQUAL); break;
+            case core::OP_LESS:     ComparisonOp(this, core::OP_LESS); break;
+            case core::OP_LESS_EQUAL: ComparisonOp(this, core::OP_LESS_EQUAL); break;
             case core::OP_DEFINE_IMMUTABLE_GLOBAL: {
                 core::NotaValue value = Pop();
                 core::NotaString* name = InternString(chunk_->constants[*ip_++].AsString());

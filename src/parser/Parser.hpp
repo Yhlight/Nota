@@ -40,6 +40,8 @@ private:
 
     std::unique_ptr<core::Expression> ParseIdentifier();
     std::unique_ptr<core::Expression> ParseIntegerLiteral();
+    std::unique_ptr<core::Expression> ParseFloatLiteral();
+    std::unique_ptr<core::Expression> ParseBooleanLiteral();
     std::unique_ptr<core::Expression> ParsePrefixExpression();
     std::unique_ptr<core::Expression> ParseInfixExpression(std::unique_ptr<core::Expression> left);
     std::unique_ptr<core::Expression> ParseGroupedExpression();

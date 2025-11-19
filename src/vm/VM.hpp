@@ -41,9 +41,9 @@ public:
     ~VM();
     InterpretResult Interpret(const std::string& source);
     core::NotaValue Pop();
+    void Push(const core::NotaValue& value);
 
 private:
-    void Push(const core::NotaValue& value);
     core::NotaString* InternString(const std::string& str);
 
 public:

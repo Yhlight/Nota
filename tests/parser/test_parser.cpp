@@ -86,6 +86,42 @@ TEST(ParserTest, IntegerLiteralExpression) {
     EXPECT_EQ(literal->value, 5);
 }
 
+TEST(ParserTest, FloatLiteralExpression) {
+    std::string source = "5.42";
+    Lexer l(source);
+    Parser p(l);
+    auto program = p.ParseProgram();
+    ASSERT_NE(program, nullptr);
+    ASSERT_TRUE(p.Errors().empty());
+    ASSERT_EQ(program->statements.size(), 1);
+
+    auto stmt = static_cast<ExpressionStatement*>(program->statements[0].get());
+    auto literal = static_cast<FloatLiteral*>(stmt->expression.get());
+    ASSERT_NE(literal, nullptr);
+    EXPECT_EQ(literal->value, 5.42);
+}
+
+TEST(ParserTest, BooleanLiteralExpression) {
+    std::vector<std::pair<std::string, bool>> tests = {
+        {"true", true},
+        {"false", false},
+    };
+
+    for (const auto& test : tests) {
+        Lexer l(test.first);
+        Parser p(l);
+        auto program = p.ParseProgram();
+        ASSERT_NE(program, nullptr);
+        ASSERT_TRUE(p.Errors().empty());
+        ASSERT_EQ(program->statements.size(), 1);
+
+        auto stmt = static_cast<ExpressionStatement*>(program->statements[0].get());
+        auto literal = static_cast<BooleanLiteral*>(stmt->expression.get());
+        ASSERT_NE(literal, nullptr);
+        EXPECT_EQ(literal->value, test.second);
+    }
+}
+
 TEST(ParserTest, PrefixExpressions) {
     std::vector<std::pair<std::string, std::string>> prefix_tests = {
         {"!5", "!"},

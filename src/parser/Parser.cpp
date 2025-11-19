@@ -13,6 +13,9 @@ Parser::Parser(lexer::Lexer& lexer) {
 
     RegisterPrefix(core::TokenType::IDENTIFIER, &Parser::ParseIdentifier);
     RegisterPrefix(core::TokenType::INTEGER, &Parser::ParseIntegerLiteral);
+    RegisterPrefix(core::TokenType::FLOAT, &Parser::ParseFloatLiteral);
+    RegisterPrefix(core::TokenType::TRUE, &Parser::ParseBooleanLiteral);
+    RegisterPrefix(core::TokenType::FALSE, &Parser::ParseBooleanLiteral);
     RegisterPrefix(core::TokenType::BANG, &Parser::ParsePrefixExpression);
     RegisterPrefix(core::TokenType::MINUS, &Parser::ParsePrefixExpression);
     RegisterPrefix(core::TokenType::LPAREN, &Parser::ParseGroupedExpression);
@@ -25,6 +28,8 @@ Parser::Parser(lexer::Lexer& lexer) {
     RegisterInfix(core::TokenType::NOT_EQ, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::LT, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::GT, &Parser::ParseInfixExpression);
+    RegisterInfix(core::TokenType::LT_EQ, &Parser::ParseInfixExpression);
+    RegisterInfix(core::TokenType::GT_EQ, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::ASSIGN, &Parser::ParseInfixExpression);
 
     precedences_ = {
@@ -33,6 +38,8 @@ Parser::Parser(lexer::Lexer& lexer) {
         {core::TokenType::NOT_EQ, EQUALS},
         {core::TokenType::LT, LESSGREATER},
         {core::TokenType::GT, LESSGREATER},
+        {core::TokenType::LT_EQ, LESSGREATER},
+        {core::TokenType::GT_EQ, LESSGREATER},
         {core::TokenType::PLUS, SUM},
         {core::TokenType::MINUS, SUM},
         {core::TokenType::SLASH, PRODUCT},
@@ -171,6 +178,25 @@ std::unique_ptr<core::Expression> Parser::ParseIntegerLiteral() {
         errors_.push_back("Could not parse " + std::string(cur_token_.literal) + " as integer");
         return nullptr;
     }
+    return literal;
+}
+
+std::unique_ptr<core::Expression> Parser::ParseFloatLiteral() {
+    auto literal = std::make_unique<core::FloatLiteral>();
+    literal->token = cur_token_;
+    try {
+        literal->value = std::stod(std::string(cur_token_.literal));
+    } catch (const std::invalid_argument& e) {
+        errors_.push_back("Could not parse " + std::string(cur_token_.literal) + " as float");
+        return nullptr;
+    }
+    return literal;
+}
+
+std::unique_ptr<core::Expression> Parser::ParseBooleanLiteral() {
+    auto literal = std::make_unique<core::BooleanLiteral>();
+    literal->token = cur_token_;
+    literal->value = cur_token_.type == core::TokenType::TRUE;
     return literal;
 }
 

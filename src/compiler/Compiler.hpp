@@ -14,6 +14,8 @@ public:
 private:
     void CompileNode(const core::Node* node);
     void CompileIntegerLiteral(const core::IntegerLiteral* literal);
+    void CompileFloatLiteral(const core::FloatLiteral* literal);
+    void CompileBooleanLiteral(const core::BooleanLiteral* literal);
     void CompileInfixExpression(const core::InfixExpression* expression);
     void CompileLetStatement(const core::LetStatement* stmt);
     void CompileMutStatement(const core::MutStatement* stmt);

@@ -30,8 +30,10 @@ This document outlines the development plan for the Nota programming language.
 - [x] Implement integer literals.
 - [x] Implement arithmetic operators.
 - [x] Implement `let` and `mut` functionality in the compiler and VM.
-- [ ] Implement other basic data types (`float`, `bool`, `string`).
-- [ ] Implement logical operators.
+- [x] Implement other basic data types (`float`, `bool`).
+- [ ] Implement `string` data type.
+- [x] Implement comparison and equality operators.
+- [ ] Implement logical operators (`&&`, `||`, `!`).
 - [ ] Implement control flow structures (`if`, `else`, `match`).
 - [ ] Implement loop structures (`while`, `for`, `for-each`, `do-while`).
 - [ ] Implement functions and function calls.

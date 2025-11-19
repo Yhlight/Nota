@@ -54,6 +54,57 @@ TEST(VMTest, LetStatementWithExpression) {
     ASSERT_EQ(value.AsInt(), 20);
 }
 
+TEST(VMTest, FloatExpression) {
+    VM vm;
+    VM::InterpretResult result = vm.Interpret("3.14");
+    ASSERT_EQ(result, VM::INTERPRET_OK);
+    NotaValue value = vm.Pop();
+    ASSERT_TRUE(value.IsFloat());
+    ASSERT_EQ(value.AsFloat(), 3.14);
+}
+
+TEST(VMTest, BooleanExpression) {
+    std::vector<std::pair<std::string, bool>> tests = {
+        {"true", true},
+        {"false", false},
+    };
+
+    for (const auto& test : tests) {
+        VM vm;
+        VM::InterpretResult result = vm.Interpret(test.first);
+        ASSERT_EQ(result, VM::INTERPRET_OK);
+        NotaValue value = vm.Pop();
+        ASSERT_TRUE(value.IsBool());
+        ASSERT_EQ(value.AsBool(), test.second);
+    }
+}
+
+TEST(VMTest, ComparisonExpression) {
+    std::vector<std::pair<std::string, bool>> tests = {
+        {"1 < 2", true},
+        {"1 > 2", false},
+        {"1 < 1", false},
+        {"1 > 1", false},
+        {"1 <= 2", true},
+        {"1 >= 2", false},
+        {"1 <= 1", true},
+        {"1 >= 1", true},
+        {"1 == 1", true},
+        {"1 != 1", false},
+        {"1 == 2", false},
+        {"1 != 2", true},
+    };
+
+    for (const auto& test : tests) {
+        VM vm;
+        VM::InterpretResult result = vm.Interpret(test.first);
+        ASSERT_EQ(result, VM::INTERPRET_OK);
+        NotaValue value = vm.Pop();
+        ASSERT_TRUE(value.IsBool());
+        ASSERT_EQ(value.AsBool(), test.second);
+    }
+}
+
 TEST(VMTest, StringInterning) {
     VM vm;
     VM::InterpretResult result = vm.Interpret("let a = 10\n let b = 10\n");

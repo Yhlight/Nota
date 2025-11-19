@@ -29,6 +29,7 @@ public:
     void visit(const IfStmt& stmt) override;
     void visit(const WhileStmt& stmt) override;
     void visit(const ForStmt& stmt) override;
+    void visit(const DoWhileStmt& stmt) override;
 
 private:
     std::shared_ptr<Environment> globals;

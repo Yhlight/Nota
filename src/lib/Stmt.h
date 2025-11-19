@@ -12,6 +12,7 @@ struct BlockStmt;
 struct IfStmt;
 struct WhileStmt;
 struct ForStmt;
+struct DoWhileStmt;
 
 // Visitor interface
 class StmtVisitor {
@@ -23,6 +24,7 @@ public:
     virtual void visit(const IfStmt& stmt) = 0;
     virtual void visit(const WhileStmt& stmt) = 0;
     virtual void visit(const ForStmt& stmt) = 0;
+    virtual void visit(const DoWhileStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -111,4 +113,17 @@ struct ForStmt : Stmt {
     const std::shared_ptr<Expr> condition;
     const std::shared_ptr<Expr> increment;
     const std::shared_ptr<Stmt> body;
+};
+
+struct DoWhileStmt : Stmt {
+    DoWhileStmt(std::shared_ptr<Stmt> body, std::shared_ptr<Expr> condition)
+        : body(std::move(body)),
+          condition(std::move(condition)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::shared_ptr<Stmt> body;
+    const std::shared_ptr<Expr> condition;
 };

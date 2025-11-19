@@ -116,6 +116,14 @@ public:
         stmt.body->accept(*this);
     }
 
+    void visit(const DoWhileStmt& stmt) override {
+        oss << "do ";
+        stmt.body->accept(*this);
+        oss << "while (";
+        stmt.condition->accept(*this);
+        oss << ")";
+    }
+
 
 private:
     void parenthesize(const std::string& name, const std::vector<std::shared_ptr<Expr>>& exprs) {

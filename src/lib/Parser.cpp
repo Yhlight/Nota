@@ -40,6 +40,7 @@ std::shared_ptr<Stmt> Parser::statement() {
     if (match({TokenType::IF})) return ifStatement();
     if (match({TokenType::WHILE})) return whileStatement();
     if (match({TokenType::FOR})) return forStatement();
+    if (match({TokenType::DO})) return doWhileStatement();
     return expressionStatement();
 }
 
@@ -106,6 +107,27 @@ std::shared_ptr<Stmt> Parser::forStatement() {
     consume(TokenType::NEWLINE, "Expect newline after end.");
 
     return std::make_shared<ForStmt>(initializer, condition, increment, body);
+}
+
+std::shared_ptr<Stmt> Parser::doWhileStatement() {
+    consume(TokenType::NEWLINE, "Expect newline after 'do'.");
+
+    std::vector<std::shared_ptr<Stmt>> bodyStmts;
+    while (!check(TokenType::WHILE) && !isAtEnd()) {
+        bodyStmts.push_back(declaration());
+    }
+
+    auto body = std::make_shared<BlockStmt>(bodyStmts);
+
+    consume(TokenType::WHILE, "Expect 'while' after do-while body.");
+
+    std::shared_ptr<Expr> condition = expression();
+    consume(TokenType::NEWLINE, "Expect newline after while condition.");
+
+    consume(TokenType::END, "Expect 'end' after do-while statement.");
+    consume(TokenType::NEWLINE, "Expect newline after end.");
+
+    return std::make_shared<DoWhileStmt>(body, condition);
 }
 
 std::shared_ptr<Stmt> Parser::expressionStatement() {

@@ -110,3 +110,16 @@ TEST(InterpreterTest, HandlesImplicitLineContinuation) {
     auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
     EXPECT_EQ(std::get<int>(value), 30);
 }
+
+TEST(InterpreterTest, HandlesDoWhileStatements) {
+    std::string source = "mut a = 0\ndo\na = a + 1\nwhile a < 5\nend\n";
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+    Interpreter interpreter;
+    interpreter.interpret(statements);
+    auto globals = interpreter.getGlobals();
+    auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
+    EXPECT_EQ(std::get<int>(value), 5);
+}

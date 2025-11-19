@@ -200,6 +200,13 @@ void Interpreter::visit(const ForStmt& stmt) {
     this->environment = previous;
 }
 
+void Interpreter::visit(const DoWhileStmt& stmt) {
+    do {
+        execute(stmt.body);
+        evaluate(stmt.condition);
+    } while (isTruthy(last_value));
+}
+
 void Interpreter::execute(const std::shared_ptr<Stmt>& stmt) {
     stmt->accept(*this);
 }

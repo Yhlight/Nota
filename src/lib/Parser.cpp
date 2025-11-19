@@ -2,12 +2,43 @@
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
-std::shared_ptr<Expr> Parser::parse() {
+std::vector<std::shared_ptr<Stmt>> Parser::parse() {
+    std::vector<std::shared_ptr<Stmt>> statements;
+    while (!isAtEnd()) {
+        statements.push_back(declaration());
+    }
+    return statements;
+}
+
+std::shared_ptr<Stmt> Parser::declaration() {
     try {
-        return expression();
+        if (match({TokenType::LET})) return varDeclaration(false);
+        if (match({TokenType::MUT})) return varDeclaration(true);
+        return statement();
     } catch (const std::runtime_error& e) {
+        synchronize();
         return nullptr;
     }
+}
+
+std::shared_ptr<Stmt> Parser::varDeclaration(bool isMutable) {
+    Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+    std::shared_ptr<Expr> initializer = nullptr;
+    if (match({TokenType::EQUAL})) {
+        initializer = expression();
+    }
+    consume(TokenType::NEWLINE, "Expect newline after variable declaration.");
+    return std::make_shared<VarStmt>(name, initializer, isMutable);
+}
+
+std::shared_ptr<Stmt> Parser::statement() {
+    return expressionStatement();
+}
+
+std::shared_ptr<Stmt> Parser::expressionStatement() {
+    auto expr = expression();
+    consume(TokenType::NEWLINE, "Expect newline after expression.");
+    return std::make_shared<ExpressionStmt>(expr);
 }
 
 std::shared_ptr<Expr> Parser::expression() {
@@ -138,4 +169,26 @@ bool Parser::hasError() const {
 
 const std::vector<NotaError>& Parser::getErrors() const {
     return errors;
+}
+
+void Parser::synchronize() {
+    advance();
+
+    while (!isAtEnd()) {
+        if (previous().type == TokenType::NEWLINE) return;
+
+        switch (peek().type) {
+            case TokenType::CLASS:
+            case TokenType::FUNC:
+            case TokenType::LET:
+            case TokenType::MUT:
+            case TokenType::FOR:
+            case TokenType::IF:
+            case TokenType::WHILE:
+            case TokenType::RETURN:
+                return;
+        }
+
+        advance();
+    }
 }

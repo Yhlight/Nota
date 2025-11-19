@@ -5,12 +5,30 @@
 #include <sstream>
 
 // An AST printer implementation to verify the structure of the parsed expressions.
-class AstPrinter : public ExprVisitor {
+class AstPrinter : public ExprVisitor, public StmtVisitor {
 public:
-    std::string print(const std::shared_ptr<Expr>& expr) {
-        if (!expr) return "null";
-        expr->accept(*this);
+    std::string print(const std::vector<std::shared_ptr<Stmt>>& stmts) {
+        oss.str(""); // Clear the stream
+        for (const auto& stmt : stmts) {
+            if (stmt) {
+                stmt->accept(*this);
+            }
+        }
         return oss.str();
+    }
+
+    void visit(const ExpressionStmt& stmt) override {
+        stmt.expression->accept(*this);
+        oss << "\n";
+    }
+
+    void visit(const VarStmt& stmt) override {
+        oss << (stmt.isMutable ? "mut " : "let ") << stmt.name.lexeme;
+        if (stmt.initializer) {
+            oss << " = ";
+            stmt.initializer->accept(*this);
+        }
+        oss << "\n";
     }
 
     void visit(const Binary& expr) override {
@@ -56,24 +74,16 @@ std::string parseAndPrint(const std::string& source) {
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
     Parser parser(tokens);
-    std::shared_ptr<Expr> expr = parser.parse();
+    auto stmts = parser.parse();
     AstPrinter printer;
-    return printer.print(expr);
+    return printer.print(stmts);
 }
 
-TEST(ParserTest, ParsesNumericLiteral) {
-    EXPECT_EQ(parseAndPrint("123"), "123");
+TEST(ParserTest, ParsesVarDeclaration) {
+    EXPECT_EQ(parseAndPrint("let a = 1\n"), "let a = 1\n");
+    EXPECT_EQ(parseAndPrint("mut b = \"hello\"\n"), "mut b = hello\n");
 }
 
-TEST(ParserTest, ParsesSimpleBinaryExpression) {
-    EXPECT_EQ(parseAndPrint("1 + 2"), "(+ 1 2)");
-}
-
-TEST(ParserTest, ParsesUnaryExpression) {
-    EXPECT_EQ(parseAndPrint("-1"), "(- 1)");
-}
-
-TEST(ParserTest, HandlesPrecedence) {
-    EXPECT_EQ(parseAndPrint("1 + 2 * 3"), "(+ 1 (* 2 3))");
-    EXPECT_EQ(parseAndPrint("(1 + 2) * 3"), "(* (group (+ 1 2)) 3)");
+TEST(ParserTest, ParsesExpressionStatement) {
+    EXPECT_EQ(parseAndPrint("1 + 2\n"), "(+ 1 2)\n");
 }

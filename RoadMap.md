@@ -9,9 +9,10 @@ This document outlines the development plan for the Nota programming language.
 - [x] Abstract Syntax Tree (AST) (Basic Expressions)
 - [ ] Bytecode generation
 - [ ] Virtual Machine (VM)
-- [ ] Basic data types (int, float, bool)
-- [ ] Variables (let, mut)
-- [ ] Basic operators (+, -, *, /)
+- [x] Basic data types (int, float, bool)
+- [x] Variables (let, mut)
+- [x] Basic operators (+, -, *, /)
+- [x] AST Interpreter (Basic Expressions and Statements)
 
 ## Phase 2: Advanced Language Features
 

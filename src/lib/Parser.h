@@ -8,10 +8,12 @@
 
 #include "Lexer.h" // For NotaError
 
+#include "Stmt.h"
+
 class Parser {
 public:
     Parser(const std::vector<Token>& tokens);
-    std::shared_ptr<Expr> parse();
+    std::vector<std::shared_ptr<Stmt>> parse();
     bool hasError() const;
     const std::vector<NotaError>& getErrors() const;
 
@@ -20,7 +22,12 @@ private:
     std::vector<NotaError> errors;
     int current = 0;
 
+    std::shared_ptr<Stmt> declaration();
+    std::shared_ptr<Stmt> varDeclaration(bool isMutable);
+    std::shared_ptr<Stmt> statement();
+    std::shared_ptr<Stmt> expressionStatement();
     std::shared_ptr<Expr> expression();
+    void synchronize();
     std::shared_ptr<Expr> equality();
     std::shared_ptr<Expr> comparison();
     std::shared_ptr<Expr> term();

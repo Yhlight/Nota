@@ -16,7 +16,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # Core Library
-file(GLOB LIBNOTA_SOURCES "src/lib/*.cpp" "src/lib/*.h")
+file(GLOB LIBNOTA_SOURCES "src/lib/*.cpp" "src/lib/*.h" "src/lib/*.cpp")
 add_library(libnota ${LIBNOTA_SOURCES})
 target_include_directories(libnota PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/lib)
 

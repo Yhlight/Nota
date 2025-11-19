@@ -84,6 +84,8 @@ std::unique_ptr<core::Statement> Parser::ParseStatement() {
             return ParseLetStatement();
         case core::TokenType::MUT:
             return ParseMutStatement();
+        case core::TokenType::IF:
+            return ParseIfStatement();
         default:
             return ParseExpressionStatement();
     }
@@ -193,6 +195,54 @@ std::unique_ptr<core::Expression> Parser::ParseInfixExpression(std::unique_ptr<c
     expression->right = ParseExpression(precedence);
 
     return expression;
+}
+
+std::unique_ptr<core::Statement> Parser::ParseIfStatement() {
+    auto stmt = std::make_unique<core::IfStatement>();
+    stmt->token = cur_token_;
+
+    NextToken();
+    stmt->condition = ParseExpression(LOWEST);
+
+    while (cur_token_.type == core::TokenType::NEWLINE) {
+        NextToken();
+    }
+
+    stmt->consequence = ParseBlockStatement();
+
+    if (peek_token_.type == core::TokenType::ELSE) {
+        NextToken();
+        NextToken();
+
+        if (cur_token_.type == core::TokenType::IF) {
+            stmt->alternative = ParseIfStatement();
+        } else {
+            stmt->alternative = ParseBlockStatement();
+        }
+    }
+
+    return stmt;
+}
+
+std::unique_ptr<core::BlockStatement> Parser::ParseBlockStatement() {
+    auto block = std::make_unique<core::BlockStatement>();
+    block->token = cur_token_;
+
+    NextToken();
+
+    while (cur_token_.type != core::TokenType::END && cur_token_.type != core::TokenType::END_OF_FILE) {
+        if (cur_token_.type == core::TokenType::NEWLINE) {
+            NextToken();
+            continue;
+        }
+        auto stmt = ParseStatement();
+        if (stmt) {
+            block->statements.push_back(std::move(stmt));
+        }
+        NextToken();
+    }
+
+    return block;
 }
 
 Precedence Parser::PeekPrecedence() {

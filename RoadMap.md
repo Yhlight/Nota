@@ -27,10 +27,10 @@ This document outlines the development plan for the Nota programming language.
 
 ## Stage 4: Language Features
 
-- [ ] Implement variable declarations (`let`, `mut`).
+- [x] Implement variable declarations (`let`, `mut`).
 - [ ] Implement basic data types (`int`, `float`, `bool`, `string`).
 - [ ] Implement arithmetic and logical operators.
-- [ ] Implement control flow structures (`if`, `else`, `match`).
+- [x] Implement control flow structures (`if`, `else`).
 - [ ] Implement loop structures (`while`, `for`, `for-each`, `do-while`).
 - [ ] Implement functions and function calls.
 - [ ] Implement classes and objects.

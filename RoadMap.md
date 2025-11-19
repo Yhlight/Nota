@@ -16,7 +16,8 @@ This document outlines the development plan for the Nota programming language.
 
 ## Phase 2: Advanced Language Features
 
-- [ ] Control flow (if/else, while, for)
+- [x] Control flow (if/else)
+- [ ] Control flow (while, for)
 - [ ] Functions
 - [ ] Strings
 - [ ] Arrays

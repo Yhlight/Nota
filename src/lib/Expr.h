@@ -9,6 +9,8 @@ struct Binary;
 struct Grouping;
 struct Literal;
 struct Unary;
+struct Variable;
+struct Assign;
 
 // Visitor interface
 class ExprVisitor {
@@ -18,6 +20,8 @@ public:
     virtual void visit(const Grouping& expr) = 0;
     virtual void visit(const Literal& expr) = 0;
     virtual void visit(const Unary& expr) = 0;
+    virtual void visit(const Variable& expr) = 0;
+    virtual void visit(const Assign& expr) = 0;
 };
 
 // Base class for all expression nodes
@@ -73,4 +77,27 @@ struct Unary : Expr {
 
     const Token op;
     const std::shared_ptr<Expr> right;
+};
+
+struct Variable : Expr {
+    explicit Variable(Token name)
+        : name(std::move(name)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token name;
+};
+
+struct Assign : Expr {
+    Assign(Token name, std::shared_ptr<Expr> value)
+        : name(std::move(name)), value(std::move(value)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token name;
+    const std::shared_ptr<Expr> value;
 };

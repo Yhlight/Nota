@@ -57,6 +57,36 @@ public:
         parenthesize(expr.op.lexeme, {expr.right});
     }
 
+    void visit(const Variable& expr) override {
+        oss << expr.name.lexeme;
+    }
+
+    void visit(const Assign& expr) override {
+        oss << "(" << expr.name.lexeme << " = ";
+        expr.value->accept(*this);
+        oss << ")";
+    }
+
+    void visit(const BlockStmt& stmt) override {
+        oss << "{\n";
+        for (const auto& s : stmt.statements) {
+            s->accept(*this);
+        }
+        oss << "}\n";
+    }
+
+    void visit(const IfStmt& stmt) override {
+        oss << "if (";
+        stmt.condition->accept(*this);
+        oss << ") ";
+        stmt.thenBranch->accept(*this);
+        if (stmt.elseBranch) {
+            oss << "else ";
+            stmt.elseBranch->accept(*this);
+        }
+    }
+
+
 private:
     void parenthesize(const std::string& name, const std::vector<std::shared_ptr<Expr>>& exprs) {
         oss << "(" << name;
@@ -86,4 +116,9 @@ TEST(ParserTest, ParsesVarDeclaration) {
 
 TEST(ParserTest, ParsesExpressionStatement) {
     EXPECT_EQ(parseAndPrint("1 + 2\n"), "(+ 1 2)\n");
+}
+
+TEST(ParserTest, ParsesIfStatement) {
+    std::string expected = "if ((> 1 0)) {\nlet a = 2\n}\n";
+    EXPECT_EQ(parseAndPrint("if 1 > 0\nlet a = 2\nend\n"), expected);
 }

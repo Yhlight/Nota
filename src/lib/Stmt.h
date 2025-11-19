@@ -8,6 +8,8 @@
 // Forward declarations
 struct ExpressionStmt;
 struct VarStmt;
+struct BlockStmt;
+struct IfStmt;
 
 // Visitor interface
 class StmtVisitor {
@@ -15,6 +17,8 @@ public:
     virtual ~StmtVisitor() = default;
     virtual void visit(const ExpressionStmt& stmt) = 0;
     virtual void visit(const VarStmt& stmt) = 0;
+    virtual void visit(const BlockStmt& stmt) = 0;
+    virtual void visit(const IfStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -47,4 +51,30 @@ struct VarStmt : Stmt {
     const Token name;
     const std::shared_ptr<Expr> initializer;
     const bool isMutable;
+};
+
+struct BlockStmt : Stmt {
+    BlockStmt(std::vector<std::shared_ptr<Stmt>> statements)
+        : statements(std::move(statements)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::vector<std::shared_ptr<Stmt>> statements;
+};
+
+struct IfStmt : Stmt {
+    IfStmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> thenBranch, std::shared_ptr<Stmt> elseBranch)
+        : condition(std::move(condition)),
+          thenBranch(std::move(thenBranch)),
+          elseBranch(std::move(elseBranch)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::shared_ptr<Expr> condition;
+    const std::shared_ptr<Stmt> thenBranch;
+    const std::shared_ptr<Stmt> elseBranch;
 };

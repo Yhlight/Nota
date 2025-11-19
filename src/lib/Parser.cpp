@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include <vector>
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
@@ -32,8 +33,29 @@ std::shared_ptr<Stmt> Parser::varDeclaration(bool isMutable) {
 }
 
 std::shared_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::IF})) return ifStatement();
     return expressionStatement();
 }
+
+std::shared_ptr<Stmt> Parser::ifStatement() {
+    std::shared_ptr<Expr> condition = expression();
+    consume(TokenType::NEWLINE, "Expect newline after if condition.");
+
+    std::vector<std::shared_ptr<Stmt>> thenBranchStmts = block();
+    std::shared_ptr<Stmt> elseBranch = nullptr;
+
+    if (match({TokenType::ELSE})) {
+        consume(TokenType::NEWLINE, "Expect newline after else.");
+        std::vector<std::shared_ptr<Stmt>> elseBranchStmts = block();
+        elseBranch = std::make_shared<BlockStmt>(elseBranchStmts);
+    }
+
+    consume(TokenType::END, "Expect 'end' after if statement.");
+    consume(TokenType::NEWLINE, "Expect newline after end.");
+
+    return std::make_shared<IfStmt>(condition, std::make_shared<BlockStmt>(thenBranchStmts), elseBranch);
+}
+
 
 std::shared_ptr<Stmt> Parser::expressionStatement() {
     auto expr = expression();
@@ -42,7 +64,24 @@ std::shared_ptr<Stmt> Parser::expressionStatement() {
 }
 
 std::shared_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
+}
+
+std::shared_ptr<Expr> Parser::assignment() {
+    auto expr = equality();
+
+    if (match({TokenType::EQUAL})) {
+        Token equals = previous();
+        auto value = assignment();
+
+        if (auto var = std::dynamic_pointer_cast<Variable>(expr)) {
+            return std::make_shared<Assign>(var->name, value);
+        }
+
+        error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
 }
 
 std::shared_ptr<Expr> Parser::equality() {
@@ -118,8 +157,23 @@ std::shared_ptr<Expr> Parser::primary() {
         return std::make_shared<Grouping>(expr);
     }
 
+    if (match({TokenType::IDENTIFIER})) {
+        return std::make_shared<Variable>(previous());
+    }
+
     throw error(peek(), "Expect expression.");
 }
+
+std::vector<std::shared_ptr<Stmt>> Parser::block() {
+    std::vector<std::shared_ptr<Stmt>> statements;
+
+    while (!check(TokenType::END) && !check(TokenType::ELSE) && !isAtEnd()) {
+        statements.push_back(declaration());
+    }
+
+    return statements;
+}
+
 
 bool Parser::isAtEnd() {
     return peek().type == TokenType::END_OF_FILE;

@@ -32,3 +32,29 @@ TEST(InterpreterTest, HandlesVariableDeclarations) {
     EXPECT_EQ(std::get<int>(a_value), 1);
     EXPECT_EQ(std::get<int>(b_value), 2);
 }
+
+TEST(InterpreterTest, HandlesIfStatements) {
+    std::string source = "mut a = 1\nif 1 > 0\na = 2\nend\n";
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+    Interpreter interpreter;
+    interpreter.interpret(statements);
+    auto globals = interpreter.getGlobals();
+    auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
+    EXPECT_EQ(std::get<int>(value), 2);
+}
+
+TEST(InterpreterTest, HandlesIfElseStatements) {
+    std::string source = "mut a = 1\nif 0 > 1\na = 2\nelse\na = 3\nend\n";
+    Lexer lexer(source);
+    auto tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+    Interpreter interpreter;
+    interpreter.interpret(statements);
+    auto globals = interpreter.getGlobals();
+    auto value = globals->get(Token{TokenType::IDENTIFIER, "a", std::monostate{}, 1});
+    EXPECT_EQ(std::get<int>(value), 3);
+}

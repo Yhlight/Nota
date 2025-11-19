@@ -25,6 +25,8 @@ private:
     std::shared_ptr<Stmt> declaration();
     std::shared_ptr<Stmt> varDeclaration(bool isMutable);
     std::shared_ptr<Stmt> statement();
+    std::shared_ptr<Stmt> function(const std::string& kind);
+    std::shared_ptr<Stmt> returnStatement();
     std::shared_ptr<Stmt> ifStatement();
     std::shared_ptr<Stmt> whileStatement();
     std::shared_ptr<Stmt> forStatement();
@@ -40,6 +42,7 @@ private:
     std::shared_ptr<Expr> unary();
     std::shared_ptr<Expr> postfix();
     std::shared_ptr<Expr> primary();
+    std::shared_ptr<Expr> finishCall(std::shared_ptr<Expr> callee);
     std::vector<std::shared_ptr<Stmt>> block();
 
     bool isAtEnd();

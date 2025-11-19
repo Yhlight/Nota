@@ -4,14 +4,25 @@
 #include "Stmt.h"
 #include "Token.h"
 #include "Environment.h"
+#include "NotaFunction.h" // Include the new header
 #include <vector>
 #include <memory>
+#include <any>
+#include <stdexcept>
 
 class Interpreter : public ExprVisitor, public StmtVisitor {
 public:
     Interpreter();
     void interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
-    std::shared_ptr<Environment> getGlobals();
+    std::any getLastValue() const;
+    void executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment);
+
+    // Custom exception for return values
+    class Return : public std::runtime_error {
+    public:
+        Return(std::any value) : std::runtime_error(""), value(std::move(value)) {}
+        std::any value;
+    };
 
     // Expression visitor methods
     void visit(const Binary& expr) override;
@@ -21,6 +32,7 @@ public:
     void visit(const Variable& expr) override;
     void visit(const Assign& expr) override;
     void visit(const Postfix& expr) override;
+    void visit(const Call& expr) override;
 
     // Statement visitor methods
     void visit(const ExpressionStmt& stmt) override;
@@ -30,16 +42,18 @@ public:
     void visit(const WhileStmt& stmt) override;
     void visit(const ForStmt& stmt) override;
     void visit(const DoWhileStmt& stmt) override;
+    void visit(const FunctionStmt& stmt) override;
+    void visit(const ReturnStmt& stmt) override;
 
 private:
+    friend class NotaFunction;
     std::shared_ptr<Environment> globals;
     std::shared_ptr<Environment> environment;
-    std::variant<std::monostate, int, double, std::string, bool> last_value;
+    std::any last_value;
 
     void execute(const std::shared_ptr<Stmt>& stmt);
-    void executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment);
     void evaluate(const std::shared_ptr<Expr>& expr);
 
-    bool isTruthy(const std::variant<std::monostate, int, double, std::string, bool>& value);
-    bool isEqual(const std::variant<std::monostate, int, double, std::string, bool>& a, const std::variant<std::monostate, int, double, std::string, bool>& b);
+    bool isTruthy(const std::any& value);
+    bool isEqual(const std::any& a, const std::any& b);
 };

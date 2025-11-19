@@ -3,7 +3,7 @@
 #include "Token.h"
 #include <map>
 #include <string>
-#include <variant>
+#include <any>
 #include <memory>
 
 class Environment {
@@ -11,13 +11,13 @@ public:
     Environment();
     explicit Environment(std::shared_ptr<Environment> enclosing);
 
-    void define(const std::string& name, const std::variant<std::monostate, int, double, std::string, bool>& value, bool isMutable);
-    void assign(const Token& name, const std::variant<std::monostate, int, double, std::string, bool>& value);
-    const std::variant<std::monostate, int, double, std::string, bool>& get(const Token& name);
+    void define(const std::string& name, const std::any& value = {}, bool isMutable = false);
+    void assign(const Token& name, const std::any& value);
+    const std::any& get(const Token& name);
 
 private:
     struct Variable {
-        std::variant<std::monostate, int, double, std::string, bool> value;
+        std::any value;
         bool isMutable;
     };
 

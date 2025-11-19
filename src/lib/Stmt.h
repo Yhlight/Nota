@@ -13,6 +13,8 @@ struct IfStmt;
 struct WhileStmt;
 struct ForStmt;
 struct DoWhileStmt;
+struct FunctionStmt;
+struct ReturnStmt;
 
 // Visitor interface
 class StmtVisitor {
@@ -25,6 +27,8 @@ public:
     virtual void visit(const WhileStmt& stmt) = 0;
     virtual void visit(const ForStmt& stmt) = 0;
     virtual void visit(const DoWhileStmt& stmt) = 0;
+    virtual void visit(const FunctionStmt& stmt) = 0;
+    virtual void visit(const ReturnStmt& stmt) = 0;
 };
 
 // Base class for all statement nodes
@@ -126,4 +130,29 @@ struct DoWhileStmt : Stmt {
 
     const std::shared_ptr<Stmt> body;
     const std::shared_ptr<Expr> condition;
+};
+
+struct FunctionStmt : Stmt {
+    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body)
+        : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token name;
+    const std::vector<Token> params;
+    const std::vector<std::shared_ptr<Stmt>> body;
+};
+
+struct ReturnStmt : Stmt {
+    ReturnStmt(Token keyword, std::shared_ptr<Expr> value)
+        : keyword(std::move(keyword)), value(std::move(value)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const Token keyword;
+    const std::shared_ptr<Expr> value;
 };

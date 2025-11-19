@@ -12,6 +12,7 @@ struct Unary;
 struct Variable;
 struct Assign;
 struct Postfix;
+struct Call;
 
 // Visitor interface
 class ExprVisitor {
@@ -24,6 +25,7 @@ public:
     virtual void visit(const Variable& expr) = 0;
     virtual void visit(const Assign& expr) = 0;
     virtual void visit(const Postfix& expr) = 0;
+    virtual void visit(const Call& expr) = 0;
 };
 
 // Base class for all expression nodes
@@ -114,4 +116,17 @@ struct Postfix : Expr {
 
     const std::shared_ptr<Expr> left;
     const Token op;
+};
+
+struct Call : Expr {
+    Call(std::shared_ptr<Expr> callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments)
+        : callee(std::move(callee)), paren(std::move(paren)), arguments(std::move(arguments)) {}
+
+    void accept(ExprVisitor& visitor) const override {
+        visitor.visit(*this);
+    }
+
+    const std::shared_ptr<Expr> callee;
+    const Token paren;
+    const std::vector<std::shared_ptr<Expr>> arguments;
 };

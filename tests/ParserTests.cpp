@@ -40,17 +40,16 @@ public:
     }
 
     void visit(const Literal& expr) override {
-        if (std::holds_alternative<std::monostate>(expr.value)) {
-            oss << "none";
-        } else if (std::holds_alternative<int>(expr.value)) {
-            oss << std::get<int>(expr.value);
-        } else if (std::holds_alternative<double>(expr.value)) {
-            oss << std::get<double>(expr.value);
-        } else if (std::holds_alternative<std::string>(expr.value)) {
-            oss << std::get<std::string>(expr.value);
-        } else if (std::holds_alternative<bool>(expr.value)) {
-            oss << (std::get<bool>(expr.value) ? "true" : "false");
-        }
+        std::visit([this](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, std::monostate>) {
+                oss << "none";
+            } else if constexpr (std::is_same_v<T, bool>) {
+                oss << (arg ? "true" : "false");
+            } else {
+                oss << arg;
+            }
+        }, expr.value);
     }
 
     void visit(const Unary& expr) override {
@@ -124,6 +123,37 @@ public:
         oss << ")";
     }
 
+    void visit(const Call& expr) override {
+        oss << "call(";
+        expr.callee->accept(*this);
+        oss << ", args=";
+        for (const auto& arg : expr.arguments) {
+            arg->accept(*this);
+            oss << " ";
+        }
+        oss << ")";
+    }
+
+    void visit(const FunctionStmt& stmt) override {
+        oss << "func " << stmt.name.lexeme << "(";
+        for (const auto& param : stmt.params) {
+            oss << param.lexeme << " ";
+        }
+        oss << ") {\n";
+        for (const auto& s : stmt.body) {
+            s->accept(*this);
+        }
+        oss << "}\n";
+    }
+
+    void visit(const ReturnStmt& stmt) override {
+        oss << "return ";
+        if (stmt.value) {
+            stmt.value->accept(*this);
+        }
+        oss << "\n";
+    }
+
 
 private:
     void parenthesize(const std::string& name, const std::vector<std::shared_ptr<Expr>>& exprs) {
@@ -169,4 +199,14 @@ TEST(ParserTest, ParsesWhileStatement) {
 TEST(ParserTest, ParsesForStatement) {
     std::string expected = "for (mut i = 0\n; (< i 5); (i++)) {\n(a = (+ a 1))\n}\n";
     EXPECT_EQ(parseAndPrint("for mut i = 0; i < 5; i++\na = a + 1\nend\n"), expected);
+}
+
+TEST(ParserTest, ParsesFunctionDeclaration) {
+    std::string expected = "func add(a b ) {\nreturn (+ a b)\n}\n";
+    EXPECT_EQ(parseAndPrint("func add(a, b)\nreturn a + b\nend\n"), expected);
+}
+
+TEST(ParserTest, ParsesFunctionCall) {
+    std::string expected = "call(add, args=(+ 1 2) )\n";
+    EXPECT_EQ(parseAndPrint("add(1 + 2)\n"), expected);
 }

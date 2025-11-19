@@ -17,6 +17,7 @@ enum class InterpretResult {
 class VM {
 public:
     InterpretResult Interpret(const std::string& source);
+    core::NotaValue GetLastPopped() const;
 
 private:
     InterpretResult Run();
@@ -24,6 +25,7 @@ private:
     core::Chunk chunk_;
     std::vector<core::NotaValue> stack_;
     core::NotaValue* stack_top_ = nullptr;
+    core::NotaValue last_popped_;
 };
 
 } // namespace vm

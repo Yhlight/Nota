@@ -36,6 +36,19 @@ void Compiler::CompileExpression(const core::Expression* expr) {
     if (auto int_lit = dynamic_cast<const core::IntegerLiteral*>(expr)) {
         core::NotaValue value(int_lit->value);
         EmitConstant(value);
+    } else if (auto infix_expr = dynamic_cast<const core::InfixExpression*>(expr)) {
+        CompileExpression(infix_expr->left.get());
+        CompileExpression(infix_expr->right.get());
+
+        if (infix_expr->op == "+") {
+            EmitByte(static_cast<uint8_t>(core::OpCode::OP_ADD));
+        } else if (infix_expr->op == "-") {
+            EmitByte(static_cast<uint8_t>(core::OpCode::OP_SUBTRACT));
+        } else if (infix_expr->op == "*") {
+            EmitByte(static_cast<uint8_t>(core::OpCode::OP_MULTIPLY));
+        } else if (infix_expr->op == "/") {
+            EmitByte(static_cast<uint8_t>(core::OpCode::OP_DIVIDE));
+        }
     }
 }
 

@@ -21,7 +21,11 @@ private:
     void EmitReturn();
     void EmitConstant(core::NotaValue value);
 
+    uint8_t ParseVariable(const std::string& name);
+    uint8_t IdentifierConstant(const std::string& name);
+
     core::Chunk* compiling_chunk_ = nullptr;
+    std::unordered_map<std::string, uint8_t> globals_;
 };
 
 } // namespace compiler

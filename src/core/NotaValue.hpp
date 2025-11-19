@@ -1,6 +1,6 @@
 #pragma once
 
-#include "NotaObject.hpp"
+#include "StringObject.hpp"
 #include <variant>
 
 namespace nota {

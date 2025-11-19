@@ -156,5 +156,20 @@ struct IfStatement : public Statement {
     }
 };
 
+// Expression for assignment (e.g., a = 10)
+struct AssignmentExpression : public Expression {
+    Token token; // The '=' token
+    std::unique_ptr<Identifier> name;
+    std::unique_ptr<Expression> value;
+
+    std::string ToString() const override {
+        std::string out;
+        out += name->ToString();
+        out += " = ";
+        out += value->ToString();
+        return out;
+    }
+};
+
 } // namespace core
 } // namespace nota

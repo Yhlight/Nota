@@ -3,6 +3,7 @@
 #include "core/Chunk.hpp"
 #include "core/NotaValue.hpp"
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace nota {
@@ -26,6 +27,7 @@ private:
     std::vector<core::NotaValue> stack_;
     core::NotaValue* stack_top_ = nullptr;
     core::NotaValue last_popped_;
+    std::unordered_map<std::string, core::NotaValue> globals_;
 };
 
 } // namespace vm

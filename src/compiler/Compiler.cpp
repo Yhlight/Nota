@@ -23,12 +23,22 @@ void Compiler::CompileProgram(const core::Program* program) {
     for (const auto& stmt : program->statements) {
         CompileStatement(stmt.get());
     }
+    EmitReturn();
 }
 
 void Compiler::CompileStatement(const core::Statement* stmt) {
     if (auto expr_stmt = dynamic_cast<const core::ExpressionStatement*>(stmt)) {
         CompileExpression(expr_stmt->expression.get());
-        EmitReturn();
+    } else if (auto let_stmt = dynamic_cast<const core::LetStatement*>(stmt)) {
+        CompileExpression(let_stmt->value.get());
+        uint8_t global = ParseVariable(let_stmt->name->value);
+        EmitByte(static_cast<uint8_t>(core::OpCode::OP_DEFINE_GLOBAL));
+        EmitByte(global);
+    } else if (auto mut_stmt = dynamic_cast<const core::MutStatement*>(stmt)) {
+        CompileExpression(mut_stmt->value.get());
+        uint8_t global = ParseVariable(mut_stmt->name->value);
+        EmitByte(static_cast<uint8_t>(core::OpCode::OP_DEFINE_GLOBAL));
+        EmitByte(global);
     }
 }
 
@@ -49,6 +59,15 @@ void Compiler::CompileExpression(const core::Expression* expr) {
         } else if (infix_expr->op == "/") {
             EmitByte(static_cast<uint8_t>(core::OpCode::OP_DIVIDE));
         }
+    } else if (auto ident = dynamic_cast<const core::Identifier*>(expr)) {
+        uint8_t global = ParseVariable(ident->value);
+        EmitByte(static_cast<uint8_t>(core::OpCode::OP_GET_GLOBAL));
+        EmitByte(global);
+    } else if (auto assign_expr = dynamic_cast<const core::AssignmentExpression*>(expr)) {
+        CompileExpression(assign_expr->value.get());
+        uint8_t global = ParseVariable(assign_expr->name->value);
+        EmitByte(static_cast<uint8_t>(core::OpCode::OP_SET_GLOBAL));
+        EmitByte(global);
     }
 }
 
@@ -63,6 +82,21 @@ void Compiler::EmitReturn() {
 void Compiler::EmitConstant(core::NotaValue value) {
     EmitByte(static_cast<uint8_t>(core::OpCode::OP_CONSTANT));
     EmitByte(compiling_chunk_->AddConstant(value));
+}
+
+uint8_t Compiler::ParseVariable(const std::string& name) {
+    if (globals_.count(name)) {
+        // Already defined
+        return globals_[name];
+    }
+
+    uint8_t index = IdentifierConstant(name);
+    globals_[name] = index;
+    return index;
+}
+
+uint8_t Compiler::IdentifierConstant(const std::string& name) {
+    return compiling_chunk_->AddConstant(core::NotaValue(new core::StringObject(name)));
 }
 
 } // namespace compiler

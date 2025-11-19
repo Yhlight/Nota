@@ -24,8 +24,10 @@ Parser::Parser(lexer::Lexer& lexer) {
     RegisterInfix(core::TokenType::NOT_EQ, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::LT, &Parser::ParseInfixExpression);
     RegisterInfix(core::TokenType::GT, &Parser::ParseInfixExpression);
+    RegisterInfix(core::TokenType::ASSIGN, &Parser::ParseAssignmentExpression);
 
     precedences_ = {
+        {core::TokenType::ASSIGN, ASSIGNMENT},
         {core::TokenType::EQ, EQUALS},
         {core::TokenType::NOT_EQ, EQUALS},
         {core::TokenType::LT, LESSGREATER},
@@ -180,6 +182,18 @@ std::unique_ptr<core::Expression> Parser::ParsePrefixExpression() {
 
     NextToken();
     expression->right = ParseExpression(PREFIX);
+
+    return expression;
+}
+
+std::unique_ptr<core::Expression> Parser::ParseAssignmentExpression(std::unique_ptr<core::Expression> left) {
+    auto expression = std::make_unique<core::AssignmentExpression>();
+    expression->token = cur_token_;
+    expression->name = std::unique_ptr<core::Identifier>(static_cast<core::Identifier*>(left.release()));
+
+    auto precedence = CurPrecedence();
+    NextToken();
+    expression->value = ParseExpression(precedence);
 
     return expression;
 }

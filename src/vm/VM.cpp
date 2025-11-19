@@ -44,6 +44,23 @@ InterpretResult VM::Run() {
         case static_cast<uint8_t>(core::OpCode::OP_SUBTRACT): BINARY_OP(-); break;
         case static_cast<uint8_t>(core::OpCode::OP_MULTIPLY): BINARY_OP(*); break;
         case static_cast<uint8_t>(core::OpCode::OP_DIVIDE):   BINARY_OP(/); break;
+        case static_cast<uint8_t>(core::OpCode::OP_DEFINE_GLOBAL): {
+            core::StringObject* name = static_cast<core::StringObject*>(READ_CONSTANT().AsObject());
+            globals_[name->GetValue()] = *(stack_top_ - 1);
+            stack_top_--;
+            break;
+        }
+        case static_cast<uint8_t>(core::OpCode::OP_GET_GLOBAL): {
+            core::StringObject* name = static_cast<core::StringObject*>(READ_CONSTANT().AsObject());
+            *stack_top_ = globals_[name->GetValue()];
+            stack_top_++;
+            break;
+        }
+        case static_cast<uint8_t>(core::OpCode::OP_SET_GLOBAL): {
+            core::StringObject* name = static_cast<core::StringObject*>(READ_CONSTANT().AsObject());
+            globals_[name->GetValue()] = *(stack_top_ - 1);
+            break;
+        }
         case static_cast<uint8_t>(core::OpCode::OP_RETURN): {
             stack_top_--;
             this->last_popped_ = *stack_top_;

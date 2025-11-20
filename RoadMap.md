@@ -10,7 +10,7 @@ This document outlines the development roadmap for the Nota programming language
 - [x] Create a simple "hello world" C++ source file (`src/main.cpp`).
 - [x] Create an initial test case (`tests/test_main.cpp`).
 - [x] Create this `RoadMap.md` file.
-- [ ] Update the `.gitignore` file.
+- [x] Update the `.gitignore` file.
 
 ## Phase 2: Lexer (Tokenizer)
 

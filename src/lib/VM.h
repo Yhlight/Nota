@@ -5,6 +5,7 @@
 #include "Value.h"
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace nota {
 
@@ -20,6 +21,7 @@ public:
     InterpretResult interpret(Chunk* chunk);
 
     std::vector<Value> stack;
+    std::unordered_map<std::string, Value> globals;
 private:
     void runtimeError(const std::string& message);
     void resetStack();

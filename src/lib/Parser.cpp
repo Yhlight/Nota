@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include "Expr.h"
+#include "Stmt.h"
 #include <memory>
 #include <string>
 #include <iostream>
@@ -8,22 +9,62 @@ namespace nota {
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
-std::unique_ptr<Expr> Parser::parse() {
-    try {
-        return expression();
-    } catch (...) {
-        return nullptr;
+std::vector<std::unique_ptr<Stmt>> Parser::parse() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+    while (!isAtEnd()) {
+        statements.push_back(declaration());
     }
+    return statements;
 }
 
-void Parser::error(const std::string& message) {
-    std::cerr << "Parse error: " << message << std::endl;
-    throw std::runtime_error(message);
+std::unique_ptr<Stmt> Parser::declaration() {
+    if (match({TokenType::LET, TokenType::MUT})) {
+        return varDeclaration();
+    }
+    return statement();
+}
+
+std::unique_ptr<Stmt> Parser::varDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+    std::unique_ptr<Expr> initializer = nullptr;
+    if (match({TokenType::EQUAL})) {
+        initializer = expression();
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+    return std::make_unique<VarDeclStmt>(name, std::move(initializer));
+}
+
+std::unique_ptr<Stmt> Parser::statement() {
+    return expressionStatement();
+}
+
+std::unique_ptr<Stmt> Parser::expressionStatement() {
+    auto expr = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+    return std::make_unique<ExpressionStmt>(std::move(expr));
 }
 
 std::unique_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
 }
+
+std::unique_ptr<Expr> Parser::assignment() {
+    auto expr = equality();
+
+    if (match({TokenType::EQUAL})) {
+        Token equals = previous();
+        auto value = assignment();
+
+        if (auto var = dynamic_cast<VariableExpr*>(expr.get())) {
+            return std::make_unique<AssignExpr>(var->name, std::move(value));
+        }
+
+        error("Invalid assignment target.");
+    }
+
+    return expr;
+}
+
 
 std::unique_ptr<Expr> Parser::equality() {
     auto expr = comparison();
@@ -88,11 +129,13 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<Literal>(lexeme.substr(1, lexeme.length() - 2), previous().line);
     }
 
+    if (match({TokenType::IDENTIFIER})) {
+        return std::make_unique<VariableExpr>(previous());
+    }
+
     if (match({TokenType::LEFT_PAREN})) {
         auto expr = expression();
-        if (!match({TokenType::RIGHT_PAREN})) {
-            error("Expect ')' after expression.");
-        }
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
         return std::make_unique<Grouping>(std::move(expr));
     }
 
@@ -108,6 +151,12 @@ bool Parser::match(const std::vector<TokenType>& types) {
         }
     }
     return false;
+}
+
+Token Parser::consume(TokenType type, const std::string& message) {
+    if (check(type)) return advance();
+    error(message);
+    return {}; // Unreachable
 }
 
 bool Parser::check(TokenType type) {
@@ -131,5 +180,12 @@ Token Parser::peek() {
 Token Parser::previous() {
     return tokens[current - 1];
 }
+
+
+void Parser::error(const std::string& message) {
+    std::cerr << "Parse error: " << message << std::endl;
+    throw std::runtime_error(message);
+}
+
 
 } // namespace nota

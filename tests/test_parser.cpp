@@ -2,25 +2,41 @@
 #include "../src/lib/Lexer.h"
 #include "../src/lib/Parser.h"
 #include "../src/lib/Expr.h"
+#include "../src/lib/Stmt.h"
 
-TEST_CASE("testing the parser") {
-    std::string source = "1 + 2";
+TEST_CASE("testing the parser with a variable declaration") {
+    std::string source = "let a = 1;";
     nota::Lexer lexer(source);
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
-    auto expr = parser.parse();
+    auto statements = parser.parse();
 
-    CHECK(expr != nullptr);
-    auto binaryExpr = dynamic_cast<nota::Binary*>(expr.get());
-    CHECK(binaryExpr != nullptr);
+    CHECK(statements.size() == 1);
+    auto varDecl = dynamic_cast<nota::VarDeclStmt*>(statements[0].get());
+    CHECK(varDecl != nullptr);
+    CHECK(varDecl->name.lexeme == "a");
 
-    auto left = dynamic_cast<nota::Literal*>(binaryExpr->left.get());
-    CHECK(left != nullptr);
-    CHECK(std::any_cast<double>(left->value) == 1.0);
+    auto literal = dynamic_cast<nota::Literal*>(varDecl->initializer.get());
+    CHECK(literal != nullptr);
+    CHECK(std::any_cast<double>(literal->value) == 1.0);
+}
 
-    CHECK(binaryExpr->op.type == nota::TokenType::PLUS);
+TEST_CASE("testing the parser with an assignment") {
+    std::string source = "a = 1;";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    auto statements = parser.parse();
 
-    auto right = dynamic_cast<nota::Literal*>(binaryExpr->right.get());
-    CHECK(right != nullptr);
-    CHECK(std::any_cast<double>(right->value) == 2.0);
+    CHECK(statements.size() == 1);
+    auto exprStmt = dynamic_cast<nota::ExpressionStmt*>(statements[0].get());
+    CHECK(exprStmt != nullptr);
+
+    auto assignExpr = dynamic_cast<nota::AssignExpr*>(exprStmt->expression.get());
+    CHECK(assignExpr != nullptr);
+    CHECK(assignExpr->name.lexeme == "a");
+
+    auto literal = dynamic_cast<nota::Literal*>(assignExpr->value.get());
+    CHECK(literal != nullptr);
+    CHECK(std::any_cast<double>(literal->value) == 1.0);
 }

@@ -1,0 +1,27 @@
+#include "vendor/doctest.h"
+#include "../src/lib/Lexer.h"
+#include "../src/lib/Parser.h"
+#include "../src/lib/Compiler.h"
+#include "../src/lib/VM.h"
+
+void testStatement(const std::string& source, const std::string& varName, double expected) {
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    auto statements = parser.parse();
+
+    nota::Compiler compiler;
+    nota::Chunk chunk = compiler.compile(statements);
+
+    nota::VM vm;
+    vm.interpret(&chunk);
+
+    nota::Value value = vm.globals[varName];
+    CHECK(std::any_cast<double>(value) == expected);
+}
+
+TEST_CASE("testing variable declarations") {
+    testStatement("let a = 1;", "a", 1.0);
+    testStatement("let b = 2;", "b", 2.0);
+    testStatement("let c = 1 + 2;", "c", 3.0);
+}

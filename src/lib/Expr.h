@@ -12,6 +12,8 @@ struct Binary;
 struct Grouping;
 struct Literal;
 struct Unary;
+struct VariableExpr;
+struct AssignExpr;
 class Expr;
 
 class ExprVisitor {
@@ -20,6 +22,8 @@ public:
     virtual std::any visitGroupingExpr(const Grouping& expr) = 0;
     virtual std::any visitLiteralExpr(const Literal& expr) = 0;
     virtual std::any visitUnaryExpr(const Unary& expr) = 0;
+    virtual std::any visitVariableExpr(const VariableExpr& expr) = 0;
+    virtual std::any visitAssignExpr(const AssignExpr& expr) = 0;
 };
 
 class Expr {
@@ -71,6 +75,28 @@ struct Unary : public Expr {
 
     Token const op;
     std::unique_ptr<Expr> const right;
+};
+
+struct VariableExpr : public Expr {
+    VariableExpr(Token name) : name(std::move(name)) {}
+
+    std::any accept(ExprVisitor& visitor) const override {
+        return visitor.visitVariableExpr(*this);
+    }
+
+    const Token name;
+};
+
+struct AssignExpr : public Expr {
+    AssignExpr(Token name, std::unique_ptr<Expr> value)
+        : name(std::move(name)), value(std::move(value)) {}
+
+    std::any accept(ExprVisitor& visitor) const override {
+        return visitor.visitAssignExpr(*this);
+    }
+
+    const Token name;
+    const std::unique_ptr<Expr> value;
 };
 
 } // namespace nota

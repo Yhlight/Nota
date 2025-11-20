@@ -159,6 +159,31 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 push(a < b);
                 break;
             }
+            case OpCode::OP_DEFINE_GLOBAL: {
+                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[ip++]]);
+                globals[name] = pop();
+                break;
+            }
+            case OpCode::OP_GET_GLOBAL: {
+                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[ip++]]);
+                auto it = globals.find(name);
+                if (it == globals.end()) {
+                    runtimeError("Undefined variable '" + name + "'.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                push(it->second);
+                break;
+            }
+            case OpCode::OP_SET_GLOBAL: {
+                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[ip++]]);
+                auto it = globals.find(name);
+                if (it == globals.end()) {
+                    runtimeError("Undefined variable '" + name + "'.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                it->second = stack.back();
+                break;
+            }
         }
     }
 }

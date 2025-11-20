@@ -15,12 +15,11 @@ void run(const std::string& source) {
     }
 
     nota::Parser parser(tokens);
-    auto expr = parser.parse();
+    auto statements = parser.parse();
 
-    if (expr) {
+    if (!statements.empty()) {
         nota::Compiler compiler;
-        nota::Chunk chunk = compiler.compile(expr);
-        chunk.write(static_cast<uint8_t>(nota::OpCode::OP_RETURN), tokens.back().line);
+        nota::Chunk chunk = compiler.compile(statements);
 
         nota::VM vm;
         vm.interpret(&chunk);

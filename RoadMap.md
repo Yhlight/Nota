@@ -14,7 +14,7 @@
 *   [ ] **Task 3: Parser**
     *   [X] Implement LL(K) recursive descent parser
     *   [X] Define Abstract Syntax Tree (AST) nodes
-    *   [ ] Parse variable declarations (`let`, `mut`)
+    *   [X] Parse variable declarations (`let`, `mut`)
     *   [X] Parse expressions and operators
     *   [ ] Parse control flow statements (`if`, `else`, `while`, `for`, `do-while`, `match`)
     *   [ ] Parse function definitions and calls

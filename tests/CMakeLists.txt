@@ -1,0 +1,11 @@
+enable_testing()
+
+add_executable(nota_tests
+    test_main.cpp
+)
+
+target_link_libraries(nota_tests PRIVATE libnota)
+
+target_include_directories(nota_tests PRIVATE vendor)
+
+add_test(NAME nota_tests COMMAND nota_tests)

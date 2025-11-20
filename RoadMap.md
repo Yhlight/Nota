@@ -12,8 +12,8 @@
 
 ## Phase 2: Lexer and Parser Implementation
 
-- [ ] **Current Focus: Implement a basic lexer to tokenize the source code.**
-- [ ] Implement a basic parser (LL(k) recursive descent).
+- [x] Implement a basic lexer to tokenize the source code.
+- [ ] **Current Focus: Implement a basic parser (LL(k) recursive descent).**
 - [ ] Set up the bytecode VM structure.
 
 ## Phase 3: Language Features

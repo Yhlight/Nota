@@ -1,7 +1,14 @@
 # Add the nota library
+# Headers:
+# - lib/Token.h
+# - lib/Lexer.h
+# - lib/Parser.h
+# - lib/VM.h
+# - lib/AST.h
 add_library(libnota STATIC
     lib/nota.cpp
     lib/Lexer.cpp
+    lib/Parser.cpp
 )
 target_include_directories(libnota PUBLIC lib)
 

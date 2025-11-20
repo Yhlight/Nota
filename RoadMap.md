@@ -2,33 +2,33 @@
 
 ## Phase 1: Core Language Features
 
-*   [ ] **Task 1: Project Setup**
+*   [X] **Task 1: Project Setup**
     *   [X] Initialize Git repository
-    *   [ ] Set up CMake build system
-    *   [ ] Create Python build script
-    *   [ ] Configure `.gitignore`
-*   [ ] **Task 2: Lexer (Tokenizer)**
-    *   [ ] Implement lexer for basic tokens (keywords, identifiers, operators, literals)
-    *   [ ] Add support for comments
-    *   [ ] Write unit tests for the lexer
+    *   [X] Set up CMake build system
+    *   [X] Create Python build script
+    *   [X] Configure `.gitignore`
+*   [X] **Task 2: Lexer (Tokenizer)**
+    *   [X] Implement lexer for basic tokens (keywords, identifiers, operators, literals)
+    *   [X] Add support for comments
+    *   [X] Write unit tests for the lexer
 *   [ ] **Task 3: Parser**
-    *   [ ] Implement LL(K) recursive descent parser
-    *   [ ] Define Abstract Syntax Tree (AST) nodes
+    *   [X] Implement LL(K) recursive descent parser
+    *   [X] Define Abstract Syntax Tree (AST) nodes
     *   [ ] Parse variable declarations (`let`, `mut`)
-    *   [ ] Parse expressions and operators
+    *   [X] Parse expressions and operators
     *   [ ] Parse control flow statements (`if`, `else`, `while`, `for`, `do-while`, `match`)
     *   [ ] Parse function definitions and calls
-    *   [ ] Write unit tests for the parser
+    *   [X] Write unit tests for the parser
 *   [ ] **Task 4: Bytecode VM**
-    *   [ ] Design bytecode instruction set
-    *   [ ] Implement a simple stack-based VM
-    *   [ ] Implement instruction fetching and decoding
-    *   [ ] Write unit tests for the VM
+    *   [X] Design bytecode instruction set
+    *   [X] Implement a simple stack-based VM
+    *   [X] Implement instruction fetching and decoding
+    *   [X] Write unit tests for the VM
 *   [ ] **Task 5: Compiler (AST to Bytecode)**
-    *   [ ] Traverse AST to generate bytecode
+    *   [X] Traverse AST to generate bytecode
     *   [ ] Implement symbol table for variable management
-    *   [ ] Compile expressions and statements
-    *   [ ] Write unit tests for the compiler
+    *   [X] Compile expressions and statements
+    *   [X] Write unit tests for the compiler
 *   [ ] **Task 6: Garbage Collection**
     *   [ ] Implement a simple mark-and-sweep garbage collector
     *   [ ] Integrate GC with the VM
@@ -60,7 +60,7 @@
     *   [ ] Implement string manipulation functions
     *   [ ] Implement math functions
 *   [ ] **Task 13: Command-Line Interface (CLI)**
-    *   [ ] Create a CLI for running Nota scripts
+    *   [X] Create a CLI for running Nota scripts
     *   [ ] Add support for file input and interactive mode
 *   [ ] **Task 14: Debugger**
     *   [ ] Implement a simple debugger

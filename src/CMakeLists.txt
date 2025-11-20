@@ -12,6 +12,8 @@ add_library(libnota STATIC
     lib/Chunk.h
     lib/VM.cpp
     lib/VM.h
+    lib/Compiler.cpp
+    lib/Compiler.h
 )
 
 add_executable(nota

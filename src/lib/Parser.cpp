@@ -1,6 +1,8 @@
 #include "Parser.h"
 #include "Expr.h"
 #include <memory>
+#include <string>
+#include <iostream>
 
 namespace nota {
 
@@ -12,6 +14,11 @@ std::unique_ptr<Expr> Parser::parse() {
     } catch (...) {
         return nullptr;
     }
+}
+
+void Parser::error(const std::string& message) {
+    std::cerr << "Parse error: " << message << std::endl;
+    throw std::runtime_error(message);
 }
 
 std::unique_ptr<Expr> Parser::expression() {
@@ -68,23 +75,28 @@ std::unique_ptr<Expr> Parser::unary() {
 }
 
 std::unique_ptr<Expr> Parser::primary() {
-    if (match({TokenType::FALSE})) return std::make_unique<Literal>(false);
-    if (match({TokenType::TRUE})) return std::make_unique<Literal>(true);
-    if (match({TokenType::NIL})) return std::make_unique<Literal>(nullptr);
+    if (match({TokenType::FALSE})) return std::make_unique<Literal>(false, previous().line);
+    if (match({TokenType::TRUE})) return std::make_unique<Literal>(true, previous().line);
+    if (match({TokenType::NIL})) return std::make_unique<Literal>(nullptr, previous().line);
 
-    if (match({TokenType::NUMBER, TokenType::STRING})) {
-        return std::make_unique<Literal>(previous().lexeme);
+    if (match({TokenType::NUMBER})) {
+        return std::make_unique<Literal>(std::stod(previous().lexeme), previous().line);
+    }
+
+    if (match({TokenType::STRING})) {
+        const std::string& lexeme = previous().lexeme;
+        return std::make_unique<Literal>(lexeme.substr(1, lexeme.length() - 2), previous().line);
     }
 
     if (match({TokenType::LEFT_PAREN})) {
         auto expr = expression();
         if (!match({TokenType::RIGHT_PAREN})) {
-            // Handle error: Expect ')' after expression.
+            error("Expect ')' after expression.");
         }
         return std::make_unique<Grouping>(std::move(expr));
     }
 
-    // Handle error: Expect expression.
+    error("Expect expression.");
     return nullptr;
 }
 

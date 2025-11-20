@@ -4,8 +4,46 @@
 
 namespace nota {
 
+namespace { // Anonymous namespace for internal linkage
+
+bool isTruthy(const Value& value) {
+    if (value.type() == typeid(bool)) {
+        return std::any_cast<bool>(value);
+    }
+    if (value.type() == typeid(nullptr)) {
+        return false;
+    }
+    if (value.type() == typeid(double)) {
+        return std::any_cast<double>(value) != 0.0;
+    }
+    return true; // Other types are truthy
+}
+
+bool isEqual(const Value& a, const Value& b) {
+    if (a.type() != b.type()) return false;
+
+    if (a.type() == typeid(nullptr)) return true; // nil == nil
+    if (a.type() == typeid(bool)) {
+        return std::any_cast<bool>(a) == std::any_cast<bool>(b);
+    }
+    if (a.type() == typeid(double)) {
+        return std::any_cast<double>(a) == std::any_cast<double>(b);
+    }
+    if (a.type() == typeid(std::string)) {
+        return std::any_cast<std::string>(a) == std::any_cast<std::string>(b);
+    }
+
+    return false;
+}
+
+} // namespace
+
 VM::VM() {
     resetStack();
+}
+
+void VM::runtimeError(const std::string& message) {
+    std::cerr << "Runtime error: " << message << std::endl;
 }
 
 void VM::resetStack() {
@@ -45,14 +83,82 @@ InterpretResult VM::interpret(Chunk* chunk) {
             }
             case OpCode::OP_NEGATE: {
                 if (stack.back().type() != typeid(double)) {
-                    // runtimeError("Operand must be a number.");
+                    runtimeError("Operand must be a number.");
                     return InterpretResult::INTERPRET_RUNTIME_ERROR;
                 }
                 double value = std::any_cast<double>(pop());
                 push(-value);
                 break;
             }
-            // Other opcodes will be implemented later
+            case OpCode::OP_ADD: {
+                if (stack.back().type() != typeid(double) || stack[stack.size() - 2].type() != typeid(double)) {
+                    runtimeError("Operands must be numbers.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                double b = std::any_cast<double>(pop());
+                double a = std::any_cast<double>(pop());
+                push(a + b);
+                break;
+            }
+            case OpCode::OP_SUBTRACT: {
+                if (stack.back().type() != typeid(double) || stack[stack.size() - 2].type() != typeid(double)) {
+                    runtimeError("Operands must be numbers.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                double b = std::any_cast<double>(pop());
+                double a = std::any_cast<double>(pop());
+                push(a - b);
+                break;
+            }
+            case OpCode::OP_MULTIPLY: {
+                if (stack.back().type() != typeid(double) || stack[stack.size() - 2].type() != typeid(double)) {
+                    runtimeError("Operands must be numbers.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                double b = std::any_cast<double>(pop());
+                double a = std::any_cast<double>(pop());
+                push(a * b);
+                break;
+            }
+            case OpCode::OP_DIVIDE: {
+                if (stack.back().type() != typeid(double) || stack[stack.size() - 2].type() != typeid(double)) {
+                    runtimeError("Operands must be numbers.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                double b = std::any_cast<double>(pop());
+                double a = std::any_cast<double>(pop());
+                push(a / b);
+                break;
+            }
+            case OpCode::OP_NOT:
+                push(!isTruthy(pop()));
+                break;
+            case OpCode::OP_EQUAL: {
+                Value b = pop();
+                Value a = pop();
+                push(isEqual(a, b));
+                break;
+            }
+            case OpCode::OP_GREATER: {
+                if (stack.back().type() != typeid(double) || stack[stack.size() - 2].type() != typeid(double)) {
+                    runtimeError("Operands must be numbers.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                double b = std::any_cast<double>(pop());
+                double a = std::any_cast<double>(pop());
+                push(a > b);
+                break;
+            }
+            case OpCode::OP_LESS: {
+                if (stack.back().type() != typeid(double) || stack[stack.size() - 2].type() != typeid(double)) {
+                    runtimeError("Operands must be numbers.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                double b = std::any_cast<double>(pop());
+                double a = std::any_cast<double>(pop());
+                push(a < b);
+                break;
+            }
         }
     }
 }

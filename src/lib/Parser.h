@@ -14,6 +14,7 @@ public:
     std::unique_ptr<Expr> parse();
 
 private:
+    void error(const std::string& message);
     std::unique_ptr<Expr> expression();
     std::unique_ptr<Expr> equality();
     std::unique_ptr<Expr> comparison();

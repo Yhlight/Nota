@@ -4,6 +4,7 @@
 #include "Chunk.h"
 #include "Value.h"
 #include <vector>
+#include <string>
 
 namespace nota {
 
@@ -20,6 +21,7 @@ public:
 
     std::vector<Value> stack;
 private:
+    void runtimeError(const std::string& message);
     void resetStack();
     void push(Value value);
     Value pop();

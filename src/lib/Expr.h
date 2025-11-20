@@ -52,13 +52,14 @@ struct Grouping : public Expr {
 };
 
 struct Literal : public Expr {
-    Literal(std::any value) : value(std::move(value)) {}
+    Literal(std::any value, int line) : value(std::move(value)), line(line) {}
 
     std::any accept(ExprVisitor& visitor) const override {
         return visitor.visitLiteralExpr(*this);
     }
 
     std::any const value;
+    int const line;
 };
 
 struct Unary : public Expr {

@@ -1,8 +1,10 @@
+# Add the nota library
 add_library(libnota STATIC
-    nota.cpp
+    lib/nota.cpp
+    lib/Lexer.cpp
 )
+target_include_directories(libnota PUBLIC lib)
 
-target_include_directories(libnota PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-add_executable(nota main.cpp)
+# Add the nota executable
+add_executable(nota app/main.cpp)
 target_link_libraries(nota PRIVATE libnota)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lexer.h"
+#include "Lexer.h"
 #include <vector>
 
 namespace nota {

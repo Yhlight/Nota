@@ -2,6 +2,7 @@ enable_testing()
 
 add_executable(nota_tests
     test_main.cpp
+    test_lexer.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE libnota)

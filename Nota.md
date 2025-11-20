@@ -49,7 +49,7 @@ let d: string = "hello world"
 let e: int[] = [1, 2, 3]  // 动态数组
 let f: int[10] = [1, 2, 3]  // 静态数组
 let g: (int, int): int = add  // 函数
-let h: className = Person{}  // 类
+let h: className = Person()  // 类
 ```
 
 ## 运算符
@@ -158,29 +158,38 @@ class Person
     name: string
     age: int
 
-    fn new(name: string, age: int)  // 构造函数是可选的，nota支持按位填入
-        this.name = name
+    Person(name: string, age: int)  // 构造函数
+        this.name = name  // this可以隐式
         this.age = age
     end
 
     fn getName(): string
         return this.name
     end
+
+    fn static say()  // 静态方法
+        print("hello world")
+    end
 end
 
 // 三种初始化方式
-let person = Person{}  // 默认初始化
-let person = Person{"张三"}  // 按位填入
-let person = Person{name: "张三", age: 18}  // 按名称填入
+let person = Person()  // 默认初始化
+let person = Person("hello", 10)  // 构造函数
 
 person.getName()
+Person::say()
 ```
+
+### this
+this是当前对象的可变引用  
+你可以使用*this进行拷贝  
+使用&&this进行转移资源  
 
 ## 模块
 nota使用import关键字来引入模块  
 
 import moduleName / "path"  // 引入模块，优先找官方模块，没有就递归当前项目目录  
-在冲突时，你需要使用moduleName::localName来使用模块中的内容  
+你需要使用moduleName::localName来使用模块中的内容  
 
 ```
 import moduleName / "path" as aliasName
@@ -207,7 +216,7 @@ end
 import packageName::math
 import packageName2::math
 
-packageName::math::add(1, 2)  // 冲突时需要这样使用
+packageName::math::add(1, 2)
 ```
 
 ## 未定义值
@@ -246,7 +255,7 @@ let b: int = (int)"10"
 ## 溢出
 Nota与lua一致，采用静默回绕处理溢出值  
 
-## 复制，引用，拷贝
+## 复制，引用，拷贝，移动
 对于基本数据类型，Nota的默认行为是复制，这是不会发生改变的做法  
 对于引用数据类型，Nota的默认行为是不可变引用，如果你需要可变引用，你需要使用&操作符  
 对于引用数据类型，如果你想要进行拷贝操作，你需要使用*操作符  
@@ -254,14 +263,16 @@ Nota与lua一致，采用静默回绕处理溢出值
 但是只有mut类型的变量能够传递给函数的可变引用参数  
 而对于函数的拷贝参数，无论你是let还是mut，都将进行拷贝操作  
 对于需要使用*操作符的自定义对象，你必须实现clone()方法  
+对于需要使用&&操作符的自定义对象，你必须实现move()方法  
 
 这些操作应该被用于函数参数  
 
 ```nota
-fn add(a: string, b: &string, c: *string): int
+fn add(a: string, b: &string, c: *string, d: &&string): int
     // a 是不可变引用
     // b 是可变引用
     // c 是拷贝操作
+    // d 是转移资源
 end
 ```
 

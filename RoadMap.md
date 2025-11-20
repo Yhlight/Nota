@@ -4,13 +4,13 @@ This document outlines the development plan for the Nota programming language.
 
 ## Phase 1: Core Language Features
 
-*   [ ] **Project Setup:**
-    *   [ ] Create a C++ project using CMake.
-    *   [ ] Set up a Python build script for CMake.
-    *   [ ] Configure `.gitignore` to exclude build artifacts.
-*   [ ] **Lexer:**
-    *   [ ] Implement a lexer to tokenize the Nota source code.
-    *   [ ] Support for all basic tokens (keywords, identifiers, operators, literals).
+*   [x] **Project Setup:**
+    *   [x] Create a C++ project using CMake.
+    *   [x] Set up a Python build script for CMake.
+    *   [x] Configure `.gitignore` to exclude build artifacts.
+*   [x] **Lexer:**
+    *   [x] Implement a lexer to tokenize the Nota source code.
+    *   [x] Support for all basic tokens (keywords, identifiers, operators, literals).
 *   [ ] **Parser:**
     *   [ ] Implement a recursive descent parser.
     *   [ ] Support for basic expressions and statements.

@@ -79,6 +79,7 @@ struct Block;
 struct ExpressionStmt;
 struct VarStmt;
 struct IfStmt;
+struct WhileStmt;
 
 class StmtVisitor {
 public:
@@ -87,6 +88,7 @@ public:
     virtual void visit(const std::shared_ptr<ExpressionStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<WhileStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -140,6 +142,18 @@ struct IfStmt : Stmt, public std::enable_shared_from_this<IfStmt> {
     std::shared_ptr<Expr> condition;
     std::shared_ptr<Stmt> thenBranch;
     std::shared_ptr<Stmt> elseBranch;
+};
+
+struct WhileStmt : Stmt, public std::enable_shared_from_this<WhileStmt> {
+    WhileStmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> body)
+        : condition(condition), body(body) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> body;
 };
 
 

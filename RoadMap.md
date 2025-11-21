@@ -19,8 +19,9 @@
 
 ## Phase 3: Language Features - Statements and Control Flow
 
-- [ ] **Current Focus: Implement control flow structures (if/else).**
-- [ ] Implement loops (while, for).
+- [x] Implement control flow structures (if/else).
+- [ ] **Current Focus: Implement loops (while).**
+- [ ] Implement other loop structures (for, for-each, do-while).
 - [ ] Implement functions.
 - [ ] Implement classes and objects.
 

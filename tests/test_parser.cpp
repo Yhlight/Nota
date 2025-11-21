@@ -2,79 +2,92 @@
 #include "Parser.h"
 #include "AST.h"
 #include "Lexer.h"
+#include <iostream>
 
-class ASTPrinter : public nota::ExprVisitor {
-public:
-    std::string print(std::shared_ptr<nota::Expr> expr) {
-        expr->accept(*this);
-        return result_;
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const std::shared_ptr<T>& ptr) {
+    if (ptr) {
+        os << ptr.get();
+    } else {
+        os << "nullptr";
     }
-
-    void visit(const std::shared_ptr<nota::Binary>& expr) override {
-        result_ = "(" + expr->op.lexeme + " " + print(expr->left) + " " + print(expr->right) + ")";
-    }
-
-    void visit(const std::shared_ptr<nota::Grouping>& expr) override {
-        result_ = "(group " + print(expr->expression) + ")";
-    }
-
-    void visit(const std::shared_ptr<nota::Literal>& expr) override {
-        if (std::holds_alternative<int>(expr->value)) {
-            result_ = std::to_string(std::get<int>(expr->value));
-        } else if (std::holds_alternative<double>(expr->value)) {
-            result_ = std::to_string(std::get<double>(expr->value));
-        } else if (std::holds_alternative<std::string>(expr->value)) {
-            result_ = std::get<std::string>(expr->value);
-        } else {
-            result_ = "nil";
-        }
-    }
-
-    void visit(const std::shared_ptr<nota::Unary>& expr) override {
-        result_ = "(" + expr->op.lexeme + " " + print(expr->right) + ")";
-    }
-
-private:
-    std::string result_;
-};
+    return os;
+}
 
 
 TEST_CASE("Parser parses a numeric literal") {
-    nota::Lexer lexer("123");
+    nota::Lexer lexer("123;");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
-    std::shared_ptr<nota::Expr> expr = parser.parse();
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
 
-    ASTPrinter printer;
-    CHECK(printer.print(expr) == "123");
+    REQUIRE(stmts.size() == 1);
+    auto exprStmt = std::dynamic_pointer_cast<nota::ExpressionStmt>(stmts[0]);
+    REQUIRE(exprStmt);
+    auto literal = std::dynamic_pointer_cast<nota::Literal>(exprStmt->expression);
+    REQUIRE(literal);
+    CHECK(std::get<int>(literal->value) == 123);
 }
 
 TEST_CASE("Parser parses a unary expression") {
-    nota::Lexer lexer("-123");
+    nota::Lexer lexer("-123;");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
-    std::shared_ptr<nota::Expr> expr = parser.parse();
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
 
-    ASTPrinter printer;
-    CHECK(printer.print(expr) == "(- 123)");
+    REQUIRE(stmts.size() == 1);
+    auto exprStmt = std::dynamic_pointer_cast<nota::ExpressionStmt>(stmts[0]);
+    REQUIRE(exprStmt);
+    auto unary = std::dynamic_pointer_cast<nota::Unary>(exprStmt->expression);
+    REQUIRE(unary);
+    CHECK(unary->op.type == nota::TokenType::MINUS);
 }
 
 TEST_CASE("Parser parses a binary expression") {
-    nota::Lexer lexer("1 + 2");
+    nota::Lexer lexer("1 + 2;");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
-    std::shared_ptr<nota::Expr> expr = parser.parse();
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
 
-    ASTPrinter printer;
-    CHECK(printer.print(expr) == "(+ 1 2)");
+    REQUIRE(stmts.size() == 1);
+    auto exprStmt = std::dynamic_pointer_cast<nota::ExpressionStmt>(stmts[0]);
+    REQUIRE(exprStmt);
+    auto binary = std::dynamic_pointer_cast<nota::Binary>(exprStmt->expression);
+    REQUIRE(binary);
+    CHECK(binary->op.type == nota::TokenType::PLUS);
 }
 
 TEST_CASE("Parser parses a grouping expression") {
-    nota::Lexer lexer("(1 + 2)");
+    nota::Lexer lexer("(1 + 2);");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
-    std::shared_ptr<nota::Expr> expr = parser.parse();
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
 
-    ASTPrinter printer;
-    CHECK(printer.print(expr) == "(group (+ 1 2))");
+    REQUIRE(stmts.size() == 1);
+    auto exprStmt = std::dynamic_pointer_cast<nota::ExpressionStmt>(stmts[0]);
+    REQUIRE(exprStmt);
+    auto grouping = std::dynamic_pointer_cast<nota::Grouping>(exprStmt->expression);
+    REQUIRE(grouping);
+}
+
+TEST_CASE("Parser parses a variable declaration") {
+    nota::Lexer lexer("let a = 10;");
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+
+    REQUIRE(stmts.size() == 1);
+    auto varStmt = std::dynamic_pointer_cast<nota::VarStmt>(stmts[0]);
+    REQUIRE(varStmt);
+    CHECK(varStmt->name.lexeme == "a");
+    auto literal = std::dynamic_pointer_cast<nota::Literal>(varStmt->initializer);
+    REQUIRE(literal);
+    CHECK(std::get<int>(literal->value) == 10);
+}
+
+TEST_CASE("Parser throws an error for an invalid expression") {
+    nota::Lexer lexer("1 +;");
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    CHECK_THROWS_AS(parser.parse(), nota::Parser::ParseError);
 }

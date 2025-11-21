@@ -5,12 +5,12 @@ namespace nota {
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens_(tokens) {}
 
-std::shared_ptr<Expr> Parser::parse() {
-    try {
-        return expression();
-    } catch (...) {
-        return nullptr;
+std::vector<std::shared_ptr<Stmt>> Parser::parse() {
+    std::vector<std::shared_ptr<Stmt>> statements;
+    while (!isAtEnd()) {
+        statements.push_back(declaration());
     }
+    return statements;
 }
 
 std::shared_ptr<Expr> Parser::expression() {
@@ -85,7 +85,36 @@ std::shared_ptr<Expr> Parser::primary() {
         return std::make_shared<Grouping>(expr);
     }
 
-    return nullptr;
+    throw error(peek(), "Expect expression.");
+}
+
+std::shared_ptr<Stmt> Parser::declaration() {
+    if (match({TokenType::LET, TokenType::MUT})) {
+        return varDeclaration();
+    }
+    return statement();
+}
+
+std::shared_ptr<Stmt> Parser::varDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+
+    std::shared_ptr<Expr> initializer = nullptr;
+    if (match({TokenType::ASSIGN})) {
+        initializer = expression();
+    }
+
+    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+    return std::make_shared<VarStmt>(name, initializer);
+}
+
+std::shared_ptr<Stmt> Parser::statement() {
+    return expressionStatement();
+}
+
+std::shared_ptr<Stmt> Parser::expressionStatement() {
+    std::shared_ptr<Expr> expr = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+    return std::make_shared<ExpressionStmt>(expr);
 }
 
 
@@ -118,7 +147,13 @@ Token Parser::previous() const {
 
 Token Parser::consume(TokenType type, const std::string& message) {
     if (peek().type == type) return advance();
-    throw std::runtime_error(message);
+    throw error(peek(), message);
+}
+
+Parser::ParseError Parser::error(const Token& token, const std::string& message) {
+    // In a real implementation, this would likely print to stderr
+    // and synchronize the parser.
+    return ParseError(message);
 }
 
 

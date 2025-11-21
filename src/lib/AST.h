@@ -2,6 +2,7 @@
 
 #include "Token.h"
 #include <memory>
+#include <vector>
 
 namespace nota {
 
@@ -72,5 +73,59 @@ struct Unary : Expr, public std::enable_shared_from_this<Unary> {
     Token op;
     std::shared_ptr<Expr> right;
 };
+
+// Statements
+struct Block;
+struct ExpressionStmt;
+struct VarStmt;
+
+class StmtVisitor {
+public:
+    virtual ~StmtVisitor() = default;
+    virtual void visit(const std::shared_ptr<Block>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<ExpressionStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
+};
+
+class Stmt {
+public:
+    virtual ~Stmt() = default;
+    virtual void accept(StmtVisitor& visitor) = 0;
+};
+
+struct Block : Stmt, public std::enable_shared_from_this<Block> {
+    Block(std::vector<std::shared_ptr<Stmt>> statements)
+        : statements(statements) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::vector<std::shared_ptr<Stmt>> statements;
+};
+
+struct ExpressionStmt : Stmt, public std::enable_shared_from_this<ExpressionStmt> {
+    ExpressionStmt(std::shared_ptr<Expr> expression)
+        : expression(expression) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> expression;
+};
+
+struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt> {
+    VarStmt(Token name, std::shared_ptr<Expr> initializer)
+        : name(name), initializer(initializer) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token name;
+    std::shared_ptr<Expr> initializer;
+};
+
 
 } // namespace nota

@@ -84,3 +84,10 @@ TEST_CASE("Lexer tokenizes ! and !=") {
     CHECK(tokens[1].type == nota::TokenType::NOT_EQUALS);
     CHECK(tokens[2].type == nota::TokenType::END_OF_FILE);
 }
+
+TEST_CASE("Lexer handles unterminated strings") {
+    std::string source = "\"hello world";
+    nota::Lexer lexer(source);
+    lexer.scanTokens();
+    CHECK(lexer.hadError());
+}

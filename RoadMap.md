@@ -10,17 +10,15 @@
 - [x] Establish the initial structure for the Lexer, Parser, and VM.
 - [x] Refactor project structure for modularity (`src/lib`, `src/app`).
 
-## Phase 2: Lexer and Parser Implementation
+## Phase 2: Lexer and Parser Implementation (Complete)
 
 - [x] Implement a basic lexer to tokenize the source code.
-- [ ] **Current Focus: Implement a basic parser (LL(k) recursive descent).**
+- [x] Implement a recursive descent parser for expressions.
 - [ ] Set up the bytecode VM structure.
 
-## Phase 3: Language Features
+## Phase 3: Language Features - Statements and Control Flow
 
-- [ ] Implement variables (let/mut).
-- [ ] Implement basic data types (int, float, bool, string).
-- [ ] Implement basic operators.
+- [ ] **Current Focus: Implement parser for statements (variable declarations).**
 - [ ] Implement control flow structures (if/else, while, for).
 - [ ] Implement functions.
 - [ ] Implement classes and objects.

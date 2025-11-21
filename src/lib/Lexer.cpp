@@ -176,7 +176,7 @@ void Lexer::string() {
     }
 
     if (isAtEnd()) {
-        // Unterminated string.
+        report(line_, "", "Unterminated string.");
         return;
     }
 

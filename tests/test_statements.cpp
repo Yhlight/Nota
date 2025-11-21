@@ -5,16 +5,8 @@
 #include "../src/lib/VM.h"
 
 void testStatement(const std::string& source, const std::string& varName, double expected) {
-    nota::Lexer lexer(source);
-    std::vector<nota::Token> tokens = lexer.scanTokens();
-    nota::Parser parser(tokens);
-    auto statements = parser.parse();
-
-    nota::Compiler compiler;
-    nota::Chunk chunk = compiler.compile(statements);
-
     nota::VM vm;
-    vm.interpret(&chunk);
+    vm.interpret(source);
 
     nota::Value value = vm.globals[varName];
     CHECK(std::any_cast<double>(value) == expected);
@@ -40,5 +32,5 @@ TEST_CASE("testing while loops") {
 }
 
 TEST_CASE("testing for loops") {
-    testStatement("let a = 0; for (let i = 0; i < 5; i = i + 1) a = a + 1; end", "a", 5.0);
+    testStatement("let a = 0; for (let i = 0; i < 5; i = i + 1;) a = a + 1; end", "a", 5.0);
 }

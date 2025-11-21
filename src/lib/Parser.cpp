@@ -18,11 +18,29 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
 }
 
 std::unique_ptr<Stmt> Parser::declaration() {
+    if (match({TokenType::FN})) return functionDeclaration("function");
     if (match({TokenType::LET, TokenType::MUT})) {
         return varDeclaration();
     }
     return statement();
 }
+
+std::unique_ptr<Stmt> Parser::functionDeclaration(const std::string& kind) {
+    Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
+    consume(TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
+    std::vector<Token> parameters;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        do {
+            parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+        } while (match({TokenType::COMMA}));
+    }
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+
+    auto body = block();
+    consume(TokenType::END, "Expect 'end' after " + kind + " body.");
+    return std::make_unique<FunctionStmt>(name, std::move(parameters), std::move(body));
+}
+
 
 std::unique_ptr<Stmt> Parser::varDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
@@ -38,6 +56,7 @@ std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::IF})) return ifStatement();
     if (match({TokenType::WHILE})) return whileStatement();
     if (match({TokenType::FOR})) return forStatement();
+    if (match({TokenType::RETURN})) return returnStatement();
     return expressionStatement();
 }
 
@@ -70,11 +89,18 @@ std::unique_ptr<Stmt> Parser::forStatement() {
 
     std::unique_ptr<Stmt> initializer;
     if (match({TokenType::SEMICOLON})) {
-        // No initializer.
+        initializer = nullptr;
     } else if (match({TokenType::LET, TokenType::MUT})) {
-        initializer = varDeclaration();
+        Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        std::unique_ptr<Expr> initExpr = nullptr;
+        if (match({TokenType::EQUAL})) {
+            initExpr = expression();
+        }
+        initializer = std::make_unique<VarDeclStmt>(name, std::move(initExpr));
+        consume(TokenType::SEMICOLON, "Expect ';' after for loop initializer.");
     } else {
-        initializer = expressionStatement();
+        initializer = std::make_unique<ExpressionStmt>(expression());
+        consume(TokenType::SEMICOLON, "Expect ';' after for loop initializer.");
     }
 
     std::unique_ptr<Expr> condition = nullptr;
@@ -93,6 +119,16 @@ std::unique_ptr<Stmt> Parser::forStatement() {
     consume(TokenType::END, "Expect 'end' after for loop.");
 
     return std::make_unique<ForStmt>(std::move(initializer), std::move(condition), std::move(increment), std::move(body));
+}
+
+std::unique_ptr<Stmt> Parser::returnStatement() {
+    Token keyword = previous();
+    std::unique_ptr<Expr> value = nullptr;
+    if (!check(TokenType::SEMICOLON)) {
+        value = expression();
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+    return std::make_unique<ReturnStmt>(keyword, std::move(value));
 }
 
 
@@ -181,8 +217,36 @@ std::unique_ptr<Expr> Parser::unary() {
         auto right = unary();
         return std::make_unique<Unary>(op, std::move(right));
     }
-    return primary();
+    return call();
 }
+
+std::unique_ptr<Expr> Parser::call() {
+    auto expr = primary();
+
+    while (true) {
+        if (match({TokenType::LEFT_PAREN})) {
+            expr = finishCall(std::move(expr));
+        } else {
+            break;
+        }
+    }
+
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::finishCall(std::unique_ptr<Expr> callee) {
+    std::vector<std::unique_ptr<Expr>> arguments;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        do {
+            arguments.push_back(expression());
+        } while (match({TokenType::COMMA}));
+    }
+
+    Token paren = consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
+
+    return std::make_unique<CallExpr>(std::move(callee), paren, std::move(arguments));
+}
+
 
 std::unique_ptr<Expr> Parser::primary() {
     if (match({TokenType::FALSE})) return std::make_unique<Literal>(false, previous().line);

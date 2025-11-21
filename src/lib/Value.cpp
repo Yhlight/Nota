@@ -1,6 +1,8 @@
 #include "Value.h"
+#include "Object.h"
 #include <iostream>
 #include <string>
+#include <memory>
 
 namespace nota {
 
@@ -13,7 +15,10 @@ void printValue(Value value) {
         std::cout << "nil";
     } else if (value.type() == typeid(std::string)) {
         std::cout << std::any_cast<std::string>(value);
-    } else {
+    } else if (value.type() == typeid(std::shared_ptr<NotaFunction>)) {
+        std::cout << "<fn " << std::any_cast<std::shared_ptr<NotaFunction>>(value)->name << ">";
+    }
+    else {
         std::cout << "Unknown value type";
     }
 }

@@ -14,6 +14,7 @@ struct Literal;
 struct Unary;
 struct VariableExpr;
 struct AssignExpr;
+struct CallExpr;
 class Expr;
 
 class ExprVisitor {
@@ -24,6 +25,7 @@ public:
     virtual std::any visitUnaryExpr(const Unary& expr) = 0;
     virtual std::any visitVariableExpr(const VariableExpr& expr) = 0;
     virtual std::any visitAssignExpr(const AssignExpr& expr) = 0;
+    virtual std::any visitCallExpr(const CallExpr& expr) = 0;
 };
 
 class Expr {
@@ -97,6 +99,19 @@ struct AssignExpr : public Expr {
 
     const Token name;
     const std::unique_ptr<Expr> value;
+};
+
+struct CallExpr : public Expr {
+    CallExpr(std::unique_ptr<Expr> callee, Token paren, std::vector<std::unique_ptr<Expr>> arguments)
+        : callee(std::move(callee)), paren(std::move(paren)), arguments(std::move(arguments)) {}
+
+    std::any accept(ExprVisitor& visitor) const override {
+        return visitor.visitCallExpr(*this);
+    }
+
+    const std::unique_ptr<Expr> callee;
+    const Token paren; // For error reporting.
+    const std::vector<std::unique_ptr<Expr>> arguments;
 };
 
 } // namespace nota

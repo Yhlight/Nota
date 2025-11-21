@@ -2,17 +2,24 @@
 
 namespace nota {
 
-Compiler::Compiler() = default;
+Compiler::Compiler() : enclosing(nullptr) {
+    function = std::make_shared<NotaFunction>("", 0);
+}
 
-Chunk Compiler::compile(const std::vector<std::unique_ptr<Stmt>>& statements) {
+Compiler::Compiler(Compiler* enclosing) : enclosing(enclosing) {
+    function = std::make_shared<NotaFunction>("", 0);
+}
+
+std::shared_ptr<NotaFunction> Compiler::compile(const std::vector<std::unique_ptr<Stmt>>& statements) {
     for (const auto& stmt : statements) {
         stmt->accept(*this);
     }
-    return chunk;
+    emitReturn();
+    return function;
 }
 
 void Compiler::emitByte(uint8_t byte, int line) {
-    chunk.write(byte, line);
+    function->chunk.write(byte, line);
 }
 
 void Compiler::emitBytes(uint8_t byte1, uint8_t byte2, int line) {
@@ -24,25 +31,30 @@ int Compiler::emitJump(uint8_t instruction, int line) {
     emitByte(instruction, line);
     emitByte(0xff, line);
     emitByte(0xff, line);
-    return chunk.code.size() - 2;
+    return function->chunk.code.size() - 2;
 }
 
 void Compiler::patchJump(int offset) {
-    int jump = chunk.code.size() - offset - 2;
-    chunk.patch(offset, jump);
+    int jump = function->chunk.code.size() - offset - 2;
+    function->chunk.patch(offset, jump);
 }
 
 void Compiler::emitLoop(int loopStart, int line) {
     emitByte(static_cast<uint8_t>(OpCode::OP_LOOP), line);
 
-    int offset = chunk.code.size() - loopStart + 2;
+    int offset = function->chunk.code.size() - loopStart + 2;
     emitByte((offset >> 8) & 0xff, line);
     emitByte(offset & 0xff, line);
 }
 
+void Compiler::emitReturn() {
+    emitByte(static_cast<uint8_t>(OpCode::OP_NIL), 0); // Implicit return nil
+    emitByte(static_cast<uint8_t>(OpCode::OP_RETURN), 0);
+}
+
 
 uint8_t Compiler::makeConstant(Value value) {
-    int constant = chunk.addConstant(value);
+    int constant = function->chunk.addConstant(value);
     // For now, we assume we won't have more than 256 constants.
     return static_cast<uint8_t>(constant);
 }
@@ -165,6 +177,14 @@ std::any Compiler::visitAssignExpr(const AssignExpr& expr) {
     return {};
 }
 
+std::any Compiler::visitCallExpr(const CallExpr& expr) {
+    expr.callee->accept(*this);
+    for (const auto& arg : expr.arguments) {
+        arg->accept(*this);
+    }
+    emitBytes(static_cast<uint8_t>(OpCode::OP_CALL), expr.arguments.size(), expr.paren.line);
+    return {};
+}
 
 // Statement Visitor Implementations
 void Compiler::visitExpressionStmt(const ExpressionStmt& stmt) {
@@ -207,7 +227,7 @@ void Compiler::visitIfStmt(const IfStmt& stmt) {
 }
 
 void Compiler::visitWhileStmt(const WhileStmt& stmt) {
-    int loopStart = chunk.code.size();
+    int loopStart = function->chunk.code.size();
     stmt.condition->accept(*this);
 
     int exitJump = emitJump(static_cast<uint8_t>(OpCode::OP_JUMP_IF_FALSE), 0);
@@ -223,7 +243,7 @@ void Compiler::visitForStmt(const ForStmt& stmt) {
         stmt.initializer->accept(*this);
     }
 
-    int loopStart = chunk.code.size();
+    int loopStart = function->chunk.code.size();
     int exitJump = -1;
     if (stmt.condition) {
         stmt.condition->accept(*this);
@@ -243,6 +263,31 @@ void Compiler::visitForStmt(const ForStmt& stmt) {
     }
 
     endScope();
+}
+
+void Compiler::visitFunctionStmt(const FunctionStmt& stmt) {
+    Compiler compiler(this);
+    compiler.function->name = stmt.name.lexeme;
+    compiler.function->arity = stmt.params.size();
+
+    compiler.beginScope();
+    for (const auto& param : stmt.params) {
+        compiler.declareVariable(param);
+        compiler.defineVariable(0, param.line);
+    }
+    compiler.compile(stmt.body);
+
+    emitConstant(compiler.function, stmt.name.line);
+    defineVariable(makeConstant(stmt.name.lexeme), stmt.name.line);
+}
+
+void Compiler::visitReturnStmt(const ReturnStmt& stmt) {
+    if (stmt.value) {
+        stmt.value->accept(*this);
+    } else {
+        emitByte(static_cast<uint8_t>(OpCode::OP_NIL), stmt.keyword.line);
+    }
+    emitByte(static_cast<uint8_t>(OpCode::OP_RETURN), stmt.keyword.line);
 }
 
 } // namespace nota

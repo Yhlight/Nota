@@ -30,7 +30,8 @@ enum class OpCode {
     OP_JUMP_IF_FALSE,
     OP_JUMP,
     OP_LOOP,
-    OP_POP
+    OP_POP,
+    OP_CALL
 };
 
 class Chunk {

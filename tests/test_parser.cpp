@@ -21,6 +21,38 @@ TEST_CASE("testing the parser with a variable declaration") {
     CHECK(std::any_cast<double>(literal->value) == 1.0);
 }
 
+TEST_CASE("testing the parser with a function declaration") {
+    std::string source = "fn hello() end";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    auto statements = parser.parse();
+
+    CHECK(statements.size() == 1);
+    auto funcDecl = dynamic_cast<nota::FunctionStmt*>(statements[0].get());
+    CHECK(funcDecl != nullptr);
+    CHECK(funcDecl->name.lexeme == "hello");
+    CHECK(funcDecl->params.empty());
+    CHECK(funcDecl->body.empty());
+}
+
+TEST_CASE("testing the parser with a function declaration with parameters and body") {
+    std::string source = "fn add(a, b) let c = a + b; return c; end";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    auto statements = parser.parse();
+
+    CHECK(statements.size() == 1);
+    auto funcDecl = dynamic_cast<nota::FunctionStmt*>(statements[0].get());
+    CHECK(funcDecl != nullptr);
+    CHECK(funcDecl->name.lexeme == "add");
+    CHECK(funcDecl->params.size() == 2);
+    CHECK(funcDecl->params[0].lexeme == "a");
+    CHECK(funcDecl->params[1].lexeme == "b");
+    CHECK(funcDecl->body.size() == 2);
+}
+
 TEST_CASE("testing the parser with an assignment") {
     std::string source = "a = 1;";
     nota::Lexer lexer(source);

@@ -1,4 +1,8 @@
 #include "VM.h"
+#include "Compiler.h"
+#include "Lexer.h"
+#include "Parser.h"
+#include "Object.h"
 #include <iostream>
 #include <cstdint>
 
@@ -48,7 +52,7 @@ void VM::runtimeError(const std::string& message) {
 
 void VM::resetStack() {
     stack.clear();
-    ip = 0;
+    callStack.clear();
 }
 
 void VM::push(Value value) {
@@ -56,28 +60,69 @@ void VM::push(Value value) {
 }
 
 Value VM::pop() {
-    Value value = stack.back();
+    lastPopped = stack.back();
     stack.pop_back();
-    return value;
+    return lastPopped;
 }
 
-InterpretResult VM::interpret(Chunk* chunk) {
-    this->chunk = chunk;
-    this->ip = 0;
+bool VM::call(std::shared_ptr<NotaFunction> function, int argCount) {
+    if (argCount != function->arity) {
+        runtimeError("Expected " + std::to_string(function->arity) +
+                     " arguments but got " + std::to_string(argCount) + ".");
+        return false;
+    }
 
+    CallFrame frame;
+    frame.function = function;
+    frame.ip = 0;
+    frame.stackTop = stack.size() - argCount - 1;
+    callStack.push_back(frame);
+    return true;
+}
+
+InterpretResult VM::interpret(const std::string& source) {
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scanTokens();
+    Parser parser(tokens);
+    auto statements = parser.parse();
+
+    if (statements.empty()) {
+        return InterpretResult::INTERPRET_OK;
+    }
+
+    Compiler compiler;
+    auto mainFunction = compiler.compile(statements);
+
+    push(mainFunction);
+    call(mainFunction, 0);
+
+    return run();
+}
+
+InterpretResult VM::run() {
     for (;;) {
-        if (ip >= chunk->code.size()) {
+        CallFrame* frame = &callStack.back();
+        Chunk* chunk = &frame->function->chunk;
+
+        if (frame->ip >= chunk->code.size()) {
             return InterpretResult::INTERPRET_OK;
         }
-        uint8_t instruction = chunk->code[ip++];
+
+        uint8_t instruction = chunk->code[frame->ip++];
         switch (static_cast<OpCode>(instruction)) {
             case OpCode::OP_RETURN: {
-                printValue(pop());
-                std::cout << std::endl;
-                return InterpretResult::INTERPRET_OK;
+                Value result = pop();
+                if (callStack.size() == 1) {
+                    // We're done.
+                    return InterpretResult::INTERPRET_OK;
+                }
+                stack.resize(frame->stackTop);
+                callStack.pop_back();
+                push(result);
+                break;
             }
             case OpCode::OP_CONSTANT: {
-                Value constant = chunk->constants[chunk->code[ip++]];
+                Value constant = chunk->constants[chunk->code[frame->ip++]];
                 push(constant);
                 break;
             }
@@ -160,12 +205,12 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 break;
             }
             case OpCode::OP_DEFINE_GLOBAL: {
-                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[ip++]]);
+                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[frame->ip++]]);
                 globals[name] = pop();
                 break;
             }
             case OpCode::OP_GET_GLOBAL: {
-                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[ip++]]);
+                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[frame->ip++]]);
                 auto it = globals.find(name);
                 if (it == globals.end()) {
                     runtimeError("Undefined variable '" + name + "'.");
@@ -175,7 +220,7 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 break;
             }
             case OpCode::OP_SET_GLOBAL: {
-                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[ip++]]);
+                std::string name = std::any_cast<std::string>(chunk->constants[chunk->code[frame->ip++]]);
                 auto it = globals.find(name);
                 if (it == globals.end()) {
                     runtimeError("Undefined variable '" + name + "'.");
@@ -185,37 +230,47 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 break;
             }
             case OpCode::OP_GET_LOCAL: {
-                uint8_t slot = chunk->code[ip++];
-                push(stack[slot]);
+                uint8_t slot = chunk->code[frame->ip++];
+                push(stack[frame->stackTop + slot]);
                 break;
             }
             case OpCode::OP_SET_LOCAL: {
-                uint8_t slot = chunk->code[ip++];
-                stack[slot] = stack.back();
+                uint8_t slot = chunk->code[frame->ip++];
+                stack[frame->stackTop + slot] = stack.back();
                 break;
             }
             case OpCode::OP_JUMP_IF_FALSE: {
-                uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
-                ip += 2;
-                if (!isTruthy(stack.back())) {
-                    ip += offset;
+                uint16_t offset = (chunk->code[frame->ip] << 8) | chunk->code[frame->ip + 1];
+                frame->ip += 2;
+                if (!isTruthy(pop())) {
+                    frame->ip += offset;
                 }
                 break;
             }
             case OpCode::OP_JUMP: {
-                uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
-                ip += 2;
-                ip += offset;
+                uint16_t offset = (chunk->code[frame->ip] << 8) | chunk->code[frame->ip + 1];
+                frame->ip += 2;
+                frame->ip += offset;
                 break;
             }
             case OpCode::OP_LOOP: {
-                uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
-                ip += 2;
-                ip -= offset;
+                uint16_t offset = (chunk->code[frame->ip] << 8) | chunk->code[frame->ip + 1];
+                frame->ip += 2;
+                frame->ip -= offset;
                 break;
             }
             case OpCode::OP_POP: {
                 pop();
+                break;
+            }
+            case OpCode::OP_CALL: {
+                int argCount = chunk->code[frame->ip++];
+                Value callee = stack[stack.size() - 1 - argCount];
+                if (callee.type() != typeid(std::shared_ptr<NotaFunction>)) {
+                    runtimeError("Can only call functions and classes.");
+                    return InterpretResult::INTERPRET_RUNTIME_ERROR;
+                }
+                call(std::any_cast<std::shared_ptr<NotaFunction>>(callee), argCount);
                 break;
             }
         }

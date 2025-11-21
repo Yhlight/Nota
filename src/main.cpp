@@ -7,23 +7,8 @@
 #include "lib/VM.h"
 
 void run(const std::string& source) {
-    nota::Lexer lexer(source);
-    std::vector<nota::Token> tokens = lexer.scanTokens();
-
-    if (tokens.empty()) {
-        return;
-    }
-
-    nota::Parser parser(tokens);
-    auto statements = parser.parse();
-
-    if (!statements.empty()) {
-        nota::Compiler compiler;
-        nota::Chunk chunk = compiler.compile(statements);
-
-        nota::VM vm;
-        vm.interpret(&chunk);
-    }
+    nota::VM vm;
+    vm.interpret(source);
 }
 
 void runFile(const std::string& path) {

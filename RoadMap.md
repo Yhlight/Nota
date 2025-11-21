@@ -20,7 +20,7 @@
     *   [X] Parse control flow statements (`while`)
     *   [X] Parse control flow statements (`for`)
     *   [ ] Parse control flow statements (`do-while`, `match`)
-    *   [ ] Parse function definitions and calls
+    *   [X] Parse function definitions and calls
     *   [X] Write unit tests for the parser
 *   [ ] **Task 4: Bytecode VM**
     *   [X] Design bytecode instruction set

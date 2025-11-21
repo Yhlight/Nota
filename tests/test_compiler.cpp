@@ -6,16 +6,8 @@
 
 void testNumericExpression(const std::string& source, double expected) {
     std::string test_source = "let test_result = " + source;
-    nota::Lexer lexer(test_source);
-    std::vector<nota::Token> tokens = lexer.scanTokens();
-    nota::Parser parser(tokens);
-    auto statements = parser.parse();
-
-    nota::Compiler compiler;
-    nota::Chunk chunk = compiler.compile(statements);
-
     nota::VM vm;
-    vm.interpret(&chunk);
+    vm.interpret(test_source);
 
     CHECK(vm.globals.count("test_result") == 1);
     nota::Value value = vm.globals["test_result"];
@@ -24,16 +16,8 @@ void testNumericExpression(const std::string& source, double expected) {
 
 void testBooleanExpression(const std::string& source, bool expected) {
     std::string test_source = "let test_result = " + source;
-    nota::Lexer lexer(test_source);
-    std::vector<nota::Token> tokens = lexer.scanTokens();
-    nota::Parser parser(tokens);
-    auto statements = parser.parse();
-
-    nota::Compiler compiler;
-    nota::Chunk chunk = compiler.compile(statements);
-
     nota::VM vm;
-    vm.interpret(&chunk);
+    vm.interpret(test_source);
 
     CHECK(vm.globals.count("test_result") == 1);
     nota::Value value = vm.globals["test_result"];

@@ -6,8 +6,17 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <memory>
 
 namespace nota {
+
+class NotaFunction;
+
+struct CallFrame {
+    std::shared_ptr<NotaFunction> function;
+    int ip;
+    int stackTop;
+};
 
 enum class InterpretResult {
     INTERPRET_OK,
@@ -18,18 +27,20 @@ enum class InterpretResult {
 class VM {
 public:
     VM();
-    InterpretResult interpret(Chunk* chunk);
+    InterpretResult interpret(const std::string& source);
 
     std::vector<Value> stack;
     std::unordered_map<std::string, Value> globals;
+    Value lastPopped;
 private:
+    InterpretResult run();
     void runtimeError(const std::string& message);
     void resetStack();
     void push(Value value);
     Value pop();
+    bool call(std::shared_ptr<NotaFunction> function, int argCount);
 
-    Chunk* chunk;
-    int ip; // Instruction pointer
+    std::vector<CallFrame> callStack;
 };
 
 } // namespace nota

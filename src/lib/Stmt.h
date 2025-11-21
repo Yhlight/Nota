@@ -14,6 +14,8 @@ struct BlockStmt;
 struct IfStmt;
 struct WhileStmt;
 struct ForStmt;
+struct FunctionStmt;
+struct ReturnStmt;
 
 class StmtVisitor {
 public:
@@ -24,6 +26,8 @@ public:
     virtual void visitIfStmt(const IfStmt& stmt) = 0;
     virtual void visitWhileStmt(const WhileStmt& stmt) = 0;
     virtual void visitForStmt(const ForStmt& stmt) = 0;
+    virtual void visitFunctionStmt(const FunctionStmt& stmt) = 0;
+    virtual void visitReturnStmt(const ReturnStmt& stmt) = 0;
 };
 
 class Stmt {
@@ -113,6 +117,31 @@ struct ForStmt : public Stmt {
     const std::unique_ptr<Expr> condition;
     const std::unique_ptr<Expr> increment;
     const std::unique_ptr<Stmt> body;
+};
+
+struct FunctionStmt : public Stmt {
+    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::unique_ptr<Stmt>> body)
+        : name(std::move(name)), params(std::move(params)), body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visitFunctionStmt(*this);
+    }
+
+    const Token name;
+    const std::vector<Token> params;
+    const std::vector<std::unique_ptr<Stmt>> body;
+};
+
+struct ReturnStmt : public Stmt {
+    ReturnStmt(Token keyword, std::unique_ptr<Expr> value)
+        : keyword(std::move(keyword)), value(std::move(value)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visitReturnStmt(*this);
+    }
+
+    const Token keyword;
+    const std::unique_ptr<Expr> value;
 };
 
 } // namespace nota

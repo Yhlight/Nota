@@ -3,11 +3,19 @@
 #include "AST.h"
 #include "Environment.h"
 #include <memory>
+#include <stdexcept>
 
 namespace nota {
 
 class Interpreter : public StmtVisitor, public ExprVisitor {
 public:
+    class RuntimeError : public std::runtime_error {
+    public:
+        RuntimeError(const Token& token, const std::string& message)
+            : std::runtime_error(message), token(token) {}
+        const Token token;
+    };
+
     void interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
     Environment& getEnvironment() { return environment_; }
 
@@ -16,7 +24,7 @@ public:
     void visit(const std::shared_ptr<VarStmt>& stmt) override;
     void visit(const std::shared_ptr<IfStmt>& stmt) override;
     void visit(const std::shared_ptr<WhileStmt>& stmt) override;
-    void visit(const std::shared_ptr<ForStmt>& stmt) override;
+    void visit(const std::shared_ptr<DoWhileStmt>& stmt) override;
 
     void visit(const std::shared_ptr<Binary>& expr) override;
     void visit(const std::shared_ptr<Grouping>& expr) override;

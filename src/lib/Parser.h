@@ -35,6 +35,7 @@ private:
     std::shared_ptr<Stmt> ifStatement();
     std::shared_ptr<Stmt> whileStatement();
     std::shared_ptr<Stmt> forStatement();
+    std::shared_ptr<Stmt> doWhileStatement();
     std::vector<std::shared_ptr<Stmt>> block();
 
 

@@ -157,6 +157,9 @@ std::shared_ptr<Stmt> Parser::statement() {
     if (match({TokenType::FOR})) {
         return forStatement();
     }
+    if (match({TokenType::DO})) {
+        return doWhileStatement();
+    }
     return expressionStatement();
 }
 
@@ -228,11 +231,19 @@ std::shared_ptr<Stmt> Parser::forStatement() {
     return body;
 }
 
+std::shared_ptr<Stmt> Parser::doWhileStatement() {
+    std::shared_ptr<Stmt> body = std::make_shared<Block>(block());
+    consume(TokenType::WHILE, "Expect 'while' after do-while body.");
+    std::shared_ptr<Expr> condition = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after do-while condition.");
+    return std::make_shared<DoWhileStmt>(body, condition);
+}
+
 
 std::vector<std::shared_ptr<Stmt>> Parser::block() {
     std::vector<std::shared_ptr<Stmt>> statements;
 
-    while (peek().type != TokenType::END && peek().type != TokenType::ELSE && !isAtEnd()) {
+    while (peek().type != TokenType::END && peek().type != TokenType::ELSE && peek().type != TokenType::WHILE && !isAtEnd()) {
         statements.push_back(declaration());
     }
 

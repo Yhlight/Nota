@@ -121,7 +121,7 @@ struct ExpressionStmt;
 struct VarStmt;
 struct IfStmt;
 struct WhileStmt;
-struct ForStmt;
+struct DoWhileStmt;
 
 class StmtVisitor {
 public:
@@ -131,7 +131,7 @@ public:
     virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<WhileStmt>& stmt) = 0;
-    virtual void visit(const std::shared_ptr<ForStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<DoWhileStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -199,19 +199,16 @@ struct WhileStmt : Stmt, public std::enable_shared_from_this<WhileStmt> {
     std::shared_ptr<Stmt> body;
 };
 
-struct ForStmt : Stmt, public std::enable_shared_from_this<ForStmt> {
-    ForStmt(std::shared_ptr<Stmt> initializer, std::shared_ptr<Expr> condition,
-            std::shared_ptr<Expr> increment, std::shared_ptr<Stmt> body)
-        : initializer(initializer), condition(condition), increment(increment), body(body) {}
+struct DoWhileStmt : Stmt, public std::enable_shared_from_this<DoWhileStmt> {
+    DoWhileStmt(std::shared_ptr<Stmt> body, std::shared_ptr<Expr> condition)
+        : body(body), condition(condition) {}
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(shared_from_this());
     }
 
-    std::shared_ptr<Stmt> initializer;
-    std::shared_ptr<Expr> condition;
-    std::shared_ptr<Expr> increment;
     std::shared_ptr<Stmt> body;
+    std::shared_ptr<Expr> condition;
 };
 
 

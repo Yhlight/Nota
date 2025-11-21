@@ -14,6 +14,7 @@ namespace {
         {"else",   TokenType::ELSE},
         {"while",  TokenType::WHILE},
         {"for",    TokenType::FOR},
+        {"do",     TokenType::DO},
         {"return", TokenType::RETURN},
         {"true",   TokenType::TRUE},
         {"false",  TokenType::FALSE},

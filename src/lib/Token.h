@@ -7,7 +7,7 @@ namespace nota {
 
 enum class TokenType {
     // Keywords
-    LET, MUT, FN, CLASS, IF, ELSE, WHILE, FOR, RETURN, TRUE, FALSE, END,
+LET, MUT, FN, CLASS, IF, ELSE, WHILE, FOR, DO, RETURN, TRUE, FALSE, END,
 
     // Literals
     IDENTIFIER, INTEGER, FLOAT, STRING,

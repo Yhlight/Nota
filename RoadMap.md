@@ -21,7 +21,8 @@
 
 - [x] Implement control flow structures (if/else).
 - [x] Implement loops (while).
-- [ ] **Current Focus: Implement other loop structures (for, for-each, do-while).**
+- [x] Implement other loop structures (for).
+- [ ] **Current Focus: Implement other loop structures (do-while).**
 - [ ] Implement functions.
 - [ ] Implement classes and objects.
 

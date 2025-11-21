@@ -41,8 +41,10 @@ void Interpreter::visit(const std::shared_ptr<WhileStmt>& stmt) {
     }
 }
 
-void Interpreter::visit(const std::shared_ptr<ForStmt>& stmt) {
-    // This should not be called, as for loops are desugared into while loops.
+void Interpreter::visit(const std::shared_ptr<DoWhileStmt>& stmt) {
+    do {
+        execute(stmt->body);
+    } while (isTruthy(evaluate(stmt->condition)));
 }
 
 void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
@@ -55,6 +57,8 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 lastValue_ = std::get<int>(left) + std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) + std::get<double>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operands must be two numbers.");
             }
             break;
         case TokenType::EQUALS:
@@ -68,6 +72,8 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 lastValue_ = std::get<int>(left) < std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) < std::get<double>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operands must be two numbers.");
             }
             break;
         case TokenType::GREATER:
@@ -75,6 +81,8 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 lastValue_ = std::get<int>(left) > std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) > std::get<double>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operands must be two numbers.");
             }
             break;
         case TokenType::LESS_EQUALS:
@@ -82,6 +90,8 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 lastValue_ = std::get<int>(left) <= std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) <= std::get<double>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operands must be two numbers.");
             }
             break;
         case TokenType::GREATER_EQUALS:
@@ -89,6 +99,8 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 lastValue_ = std::get<int>(left) >= std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) >= std::get<double>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operands must be two numbers.");
             }
             break;
         default:
@@ -114,7 +126,11 @@ void Interpreter::visit(const std::shared_ptr<Postfix>& expr) {
             lastValue_ = std::get<int>(left);
             if (auto var = std::dynamic_pointer_cast<Variable>(expr->left)) {
                 environment_.assign(var->name, std::get<int>(left) + 1);
+            } else {
+                throw RuntimeError(expr->op, "Operand of increment must be a variable.");
             }
+        } else {
+            throw RuntimeError(expr->op, "Operand of increment must be a number.");
         }
     }
 }
@@ -146,6 +162,8 @@ void Interpreter::visit(const std::shared_ptr<Unary>& expr) {
                 lastValue_ = -std::get<int>(right);
             } else if (std::holds_alternative<double>(right)) {
                 lastValue_ = -std::get<double>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operand must be a number.");
             }
             break;
         case TokenType::NOT:
@@ -167,10 +185,11 @@ Interpreter::Value Interpreter::evaluate(const std::shared_ptr<Expr>& expr) {
 }
 
 bool Interpreter::isTruthy(const Value& value) {
-    if (std::holds_alternative<bool>(value)) {
-        return std::get<bool>(value);
-    }
-    return false;
+    if (std::holds_alternative<std::monostate>(value)) return false;
+    if (std::holds_alternative<bool>(value)) return std::get<bool>(value);
+    if (std::holds_alternative<double>(value)) return std::get<double>(value) != 0.0;
+    if (std::holds_alternative<int>(value)) return std::get<int>(value) != 0;
+    return true;
 }
 
 } // namespace nota

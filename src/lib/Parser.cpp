@@ -35,8 +35,37 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
 }
 
 std::unique_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::IF})) return ifStatement();
     return expressionStatement();
 }
+
+std::unique_ptr<Stmt> Parser::ifStatement() {
+    auto condition = expression();
+
+    auto thenBranch = std::make_unique<BlockStmt>(block());
+    std::unique_ptr<Stmt> elseBranch = nullptr;
+    if (match({TokenType::ELSE})) {
+        if (match({TokenType::IF})) {
+            elseBranch = ifStatement();
+        } else {
+            elseBranch = std::make_unique<BlockStmt>(block());
+        }
+    }
+    consume(TokenType::END, "Expect 'end' after if statement.");
+
+    return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch), std::move(elseBranch));
+}
+
+std::vector<std::unique_ptr<Stmt>> Parser::block() {
+    std::vector<std::unique_ptr<Stmt>> statements;
+
+    while (!check(TokenType::ELSE) && !check(TokenType::END) && !isAtEnd()) {
+        statements.push_back(declaration());
+    }
+
+    return statements;
+}
+
 
 std::unique_ptr<Stmt> Parser::expressionStatement() {
     auto expr = expression();

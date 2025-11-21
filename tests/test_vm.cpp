@@ -8,7 +8,7 @@ TEST_CASE("testing the VM with OP_CONSTANT") {
 
     int constant = chunk.addConstant(1.2);
     chunk.write(static_cast<uint8_t>(nota::OpCode::OP_CONSTANT), 1);
-    chunk.write(constant, 1);
+    chunk.write(static_cast<uint8_t>(constant), 1);
 
     vm.interpret(&chunk);
 
@@ -21,7 +21,7 @@ TEST_CASE("testing the VM with OP_NEGATE") {
 
     int constant = chunk.addConstant(1.2);
     chunk.write(static_cast<uint8_t>(nota::OpCode::OP_CONSTANT), 1);
-    chunk.write(constant, 1);
+    chunk.write(static_cast<uint8_t>(constant), 1);
     chunk.write(static_cast<uint8_t>(nota::OpCode::OP_NEGATE), 1);
 
     vm.interpret(&chunk);

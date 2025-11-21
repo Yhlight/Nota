@@ -24,13 +24,18 @@ enum class OpCode {
     OP_LESS,
     OP_DEFINE_GLOBAL,
     OP_GET_GLOBAL,
-    OP_SET_GLOBAL
+    OP_SET_GLOBAL,
+    OP_JUMP_IF_FALSE,
+    OP_JUMP
 };
 
 class Chunk {
 public:
     void write(uint8_t byte, int line);
+    void write(uint16_t bytes, int line);
     int addConstant(Value value);
+    void patch(int offset, uint16_t value);
+
 
     std::vector<uint8_t> code;
     std::vector<Value> constants;

@@ -26,7 +26,7 @@ namespace nota {
         AND, CLASS, ELSE, FALSE,
         FN, FOR, IF, NIL, OR,
         PRINT, RETURN, SUPER, THIS,
-        TRUE, LET, MUT, WHILE,
+        TRUE, LET, MUT, WHILE, END,
 
         END_OF_FILE
     };

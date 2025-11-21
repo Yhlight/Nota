@@ -184,6 +184,20 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 it->second = stack.back();
                 break;
             }
+            case OpCode::OP_JUMP_IF_FALSE: {
+                uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
+                ip += 2;
+                if (!isTruthy(stack.back())) {
+                    ip += offset;
+                }
+                break;
+            }
+            case OpCode::OP_JUMP: {
+                uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
+                ip += 2;
+                ip += offset;
+                break;
+            }
         }
     }
 }

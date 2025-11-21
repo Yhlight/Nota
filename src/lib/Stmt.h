@@ -10,12 +10,16 @@ namespace nota {
 class Stmt;
 struct ExpressionStmt;
 struct VarDeclStmt;
+struct BlockStmt;
+struct IfStmt;
 
 class StmtVisitor {
 public:
     virtual ~StmtVisitor() = default;
     virtual void visitExpressionStmt(const ExpressionStmt& stmt) = 0;
     virtual void visitVarDeclStmt(const VarDeclStmt& stmt) = 0;
+    virtual void visitBlockStmt(const BlockStmt& stmt) = 0;
+    virtual void visitIfStmt(const IfStmt& stmt) = 0;
 };
 
 class Stmt {
@@ -45,6 +49,34 @@ struct VarDeclStmt : public Stmt {
 
     const Token name;
     const std::unique_ptr<Expr> initializer;
+};
+
+struct BlockStmt : public Stmt {
+    BlockStmt(std::vector<std::unique_ptr<Stmt>> statements)
+        : statements(std::move(statements)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visitBlockStmt(*this);
+    }
+
+    const std::vector<std::unique_ptr<Stmt>> statements;
+};
+
+struct IfStmt : public Stmt {
+    IfStmt(std::unique_ptr<Expr> condition,
+           std::unique_ptr<Stmt> thenBranch,
+           std::unique_ptr<Stmt> elseBranch)
+        : condition(std::move(condition)),
+          thenBranch(std::move(thenBranch)),
+          elseBranch(std::move(elseBranch)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visitIfStmt(*this);
+    }
+
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> thenBranch;
+    const std::unique_ptr<Stmt> elseBranch;
 };
 
 } // namespace nota

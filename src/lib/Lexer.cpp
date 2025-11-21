@@ -126,6 +126,7 @@ void Lexer::identifier() {
         {"let",    TokenType::LET},
         {"mut",    TokenType::MUT},
         {"while",  TokenType::WHILE},
+        {"end",    TokenType::END}
     };
 
     auto it = keywords.find(text);

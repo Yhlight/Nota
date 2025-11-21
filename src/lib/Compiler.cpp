@@ -13,6 +13,24 @@ void Compiler::emitByte(uint8_t byte, int line) {
     chunk.write(byte, line);
 }
 
+void Compiler::emitBytes(uint8_t byte1, uint8_t byte2, int line) {
+    emitByte(byte1, line);
+    emitByte(byte2, line);
+}
+
+int Compiler::emitJump(uint8_t instruction, int line) {
+    emitByte(instruction, line);
+    emitByte(0xff, line);
+    emitByte(0xff, line);
+    return chunk.code.size() - 2;
+}
+
+void Compiler::patchJump(int offset) {
+    int jump = chunk.code.size() - offset - 2;
+    chunk.patch(offset, jump);
+}
+
+
 uint8_t Compiler::makeConstant(Value value) {
     int constant = chunk.addConstant(value);
     // For now, we assume we won't have more than 256 constants.
@@ -23,6 +41,15 @@ void Compiler::emitConstant(Value value, int line) {
     emitByte(static_cast<uint8_t>(OpCode::OP_CONSTANT), line);
     emitByte(makeConstant(value), line);
 }
+
+void Compiler::beginScope() {
+    scopeDepth.push_back(0);
+}
+
+void Compiler::endScope() {
+    scopeDepth.pop_back();
+}
+
 
 // Expression Visitor Implementations
 std::any Compiler::visitBinaryExpr(const Binary& expr) {
@@ -70,16 +97,14 @@ std::any Compiler::visitUnaryExpr(const Unary& expr) {
 
 std::any Compiler::visitVariableExpr(const VariableExpr& expr) {
     uint8_t name = makeConstant(expr.name.lexeme);
-    emitByte(static_cast<uint8_t>(OpCode::OP_GET_GLOBAL), expr.name.line);
-    emitByte(name, expr.name.line);
+    emitBytes(static_cast<uint8_t>(OpCode::OP_GET_GLOBAL), name, expr.name.line);
     return {};
 }
 
 std::any Compiler::visitAssignExpr(const AssignExpr& expr) {
     expr.value->accept(*this);
     uint8_t name = makeConstant(expr.name.lexeme);
-    emitByte(static_cast<uint8_t>(OpCode::OP_SET_GLOBAL), expr.name.line);
-    emitByte(name, expr.name.line);
+    emitBytes(static_cast<uint8_t>(OpCode::OP_SET_GLOBAL), name, expr.name.line);
     return {};
 }
 
@@ -100,8 +125,31 @@ void Compiler::visitVarDeclStmt(const VarDeclStmt& stmt) {
     }
 
     uint8_t name = makeConstant(stmt.name.lexeme);
-    emitByte(static_cast<uint8_t>(OpCode::OP_DEFINE_GLOBAL), stmt.name.line);
-    emitByte(name, stmt.name.line);
+    emitBytes(static_cast<uint8_t>(OpCode::OP_DEFINE_GLOBAL), name, stmt.name.line);
+}
+
+void Compiler::visitBlockStmt(const BlockStmt& stmt) {
+    beginScope();
+    for (const auto& statement : stmt.statements) {
+        statement->accept(*this);
+    }
+    endScope();
+}
+
+void Compiler::visitIfStmt(const IfStmt& stmt) {
+    stmt.condition->accept(*this);
+
+    int thenJump = emitJump(static_cast<uint8_t>(OpCode::OP_JUMP_IF_FALSE), 0);
+    stmt.thenBranch->accept(*this);
+
+    int elseJump = emitJump(static_cast<uint8_t>(OpCode::OP_JUMP), 0);
+
+    patchJump(thenJump);
+    if (stmt.elseBranch) {
+        stmt.elseBranch->accept(*this);
+    }
+
+    patchJump(elseJump);
 }
 
 } // namespace nota

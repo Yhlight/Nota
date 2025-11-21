@@ -25,3 +25,12 @@ TEST_CASE("testing variable declarations") {
     testStatement("let b = 2;", "b", 2.0);
     testStatement("let c = 1 + 2;", "c", 3.0);
 }
+
+TEST_CASE("testing if statements") {
+    testStatement("let a = 1; if (true) a = 2; end", "a", 2.0);
+    testStatement("let a = 1; if (false) a = 2; end", "a", 1.0);
+    testStatement("let a = 1; if (true) a = 2; else a = 3; end", "a", 2.0);
+    testStatement("let a = 1; if (false) a = 2; else a = 3; end", "a", 3.0);
+    testStatement("let a = 1; if (1 < 2) a = 2; else a = 3; end", "a", 2.0);
+    testStatement("let a = 1; if (1 > 2) a = 2; else a = 3; end", "a", 3.0);
+}

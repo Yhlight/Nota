@@ -16,7 +16,8 @@
     *   [X] Define Abstract Syntax Tree (AST) nodes
     *   [X] Parse variable declarations (`let`, `mut`)
     *   [X] Parse expressions and operators
-    *   [ ] Parse control flow statements (`if`, `else`, `while`, `for`, `do-while`, `match`)
+    *   [X] Parse control flow statements (`if`, `else`)
+    *   [ ] Parse control flow statements (`while`, `for`, `do-while`, `match`)
     *   [ ] Parse function definitions and calls
     *   [X] Write unit tests for the parser
 *   [ ] **Task 4: Bytecode VM**

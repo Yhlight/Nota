@@ -38,3 +38,7 @@ TEST_CASE("testing if statements") {
 TEST_CASE("testing while loops") {
     testStatement("let a = 0; while (a < 5) a = a + 1; end", "a", 5.0);
 }
+
+TEST_CASE("testing for loops") {
+    testStatement("let a = 0; for (let i = 0; i < 5; i = i + 1) a = a + 1; end", "a", 5.0);
+}

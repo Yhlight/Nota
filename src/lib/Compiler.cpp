@@ -2,6 +2,8 @@
 
 namespace nota {
 
+Compiler::Compiler() = default;
+
 Chunk Compiler::compile(const std::vector<std::unique_ptr<Stmt>>& statements) {
     for (const auto& stmt : statements) {
         stmt->accept(*this);
@@ -51,13 +53,50 @@ void Compiler::emitConstant(Value value, int line) {
 }
 
 void Compiler::beginScope() {
-    scopeDepth.push_back(0);
+    symbolTable.beginScope();
 }
 
 void Compiler::endScope() {
-    scopeDepth.pop_back();
+    symbolTable.endScope();
+
+    while (symbolTable.locals.size() > 0 &&
+           symbolTable.locals.back().depth > symbolTable.scopeDepth) {
+        emitByte(static_cast<uint8_t>(OpCode::OP_POP), 0); // Placeholder line
+        symbolTable.locals.pop_back();
+    }
 }
 
+void Compiler::declareVariable(Token name) {
+    if (symbolTable.scopeDepth == 0) return;
+
+    for (int i = symbolTable.locals.size() - 1; i >= 0; i--) {
+        const Local& local = symbolTable.locals[i];
+        if (local.depth != -1 && local.depth < symbolTable.scopeDepth) {
+            break;
+        }
+
+        if (name.lexeme == local.name.lexeme) {
+            // Error: Already a variable with this name in this scope.
+        }
+    }
+
+    symbolTable.addLocal(name);
+}
+
+uint8_t Compiler::parseVariable(const std::string& errorMessage, int line) {
+    // For now, we only support global variables.
+    return makeConstant(errorMessage);
+}
+
+void Compiler::defineVariable(uint8_t global, int line) {
+    if (symbolTable.scopeDepth > 0) {
+        // Mark the latest local as initialized.
+        symbolTable.locals.back().depth = symbolTable.scopeDepth;
+        return;
+    }
+
+    emitBytes(static_cast<uint8_t>(OpCode::OP_DEFINE_GLOBAL), global, line);
+}
 
 // Expression Visitor Implementations
 std::any Compiler::visitBinaryExpr(const Binary& expr) {
@@ -104,15 +143,25 @@ std::any Compiler::visitUnaryExpr(const Unary& expr) {
 }
 
 std::any Compiler::visitVariableExpr(const VariableExpr& expr) {
-    uint8_t name = makeConstant(expr.name.lexeme);
-    emitBytes(static_cast<uint8_t>(OpCode::OP_GET_GLOBAL), name, expr.name.line);
+    int arg = symbolTable.resolveLocal(expr.name.lexeme);
+    if (arg != -1) {
+        emitBytes(static_cast<uint8_t>(OpCode::OP_GET_LOCAL), arg, expr.name.line);
+    } else {
+        uint8_t name = makeConstant(expr.name.lexeme);
+        emitBytes(static_cast<uint8_t>(OpCode::OP_GET_GLOBAL), name, expr.name.line);
+    }
     return {};
 }
 
 std::any Compiler::visitAssignExpr(const AssignExpr& expr) {
     expr.value->accept(*this);
-    uint8_t name = makeConstant(expr.name.lexeme);
-    emitBytes(static_cast<uint8_t>(OpCode::OP_SET_GLOBAL), name, expr.name.line);
+    int arg = symbolTable.resolveLocal(expr.name.lexeme);
+    if (arg != -1) {
+        emitBytes(static_cast<uint8_t>(OpCode::OP_SET_LOCAL), arg, expr.name.line);
+    } else {
+        uint8_t name = makeConstant(expr.name.lexeme);
+        emitBytes(static_cast<uint8_t>(OpCode::OP_SET_GLOBAL), name, expr.name.line);
+    }
     return {};
 }
 
@@ -120,20 +169,17 @@ std::any Compiler::visitAssignExpr(const AssignExpr& expr) {
 // Statement Visitor Implementations
 void Compiler::visitExpressionStmt(const ExpressionStmt& stmt) {
     stmt.expression->accept(*this);
-    // We might want to pop the value off the stack here, but for now we'll
-    // leave it for potential use in a REPL.
+    emitByte(static_cast<uint8_t>(OpCode::OP_POP), 0); // Placeholder line
 }
 
 void Compiler::visitVarDeclStmt(const VarDeclStmt& stmt) {
+    declareVariable(stmt.name);
     if (stmt.initializer) {
         stmt.initializer->accept(*this);
     } else {
-        // Default initialize to nil.
         emitByte(static_cast<uint8_t>(OpCode::OP_NIL), stmt.name.line);
     }
-
-    uint8_t name = makeConstant(stmt.name.lexeme);
-    emitBytes(static_cast<uint8_t>(OpCode::OP_DEFINE_GLOBAL), name, stmt.name.line);
+    defineVariable(makeConstant(stmt.name.lexeme), stmt.name.line);
 }
 
 void Compiler::visitBlockStmt(const BlockStmt& stmt) {
@@ -169,6 +215,34 @@ void Compiler::visitWhileStmt(const WhileStmt& stmt) {
     emitLoop(loopStart, 0);
 
     patchJump(exitJump);
+}
+
+void Compiler::visitForStmt(const ForStmt& stmt) {
+    beginScope();
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    }
+
+    int loopStart = chunk.code.size();
+    int exitJump = -1;
+    if (stmt.condition) {
+        stmt.condition->accept(*this);
+        exitJump = emitJump(static_cast<uint8_t>(OpCode::OP_JUMP_IF_FALSE), 0);
+    }
+
+    stmt.body->accept(*this);
+    if (stmt.increment) {
+        stmt.increment->accept(*this);
+        emitByte(static_cast<uint8_t>(OpCode::OP_POP), 0);
+    }
+
+    emitLoop(loopStart, 0);
+
+    if (exitJump != -1) {
+        patchJump(exitJump);
+    }
+
+    endScope();
 }
 
 } // namespace nota

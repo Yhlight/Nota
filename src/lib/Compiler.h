@@ -4,6 +4,7 @@
 #include "Expr.h"
 #include "Stmt.h"
 #include "Chunk.h"
+#include "SymbolTable.h"
 #include <memory>
 #include <vector>
 
@@ -11,6 +12,7 @@ namespace nota {
 
 class Compiler : public ExprVisitor, public StmtVisitor {
 public:
+    Compiler();
     Chunk compile(const std::vector<std::unique_ptr<Stmt>>& statements);
 
     std::any visitBinaryExpr(const Binary& expr) override;
@@ -25,6 +27,7 @@ public:
     void visitBlockStmt(const BlockStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;
     void visitWhileStmt(const WhileStmt& stmt) override;
+    void visitForStmt(const ForStmt& stmt) override;
 
 private:
     void emitByte(uint8_t byte, int line);
@@ -32,7 +35,9 @@ private:
     int emitJump(uint8_t instruction, int line);
     void patchJump(int offset);
     void emitLoop(int loopStart, int line);
-
+    void declareVariable(Token name);
+    uint8_t parseVariable(const std::string& errorMessage, int line);
+    void defineVariable(uint8_t global, int line);
 
     uint8_t makeConstant(Value value);
     void emitConstant(Value value, int line);
@@ -41,7 +46,7 @@ private:
     void endScope();
 
     Chunk chunk;
-    std::vector<int> scopeDepth;
+    SymbolTable symbolTable;
 };
 
 } // namespace nota

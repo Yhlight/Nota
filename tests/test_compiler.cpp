@@ -5,7 +5,8 @@
 #include "../src/lib/VM.h"
 
 void testNumericExpression(const std::string& source, double expected) {
-    nota::Lexer lexer(source);
+    std::string test_source = "let test_result = " + source;
+    nota::Lexer lexer(test_source);
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     auto statements = parser.parse();
@@ -16,11 +17,14 @@ void testNumericExpression(const std::string& source, double expected) {
     nota::VM vm;
     vm.interpret(&chunk);
 
-    CHECK(std::any_cast<double>(vm.stack.back()) == expected);
+    CHECK(vm.globals.count("test_result") == 1);
+    nota::Value value = vm.globals["test_result"];
+    CHECK(std::any_cast<double>(value) == expected);
 }
 
 void testBooleanExpression(const std::string& source, bool expected) {
-    nota::Lexer lexer(source);
+    std::string test_source = "let test_result = " + source;
+    nota::Lexer lexer(test_source);
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     auto statements = parser.parse();
@@ -31,7 +35,9 @@ void testBooleanExpression(const std::string& source, bool expected) {
     nota::VM vm;
     vm.interpret(&chunk);
 
-    CHECK(std::any_cast<bool>(vm.stack.back()) == expected);
+    CHECK(vm.globals.count("test_result") == 1);
+    nota::Value value = vm.globals["test_result"];
+    CHECK(std::any_cast<bool>(value) == expected);
 }
 
 TEST_CASE("testing the compiler with arithmetic") {

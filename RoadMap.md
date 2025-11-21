@@ -18,7 +18,8 @@
     *   [X] Parse expressions and operators
     *   [X] Parse control flow statements (`if`, `else`)
     *   [X] Parse control flow statements (`while`)
-    *   [ ] Parse control flow statements (`for`, `do-while`, `match`)
+    *   [X] Parse control flow statements (`for`)
+    *   [ ] Parse control flow statements (`do-while`, `match`)
     *   [ ] Parse function definitions and calls
     *   [X] Write unit tests for the parser
 *   [ ] **Task 4: Bytecode VM**
@@ -28,7 +29,7 @@
     *   [X] Write unit tests for the VM
 *   [ ] **Task 5: Compiler (AST to Bytecode)**
     *   [X] Traverse AST to generate bytecode
-    *   [ ] Implement symbol table for variable management
+    *   [X] Implement symbol table for variable management
     *   [X] Compile expressions and statements
     *   [X] Write unit tests for the compiler
 *   [ ] **Task 6: Garbage Collection**

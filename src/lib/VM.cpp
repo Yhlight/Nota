@@ -184,6 +184,16 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 it->second = stack.back();
                 break;
             }
+            case OpCode::OP_GET_LOCAL: {
+                uint8_t slot = chunk->code[ip++];
+                push(stack[slot]);
+                break;
+            }
+            case OpCode::OP_SET_LOCAL: {
+                uint8_t slot = chunk->code[ip++];
+                stack[slot] = stack.back();
+                break;
+            }
             case OpCode::OP_JUMP_IF_FALSE: {
                 uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
                 ip += 2;
@@ -202,6 +212,10 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
                 ip += 2;
                 ip -= offset;
+                break;
+            }
+            case OpCode::OP_POP: {
+                pop();
                 break;
             }
         }

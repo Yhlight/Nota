@@ -37,6 +37,7 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
 std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::IF})) return ifStatement();
     if (match({TokenType::WHILE})) return whileStatement();
+    if (match({TokenType::FOR})) return forStatement();
     return expressionStatement();
 }
 
@@ -63,6 +64,37 @@ std::unique_ptr<Stmt> Parser::whileStatement() {
     consume(TokenType::END, "Expect 'end' after while loop.");
     return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }
+
+std::unique_ptr<Stmt> Parser::forStatement() {
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+
+    std::unique_ptr<Stmt> initializer;
+    if (match({TokenType::SEMICOLON})) {
+        // No initializer.
+    } else if (match({TokenType::LET, TokenType::MUT})) {
+        initializer = varDeclaration();
+    } else {
+        initializer = expressionStatement();
+    }
+
+    std::unique_ptr<Expr> condition = nullptr;
+    if (!check(TokenType::SEMICOLON)) {
+        condition = expression();
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+    std::unique_ptr<Expr> increment = nullptr;
+    if (!check(TokenType::RIGHT_PAREN)) {
+        increment = expression();
+    }
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    auto body = std::make_unique<BlockStmt>(block());
+    consume(TokenType::END, "Expect 'end' after for loop.");
+
+    return std::make_unique<ForStmt>(std::move(initializer), std::move(condition), std::move(increment), std::move(body));
+}
+
 
 std::vector<std::unique_ptr<Stmt>> Parser::block() {
     std::vector<std::unique_ptr<Stmt>> statements;

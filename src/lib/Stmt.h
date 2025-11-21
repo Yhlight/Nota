@@ -13,6 +13,7 @@ struct VarDeclStmt;
 struct BlockStmt;
 struct IfStmt;
 struct WhileStmt;
+struct ForStmt;
 
 class StmtVisitor {
 public:
@@ -22,6 +23,7 @@ public:
     virtual void visitBlockStmt(const BlockStmt& stmt) = 0;
     virtual void visitIfStmt(const IfStmt& stmt) = 0;
     virtual void visitWhileStmt(const WhileStmt& stmt) = 0;
+    virtual void visitForStmt(const ForStmt& stmt) = 0;
 };
 
 class Stmt {
@@ -90,6 +92,26 @@ struct WhileStmt : public Stmt {
     }
 
     const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> body;
+};
+
+struct ForStmt : public Stmt {
+    ForStmt(std::unique_ptr<Stmt> initializer,
+            std::unique_ptr<Expr> condition,
+            std::unique_ptr<Expr> increment,
+            std::unique_ptr<Stmt> body)
+        : initializer(std::move(initializer)),
+          condition(std::move(condition)),
+          increment(std::move(increment)),
+          body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visitForStmt(*this);
+    }
+
+    const std::unique_ptr<Stmt> initializer;
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Expr> increment;
     const std::unique_ptr<Stmt> body;
 };
 

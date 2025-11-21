@@ -14,6 +14,9 @@ add_library(libnota STATIC
     lib/VM.h
     lib/Compiler.cpp
     lib/Compiler.h
+    lib/Stmt.h
+    lib/SymbolTable.cpp
+    lib/SymbolTable.h
 )
 
 add_executable(nota

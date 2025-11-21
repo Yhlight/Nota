@@ -19,7 +19,10 @@ namespace {
         {"return", TokenType::RETURN},
         {"true",   TokenType::TRUE},
         {"false",  TokenType::FALSE},
-        {"end",    TokenType::END}
+        {"end",    TokenType::END},
+        {"import", TokenType::IMPORT},
+        {"as",     TokenType::AS},
+        {"package",TokenType::PACKAGE}
     };
 }
 
@@ -51,7 +54,9 @@ void Lexer::scanToken() {
         case ']': addToken(TokenType::RBRACKET); break;
         case ',': addToken(TokenType::COMMA); break;
         case '.': addToken(TokenType::DOT); break;
-        case ':': addToken(TokenType::COLON); break;
+        case ':':
+            addToken(match(':') ? TokenType::COLON_COLON : TokenType::COLON);
+            break;
         case ';': addToken(TokenType::SEMICOLON); break;
         case '+':
             addToken(match('+') ? TokenType::PLUS_PLUS : TokenType::PLUS);

@@ -144,7 +144,12 @@ std::shared_ptr<Expr> Parser::primary() {
     }
 
     if (match({TokenType::IDENTIFIER})) {
-        return std::make_shared<Variable>(previous());
+        Token identifier = previous();
+        if (match({TokenType::COLON_COLON})) {
+            Token member = consume(TokenType::IDENTIFIER, "Expect member name after '::'.");
+            return std::make_shared<ModuleAccessExpr>(identifier, member);
+        }
+        return std::make_shared<Variable>(identifier);
     }
 
     if (match({TokenType::LPAREN})) {
@@ -162,6 +167,12 @@ std::shared_ptr<Stmt> Parser::declaration() {
     }
     if (match({TokenType::FN})) {
         return functionDeclaration();
+    }
+    if (match({TokenType::IMPORT})) {
+        return importStatement();
+    }
+    if (match({TokenType::PACKAGE})) {
+        return packageStatement();
     }
     if (match({TokenType::LET, TokenType::MUT})) {
         return varDeclaration();
@@ -183,6 +194,22 @@ std::shared_ptr<Stmt> Parser::classDeclaration() {
 
     consume(TokenType::END, "Expect 'end' after class body.");
     return std::make_shared<ClassStmt>(name, methods);
+}
+
+std::shared_ptr<Stmt> Parser::importStatement() {
+    Token path = consume(TokenType::STRING, "Expect module path.");
+    std::optional<Token> alias;
+    if (match({TokenType::AS})) {
+        alias = consume(TokenType::IDENTIFIER, "Expect alias name.");
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+    return std::make_shared<ImportStmt>(path, alias);
+}
+
+std::shared_ptr<Stmt> Parser::packageStatement() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect package name.");
+    consume(TokenType::SEMICOLON, "Expect ';' after package statement.");
+    return std::make_shared<PackageStmt>(name);
 }
 
 std::shared_ptr<Stmt> Parser::functionDeclaration() {

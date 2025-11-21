@@ -24,11 +24,13 @@
 - [x] Implement other loop structures (for, do-while).
 - [x] Implement functions (declaration and call).
 - [x] Implement function return statements.
-- [ ] **Current Focus: Implement classes and objects.**
+- [x] Implement classes and objects.
+- [x] Implement modules and packages.
+- [ ] **Current Focus: Implement garbage collection.**
 
 ## Phase 4: Advanced Features
 
-- [ ] Implement modules and packages.
+- [ ] Implement FFI.
 - [ ] Implement garbage collection.
 - [ ] Implement FFI.
 

@@ -1,4 +1,5 @@
 #include "Interpreter.h"
+#include "ModuleLoader.h"
 #include <iostream>
 #include <utility>
 
@@ -19,6 +20,10 @@ private:
     std::shared_ptr<Environment>& current_;
     std::shared_ptr<Environment> previous_;
 };
+
+Interpreter::Interpreter() : environment_(std::make_shared<Environment>()), moduleLoader_(std::make_unique<ModuleLoader>(*this)) {}
+
+Interpreter::~Interpreter() = default;
 
 void Interpreter::interpret(const std::vector<std::shared_ptr<Stmt>>& statements) {
     for (const auto& statement : statements) {
@@ -112,6 +117,26 @@ void Interpreter::visit(const std::shared_ptr<ClassStmt>& stmt) {
 
     auto klass = std::make_shared<NotaClass>(stmt->name, methods);
     environment_->define(stmt->name.lexeme, klass);
+}
+
+void Interpreter::visit(const std::shared_ptr<ImportStmt>& stmt) {
+    std::string path = std::get<std::string>(stmt->path.literal);
+    std::string name;
+    if (stmt->alias) {
+        name = stmt->alias->lexeme;
+    } else {
+        size_t last_slash = path.find_last_of("/\\");
+        name = (last_slash == std::string::npos) ? path : path.substr(last_slash + 1);
+        size_t last_dot = name.find_last_of('.');
+        if (last_dot != std::string::npos) {
+            name = name.substr(0, last_dot);
+        }
+    }
+    modules_[name] = moduleLoader_->load(path);
+}
+
+void Interpreter::visit(const std::shared_ptr<PackageStmt>& stmt) {
+    // Not implemented yet
 }
 
 namespace {
@@ -227,6 +252,14 @@ void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
 
 void Interpreter::visit(const std::shared_ptr<ThisExpr>& expr) {
     lastValue_ = environment_->get(expr->keyword);
+}
+
+void Interpreter::visit(const std::shared_ptr<ModuleAccessExpr>& expr) {
+    auto it = modules_.find(expr->module.lexeme);
+    if (it == modules_.end()) {
+        throw RuntimeError(expr->module, "Module not found: " + expr->module.lexeme);
+    }
+    lastValue_ = it->second->get(expr->member);
 }
 
 void Interpreter::visit(const std::shared_ptr<Grouping>& expr) {

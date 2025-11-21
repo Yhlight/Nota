@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include <variant>
+#include <optional>
 
 namespace nota {
 
@@ -22,6 +23,7 @@ struct CallExpr;
 struct GetExpr;
 struct SetExpr;
 struct ThisExpr;
+struct ModuleAccessExpr;
 
 class ExprVisitor {
 public:
@@ -37,6 +39,7 @@ public:
     virtual void visit(const std::shared_ptr<GetExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<SetExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<ThisExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<ModuleAccessExpr>& expr) = 0;
 };
 
 class Expr {
@@ -176,6 +179,18 @@ struct ThisExpr : Expr, public std::enable_shared_from_this<ThisExpr> {
     Token keyword;
 };
 
+struct ModuleAccessExpr : Expr, public std::enable_shared_from_this<ModuleAccessExpr> {
+    ModuleAccessExpr(Token module, Token member)
+        : module(module), member(member) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token module;
+    Token member;
+};
+
 // Statements
 struct Block;
 struct ExpressionStmt;
@@ -186,6 +201,8 @@ struct DoWhileStmt;
 struct FunctionStmt;
 struct ReturnStmt;
 struct ClassStmt;
+struct ImportStmt;
+struct PackageStmt;
 
 class StmtVisitor {
 public:
@@ -199,6 +216,8 @@ public:
     virtual void visit(const std::shared_ptr<FunctionStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<ReturnStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<ClassStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<ImportStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<PackageStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -313,6 +332,29 @@ struct ClassStmt : Stmt, public std::enable_shared_from_this<ClassStmt> {
 
     Token name;
     std::vector<std::shared_ptr<FunctionStmt>> methods;
+};
+
+struct ImportStmt : Stmt, public std::enable_shared_from_this<ImportStmt> {
+    ImportStmt(Token path, std::optional<Token> alias)
+        : path(path), alias(alias) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token path;
+    std::optional<Token> alias;
+};
+
+struct PackageStmt : Stmt, public std::enable_shared_from_this<PackageStmt> {
+    PackageStmt(Token name)
+        : name(name) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token name;
 };
 
 

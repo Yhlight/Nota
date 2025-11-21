@@ -33,6 +33,8 @@ private:
     std::shared_ptr<Stmt> functionDeclaration();
     std::shared_ptr<Stmt> statement();
     std::shared_ptr<Stmt> varDeclaration();
+    std::shared_ptr<Stmt> importStatement();
+    std::shared_ptr<Stmt> packageStatement();
     std::shared_ptr<Stmt> expressionStatement();
     std::shared_ptr<Stmt> ifStatement();
     std::shared_ptr<Stmt> whileStatement();

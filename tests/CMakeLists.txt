@@ -6,6 +6,7 @@ add_executable(nota_tests
     test_parser.cpp
     test_interpreter.cpp
     test_class.cpp
+    test_modules.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE libnota)

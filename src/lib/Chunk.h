@@ -26,7 +26,8 @@ enum class OpCode {
     OP_GET_GLOBAL,
     OP_SET_GLOBAL,
     OP_JUMP_IF_FALSE,
-    OP_JUMP
+    OP_JUMP,
+    OP_LOOP
 };
 
 class Chunk {

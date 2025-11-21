@@ -30,6 +30,14 @@ void Compiler::patchJump(int offset) {
     chunk.patch(offset, jump);
 }
 
+void Compiler::emitLoop(int loopStart, int line) {
+    emitByte(static_cast<uint8_t>(OpCode::OP_LOOP), line);
+
+    int offset = chunk.code.size() - loopStart + 2;
+    emitByte((offset >> 8) & 0xff, line);
+    emitByte(offset & 0xff, line);
+}
+
 
 uint8_t Compiler::makeConstant(Value value) {
     int constant = chunk.addConstant(value);
@@ -150,6 +158,17 @@ void Compiler::visitIfStmt(const IfStmt& stmt) {
     }
 
     patchJump(elseJump);
+}
+
+void Compiler::visitWhileStmt(const WhileStmt& stmt) {
+    int loopStart = chunk.code.size();
+    stmt.condition->accept(*this);
+
+    int exitJump = emitJump(static_cast<uint8_t>(OpCode::OP_JUMP_IF_FALSE), 0);
+    stmt.body->accept(*this);
+    emitLoop(loopStart, 0);
+
+    patchJump(exitJump);
 }
 
 } // namespace nota

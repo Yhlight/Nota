@@ -34,3 +34,7 @@ TEST_CASE("testing if statements") {
     testStatement("let a = 1; if (1 < 2) a = 2; else a = 3; end", "a", 2.0);
     testStatement("let a = 1; if (1 > 2) a = 2; else a = 3; end", "a", 3.0);
 }
+
+TEST_CASE("testing while loops") {
+    testStatement("let a = 0; while (a < 5) a = a + 1; end", "a", 5.0);
+}

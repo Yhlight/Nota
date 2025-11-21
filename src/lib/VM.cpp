@@ -198,6 +198,12 @@ InterpretResult VM::interpret(Chunk* chunk) {
                 ip += offset;
                 break;
             }
+            case OpCode::OP_LOOP: {
+                uint16_t offset = (chunk->code[ip] << 8) | chunk->code[ip + 1];
+                ip += 2;
+                ip -= offset;
+                break;
+            }
         }
     }
 }

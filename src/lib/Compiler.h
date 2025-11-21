@@ -24,12 +24,14 @@ public:
     void visitVarDeclStmt(const VarDeclStmt& stmt) override;
     void visitBlockStmt(const BlockStmt& stmt) override;
     void visitIfStmt(const IfStmt& stmt) override;
+    void visitWhileStmt(const WhileStmt& stmt) override;
 
 private:
     void emitByte(uint8_t byte, int line);
     void emitBytes(uint8_t byte1, uint8_t byte2, int line);
     int emitJump(uint8_t instruction, int line);
     void patchJump(int offset);
+    void emitLoop(int loopStart, int line);
 
 
     uint8_t makeConstant(Value value);

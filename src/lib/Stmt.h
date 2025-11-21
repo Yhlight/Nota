@@ -12,6 +12,7 @@ struct ExpressionStmt;
 struct VarDeclStmt;
 struct BlockStmt;
 struct IfStmt;
+struct WhileStmt;
 
 class StmtVisitor {
 public:
@@ -20,6 +21,7 @@ public:
     virtual void visitVarDeclStmt(const VarDeclStmt& stmt) = 0;
     virtual void visitBlockStmt(const BlockStmt& stmt) = 0;
     virtual void visitIfStmt(const IfStmt& stmt) = 0;
+    virtual void visitWhileStmt(const WhileStmt& stmt) = 0;
 };
 
 class Stmt {
@@ -77,6 +79,18 @@ struct IfStmt : public Stmt {
     const std::unique_ptr<Expr> condition;
     const std::unique_ptr<Stmt> thenBranch;
     const std::unique_ptr<Stmt> elseBranch;
+};
+
+struct WhileStmt : public Stmt {
+    WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
+        : condition(std::move(condition)), body(std::move(body)) {}
+
+    void accept(StmtVisitor& visitor) const override {
+        visitor.visitWhileStmt(*this);
+    }
+
+    const std::unique_ptr<Expr> condition;
+    const std::unique_ptr<Stmt> body;
 };
 
 } // namespace nota

@@ -17,7 +17,8 @@
     *   [X] Parse variable declarations (`let`, `mut`)
     *   [X] Parse expressions and operators
     *   [X] Parse control flow statements (`if`, `else`)
-    *   [ ] Parse control flow statements (`while`, `for`, `do-while`, `match`)
+    *   [X] Parse control flow statements (`while`)
+    *   [ ] Parse control flow statements (`for`, `do-while`, `match`)
     *   [ ] Parse function definitions and calls
     *   [X] Write unit tests for the parser
 *   [ ] **Task 4: Bytecode VM**

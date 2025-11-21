@@ -14,7 +14,25 @@ std::vector<std::shared_ptr<Stmt>> Parser::parse() {
 }
 
 std::shared_ptr<Expr> Parser::expression() {
-    return equality();
+    return assignment();
+}
+
+std::shared_ptr<Expr> Parser::assignment() {
+    std::shared_ptr<Expr> expr = equality();
+
+    if (match({TokenType::ASSIGN})) {
+        Token equals = previous();
+        std::shared_ptr<Expr> value = assignment();
+
+        if (auto var = std::dynamic_pointer_cast<Variable>(expr)) {
+            Token name = var->name;
+            return std::make_shared<Assign>(name, value);
+        }
+
+        error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
 }
 
 std::shared_ptr<Expr> Parser::equality() {
@@ -75,8 +93,19 @@ std::shared_ptr<Expr> Parser::unary() {
 }
 
 std::shared_ptr<Expr> Parser::primary() {
-    if (match({TokenType::INTEGER, TokenType::FLOAT, TokenType::STRING, TokenType::TRUE, TokenType::FALSE})) {
+    if (match({TokenType::TRUE})) {
+        return std::make_shared<Literal>(true);
+    }
+    if (match({TokenType::FALSE})) {
+        return std::make_shared<Literal>(false);
+    }
+
+    if (match({TokenType::INTEGER, TokenType::FLOAT, TokenType::STRING})) {
         return std::make_shared<Literal>(previous().literal);
+    }
+
+    if (match({TokenType::IDENTIFIER})) {
+        return std::make_shared<Variable>(previous());
     }
 
     if (match({TokenType::LPAREN})) {

@@ -122,8 +122,8 @@ TEST_CASE("Parser parses an if-else statement") {
     REQUIRE(elseBranch);
 }
 
-TEST_CASE("Parser parses a while statement") {
-    nota::Lexer lexer("while true 1; end");
+TEST_CASE("Parser parses a while statement with a block") {
+    nota::Lexer lexer("while true let a = 1; end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -136,6 +136,8 @@ TEST_CASE("Parser parses a while statement") {
     auto body = std::dynamic_pointer_cast<nota::Block>(whileStmt->body);
     REQUIRE(body);
     REQUIRE(body->statements.size() == 1);
+    auto varStmt = std::dynamic_pointer_cast<nota::VarStmt>(body->statements[0]);
+    REQUIRE(varStmt);
 }
 
 TEST_CASE("Parser throws an error for an invalid expression") {

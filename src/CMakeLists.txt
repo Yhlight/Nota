@@ -9,6 +9,8 @@ add_library(libnota STATIC
     lib/nota.cpp
     lib/Lexer.cpp
     lib/Parser.cpp
+    lib/Interpreter.cpp
+    lib/Environment.cpp
 )
 target_include_directories(libnota PUBLIC lib)
 

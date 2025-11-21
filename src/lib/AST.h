@@ -11,6 +11,8 @@ struct Binary;
 struct Grouping;
 struct Literal;
 struct Unary;
+struct Variable;
+struct Assign;
 
 class ExprVisitor {
 public:
@@ -19,6 +21,8 @@ public:
     virtual void visit(const std::shared_ptr<Grouping>& expr) = 0;
     virtual void visit(const std::shared_ptr<Literal>& expr) = 0;
     virtual void visit(const std::shared_ptr<Unary>& expr) = 0;
+    virtual void visit(const std::shared_ptr<Variable>& expr) = 0;
+    virtual void visit(const std::shared_ptr<Assign>& expr) = 0;
 };
 
 class Expr {
@@ -52,14 +56,14 @@ struct Grouping : Expr, public std::enable_shared_from_this<Grouping> {
 };
 
 struct Literal : Expr, public std::enable_shared_from_this<Literal> {
-    Literal(std::variant<std::monostate, int, double, std::string> value)
+    Literal(std::variant<std::monostate, int, double, std::string, bool> value)
         : value(value) {}
 
     void accept(ExprVisitor& visitor) override {
         visitor.visit(shared_from_this());
     }
 
-    std::variant<std::monostate, int, double, std::string> value;
+    std::variant<std::monostate, int, double, std::string, bool> value;
 };
 
 struct Unary : Expr, public std::enable_shared_from_this<Unary> {
@@ -72,6 +76,29 @@ struct Unary : Expr, public std::enable_shared_from_this<Unary> {
 
     Token op;
     std::shared_ptr<Expr> right;
+};
+
+struct Variable : Expr, public std::enable_shared_from_this<Variable> {
+    Variable(Token name)
+        : name(name) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token name;
+};
+
+struct Assign : Expr, public std::enable_shared_from_this<Assign> {
+    Assign(Token name, std::shared_ptr<Expr> value)
+        : name(name), value(value) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token name;
+    std::shared_ptr<Expr> value;
 };
 
 // Statements

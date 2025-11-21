@@ -19,6 +19,7 @@ public:
 
 private:
     std::shared_ptr<Expr> expression();
+    std::shared_ptr<Expr> assignment();
     std::shared_ptr<Expr> equality();
     std::shared_ptr<Expr> comparison();
     std::shared_ptr<Expr> term();

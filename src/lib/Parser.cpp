@@ -89,18 +89,37 @@ std::shared_ptr<Expr> Parser::unary() {
         std::shared_ptr<Expr> right = unary();
         return std::make_shared<Unary>(op, right);
     }
-    return postfix();
+    return call();
 }
 
-std::shared_ptr<Expr> Parser::postfix() {
+std::shared_ptr<Expr> Parser::call() {
     std::shared_ptr<Expr> expr = primary();
 
-    if (match({TokenType::PLUS_PLUS})) {
-        Token op = previous();
-        expr = std::make_shared<Postfix>(expr, op);
+    while (true) {
+        if (match({TokenType::LPAREN})) {
+            expr = finishCall(expr);
+        } else if (match({TokenType::PLUS_PLUS})) {
+            Token op = previous();
+            expr = std::make_shared<Postfix>(expr, op);
+        } else {
+            break;
+        }
     }
 
     return expr;
+}
+
+std::shared_ptr<Expr> Parser::finishCall(std::shared_ptr<Expr> callee) {
+    std::vector<std::shared_ptr<Expr>> arguments;
+    if (peek().type != TokenType::RPAREN) {
+        do {
+            arguments.push_back(expression());
+        } while (match({TokenType::COMMA}));
+    }
+
+    Token paren = consume(TokenType::RPAREN, "Expect ')' after arguments.");
+
+    return std::make_shared<CallExpr>(callee, paren, arguments);
 }
 
 std::shared_ptr<Expr> Parser::primary() {
@@ -129,10 +148,29 @@ std::shared_ptr<Expr> Parser::primary() {
 }
 
 std::shared_ptr<Stmt> Parser::declaration() {
+    if (match({TokenType::FN})) {
+        return functionDeclaration();
+    }
     if (match({TokenType::LET, TokenType::MUT})) {
         return varDeclaration();
     }
     return statement();
+}
+
+std::shared_ptr<Stmt> Parser::functionDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
+    consume(TokenType::LPAREN, "Expect '(' after function name.");
+    std::vector<Token> parameters;
+    if (peek().type != TokenType::RPAREN) {
+        do {
+            parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+        } while (match({TokenType::COMMA}));
+    }
+    consume(TokenType::RPAREN, "Expect ')' after parameters.");
+
+    std::vector<std::shared_ptr<Stmt>> body = block();
+    consume(TokenType::END, "Expect 'end' after function body.");
+    return std::make_shared<FunctionStmt>(name, parameters, body);
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration() {

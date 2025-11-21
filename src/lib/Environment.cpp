@@ -12,12 +12,19 @@ Environment::Value Environment::get(const Token& name) {
         return values_.at(name.lexeme);
     }
 
+    if (enclosing_ != nullptr) return enclosing_->get(name);
+
     throw std::runtime_error("Undefined variable '" + name.lexeme + "'.");
 }
 
 void Environment::assign(const Token& name, const Value& value) {
     if (values_.find(name.lexeme) != values_.end()) {
         values_[name.lexeme] = value;
+        return;
+    }
+
+    if (enclosing_ != nullptr) {
+        enclosing_->assign(name, value);
         return;
     }
 

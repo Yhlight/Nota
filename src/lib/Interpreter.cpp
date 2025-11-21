@@ -1,7 +1,30 @@
 #include "Interpreter.h"
 #include <iostream>
+#include <utility>
 
 namespace nota {
+
+class Function : public Callable {
+public:
+    Function(std::shared_ptr<FunctionStmt> declaration) : declaration_(std::move(declaration)) {}
+
+    int arity() override {
+        return declaration_->params.size();
+    }
+
+    Value call(Interpreter& interpreter, std::vector<Value> arguments) override {
+        auto environment = std::make_shared<Environment>(interpreter.environment_.get());
+        for (int i = 0; i < declaration_->params.size(); ++i) {
+            environment->define(declaration_->params[i].lexeme, arguments[i]);
+        }
+
+        interpreter.executeBlock(declaration_->body, environment);
+        return {};
+    }
+
+private:
+    std::shared_ptr<FunctionStmt> declaration_;
+};
 
 void Interpreter::interpret(const std::vector<std::shared_ptr<Stmt>>& statements) {
     for (const auto& statement : statements) {
@@ -24,7 +47,18 @@ void Interpreter::visit(const std::shared_ptr<VarStmt>& stmt) {
     if (stmt->initializer) {
         value = evaluate(stmt->initializer);
     }
-    environment_.define(stmt->name.lexeme, value);
+    environment_->define(stmt->name.lexeme, value);
+}
+
+void Interpreter::executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment) {
+    std::shared_ptr<Environment> previous = this->environment_;
+    this->environment_ = std::move(environment);
+
+    for (const auto& statement : statements) {
+        execute(statement);
+    }
+
+    this->environment_ = std::move(previous);
 }
 
 void Interpreter::visit(const std::shared_ptr<IfStmt>& stmt) {
@@ -45,6 +79,29 @@ void Interpreter::visit(const std::shared_ptr<DoWhileStmt>& stmt) {
     do {
         execute(stmt->body);
     } while (isTruthy(evaluate(stmt->condition)));
+}
+
+void Interpreter::visit(const std::shared_ptr<CallExpr>& expr) {
+    Value callee = evaluate(expr->callee);
+
+    std::vector<Value> arguments;
+    for (const auto& argument : expr->arguments) {
+        arguments.push_back(evaluate(argument));
+    }
+
+    if (auto callable = std::get_if<std::shared_ptr<Callable>>(&callee)) {
+        if (arguments.size() != (*callable)->arity()) {
+            throw RuntimeError(expr->paren, "Expected " + std::to_string((*callable)->arity()) + " arguments but got " + std::to_string(arguments.size()) + ".");
+        }
+        lastValue_ = (*callable)->call(*this, arguments);
+    } else {
+        throw RuntimeError(expr->paren, "Can only call functions and classes.");
+    }
+}
+
+void Interpreter::visit(const std::shared_ptr<FunctionStmt>& stmt) {
+    auto function = std::make_shared<Function>(stmt);
+    environment_->define(stmt->name.lexeme, function);
 }
 
 void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
@@ -110,12 +167,12 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
 }
 
 void Interpreter::visit(const std::shared_ptr<Variable>& expr) {
-    lastValue_ = environment_.get(expr->name);
+    lastValue_ = environment_->get(expr->name);
 }
 
 void Interpreter::visit(const std::shared_ptr<Assign>& expr) {
     Value value = evaluate(expr->value);
-    environment_.assign(expr->name, value);
+    environment_->assign(expr->name, value);
     lastValue_ = value;
 }
 
@@ -125,7 +182,7 @@ void Interpreter::visit(const std::shared_ptr<Postfix>& expr) {
         if (std::holds_alternative<int>(left)) {
             lastValue_ = std::get<int>(left);
             if (auto var = std::dynamic_pointer_cast<Variable>(expr->left)) {
-                environment_.assign(var->name, std::get<int>(left) + 1);
+                environment_->assign(var->name, std::get<int>(left) + 1);
             } else {
                 throw RuntimeError(expr->op, "Operand of increment must be a variable.");
             }
@@ -179,7 +236,7 @@ void Interpreter::execute(const std::shared_ptr<Stmt>& stmt) {
     stmt->accept(*this);
 }
 
-Interpreter::Value Interpreter::evaluate(const std::shared_ptr<Expr>& expr) {
+Value Interpreter::evaluate(const std::shared_ptr<Expr>& expr) {
     expr->accept(*this);
     return lastValue_;
 }

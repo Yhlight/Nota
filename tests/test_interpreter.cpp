@@ -12,7 +12,20 @@ TEST_CASE("Interpreter executes a while loop") {
     nota::Interpreter interpreter;
     interpreter.interpret(stmts);
 
-    auto value = interpreter.getEnvironment().get({nota::TokenType::IDENTIFIER, "a", {}, 1});
+    auto value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "a", {}, 1});
+    REQUIRE(std::holds_alternative<int>(value));
+    CHECK(std::get<int>(value) == 5);
+}
+
+TEST_CASE("Interpreter executes a function call") {
+    nota::Lexer lexer("mut a = 0; fn test(x) a = x; end test(5);");
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+    nota::Interpreter interpreter;
+    interpreter.interpret(stmts);
+
+    auto value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "a", {}, 1});
     REQUIRE(std::holds_alternative<int>(value));
     CHECK(std::get<int>(value) == 5);
 }
@@ -25,7 +38,7 @@ TEST_CASE("Interpreter executes an if statement") {
     nota::Interpreter interpreter;
     interpreter.interpret(stmts);
 
-    auto value = interpreter.getEnvironment().get({nota::TokenType::IDENTIFIER, "a", {}, 1});
+    auto value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "a", {}, 1});
     REQUIRE(std::holds_alternative<int>(value));
     CHECK(std::get<int>(value) == 1);
 }
@@ -38,7 +51,7 @@ TEST_CASE("Interpreter executes a for loop") {
     nota::Interpreter interpreter;
     interpreter.interpret(stmts);
 
-    auto value = interpreter.getEnvironment().get({nota::TokenType::IDENTIFIER, "a", {}, 1});
+    auto value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "a", {}, 1});
     REQUIRE(std::holds_alternative<int>(value));
     CHECK(std::get<int>(value) == 10);
 }
@@ -51,7 +64,7 @@ TEST_CASE("Interpreter executes a do-while loop") {
     nota::Interpreter interpreter;
     interpreter.interpret(stmts);
 
-    auto value = interpreter.getEnvironment().get({nota::TokenType::IDENTIFIER, "a", {}, 1});
+    auto value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "a", {}, 1});
     REQUIRE(std::holds_alternative<int>(value));
     CHECK(std::get<int>(value) == 5);
 }

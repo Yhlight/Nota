@@ -14,6 +14,7 @@ struct Unary;
 struct Variable;
 struct Assign;
 struct Postfix;
+struct CallExpr;
 
 class ExprVisitor {
 public:
@@ -25,6 +26,7 @@ public:
     virtual void visit(const std::shared_ptr<Variable>& expr) = 0;
     virtual void visit(const std::shared_ptr<Assign>& expr) = 0;
     virtual void visit(const std::shared_ptr<Postfix>& expr) = 0;
+    virtual void visit(const std::shared_ptr<CallExpr>& expr) = 0;
 };
 
 class Expr {
@@ -115,6 +117,19 @@ struct Postfix : Expr, public std::enable_shared_from_this<Postfix> {
     Token op;
 };
 
+struct CallExpr : Expr, public std::enable_shared_from_this<CallExpr> {
+    CallExpr(std::shared_ptr<Expr> callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments)
+        : callee(callee), paren(paren), arguments(arguments) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> callee;
+    Token paren; // For error reporting
+    std::vector<std::shared_ptr<Expr>> arguments;
+};
+
 // Statements
 struct Block;
 struct ExpressionStmt;
@@ -122,6 +137,7 @@ struct VarStmt;
 struct IfStmt;
 struct WhileStmt;
 struct DoWhileStmt;
+struct FunctionStmt;
 
 class StmtVisitor {
 public:
@@ -132,6 +148,7 @@ public:
     virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<WhileStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<DoWhileStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<FunctionStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -209,6 +226,19 @@ struct DoWhileStmt : Stmt, public std::enable_shared_from_this<DoWhileStmt> {
 
     std::shared_ptr<Stmt> body;
     std::shared_ptr<Expr> condition;
+};
+
+struct FunctionStmt : Stmt, public std::enable_shared_from_this<FunctionStmt> {
+    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body)
+        : name(name), params(params), body(body) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token name;
+    std::vector<Token> params;
+    std::vector<std::shared_ptr<Stmt>> body;
 };
 
 

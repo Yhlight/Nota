@@ -41,6 +41,10 @@ void Interpreter::visit(const std::shared_ptr<WhileStmt>& stmt) {
     }
 }
 
+void Interpreter::visit(const std::shared_ptr<ForStmt>& stmt) {
+    // This should not be called, as for loops are desugared into while loops.
+}
+
 void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
     Value left = evaluate(expr->left);
     Value right = evaluate(expr->right);
@@ -53,11 +57,38 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 lastValue_ = std::get<double>(left) + std::get<double>(right);
             }
             break;
+        case TokenType::EQUALS:
+            lastValue_ = left == right;
+            break;
+        case TokenType::NOT_EQUALS:
+            lastValue_ = left != right;
+            break;
         case TokenType::LESS:
             if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
                 lastValue_ = std::get<int>(left) < std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) < std::get<double>(right);
+            }
+            break;
+        case TokenType::GREATER:
+            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+                lastValue_ = std::get<int>(left) > std::get<int>(right);
+            } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
+                lastValue_ = std::get<double>(left) > std::get<double>(right);
+            }
+            break;
+        case TokenType::LESS_EQUALS:
+            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+                lastValue_ = std::get<int>(left) <= std::get<int>(right);
+            } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
+                lastValue_ = std::get<double>(left) <= std::get<double>(right);
+            }
+            break;
+        case TokenType::GREATER_EQUALS:
+            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+                lastValue_ = std::get<int>(left) >= std::get<int>(right);
+            } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
+                lastValue_ = std::get<double>(left) >= std::get<double>(right);
             }
             break;
         default:
@@ -74,6 +105,18 @@ void Interpreter::visit(const std::shared_ptr<Assign>& expr) {
     Value value = evaluate(expr->value);
     environment_.assign(expr->name, value);
     lastValue_ = value;
+}
+
+void Interpreter::visit(const std::shared_ptr<Postfix>& expr) {
+    Value left = evaluate(expr->left);
+    if (expr->op.type == TokenType::PLUS_PLUS) {
+        if (std::holds_alternative<int>(left)) {
+            lastValue_ = std::get<int>(left);
+            if (auto var = std::dynamic_pointer_cast<Variable>(expr->left)) {
+                environment_.assign(var->name, std::get<int>(left) + 1);
+            }
+        }
+    }
 }
 
 void Interpreter::visit(const std::shared_ptr<Grouping>& expr) {
@@ -95,8 +138,23 @@ void Interpreter::visit(const std::shared_ptr<Literal>& expr) {
 }
 
 void Interpreter::visit(const std::shared_ptr<Unary>& expr) {
-    // For now, do nothing.
-    lastValue_ = {};
+    Value right = evaluate(expr->right);
+
+    switch (expr->op.type) {
+        case TokenType::MINUS:
+            if (std::holds_alternative<int>(right)) {
+                lastValue_ = -std::get<int>(right);
+            } else if (std::holds_alternative<double>(right)) {
+                lastValue_ = -std::get<double>(right);
+            }
+            break;
+        case TokenType::NOT:
+            lastValue_ = !isTruthy(right);
+            break;
+        default:
+            lastValue_ = {};
+            break;
+    }
 }
 
 void Interpreter::execute(const std::shared_ptr<Stmt>& stmt) {

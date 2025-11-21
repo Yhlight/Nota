@@ -13,6 +13,7 @@ struct Literal;
 struct Unary;
 struct Variable;
 struct Assign;
+struct Postfix;
 
 class ExprVisitor {
 public:
@@ -23,6 +24,7 @@ public:
     virtual void visit(const std::shared_ptr<Unary>& expr) = 0;
     virtual void visit(const std::shared_ptr<Variable>& expr) = 0;
     virtual void visit(const std::shared_ptr<Assign>& expr) = 0;
+    virtual void visit(const std::shared_ptr<Postfix>& expr) = 0;
 };
 
 class Expr {
@@ -101,12 +103,25 @@ struct Assign : Expr, public std::enable_shared_from_this<Assign> {
     std::shared_ptr<Expr> value;
 };
 
+struct Postfix : Expr, public std::enable_shared_from_this<Postfix> {
+    Postfix(std::shared_ptr<Expr> left, Token op)
+        : left(left), op(op) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> left;
+    Token op;
+};
+
 // Statements
 struct Block;
 struct ExpressionStmt;
 struct VarStmt;
 struct IfStmt;
 struct WhileStmt;
+struct ForStmt;
 
 class StmtVisitor {
 public:
@@ -116,6 +131,7 @@ public:
     virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<WhileStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<ForStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -180,6 +196,21 @@ struct WhileStmt : Stmt, public std::enable_shared_from_this<WhileStmt> {
     }
 
     std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> body;
+};
+
+struct ForStmt : Stmt, public std::enable_shared_from_this<ForStmt> {
+    ForStmt(std::shared_ptr<Stmt> initializer, std::shared_ptr<Expr> condition,
+            std::shared_ptr<Expr> increment, std::shared_ptr<Stmt> body)
+        : initializer(initializer), condition(condition), increment(increment), body(body) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Stmt> initializer;
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Expr> increment;
     std::shared_ptr<Stmt> body;
 };
 

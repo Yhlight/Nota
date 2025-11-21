@@ -89,7 +89,18 @@ std::shared_ptr<Expr> Parser::unary() {
         std::shared_ptr<Expr> right = unary();
         return std::make_shared<Unary>(op, right);
     }
-    return primary();
+    return postfix();
+}
+
+std::shared_ptr<Expr> Parser::postfix() {
+    std::shared_ptr<Expr> expr = primary();
+
+    if (match({TokenType::PLUS_PLUS})) {
+        Token op = previous();
+        expr = std::make_shared<Postfix>(expr, op);
+    }
+
+    return expr;
 }
 
 std::shared_ptr<Expr> Parser::primary() {
@@ -143,6 +154,9 @@ std::shared_ptr<Stmt> Parser::statement() {
     if (match({TokenType::WHILE})) {
         return whileStatement();
     }
+    if (match({TokenType::FOR})) {
+        return forStatement();
+    }
     return expressionStatement();
 }
 
@@ -166,6 +180,54 @@ std::shared_ptr<Stmt> Parser::ifStatement() {
     consume(TokenType::END, "Expect 'end' after if statement.");
     return std::make_shared<IfStmt>(condition, thenBranch, elseBranch);
 }
+
+std::shared_ptr<Stmt> Parser::forStatement() {
+    // Initializer
+    std::shared_ptr<Stmt> initializer;
+    if (match({TokenType::SEMICOLON})) {
+        initializer = nullptr;
+    } else if (match({TokenType::LET, TokenType::MUT})) {
+        initializer = varDeclaration();
+    } else {
+        initializer = expressionStatement();
+    }
+
+    // Condition
+    std::shared_ptr<Expr> condition = nullptr;
+    if (peek().type != TokenType::SEMICOLON) {
+        condition = expression();
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+    // Increment
+    std::shared_ptr<Expr> increment = nullptr;
+    if (peek().type != TokenType::END) {
+        increment = expression();
+    }
+
+    // Body
+    std::shared_ptr<Stmt> body = std::make_shared<Block>(block());
+    consume(TokenType::END, "Expect 'end' after for clauses.");
+
+    // Desugar into a while loop
+    if (increment != nullptr) {
+        std::vector<std::shared_ptr<Stmt>> statements = { body, std::make_shared<ExpressionStmt>(increment) };
+        body = std::make_shared<Block>(statements);
+    }
+
+    if (condition == nullptr) {
+        condition = std::make_shared<Literal>(true);
+    }
+    body = std::make_shared<WhileStmt>(condition, body);
+
+    if (initializer != nullptr) {
+        std::vector<std::shared_ptr<Stmt>> statements = { initializer, body };
+        body = std::make_shared<Block>(statements);
+    }
+
+    return body;
+}
+
 
 std::vector<std::shared_ptr<Stmt>> Parser::block() {
     std::vector<std::shared_ptr<Stmt>> statements;

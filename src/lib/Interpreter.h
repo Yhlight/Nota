@@ -16,6 +16,7 @@ public:
     void visit(const std::shared_ptr<VarStmt>& stmt) override;
     void visit(const std::shared_ptr<IfStmt>& stmt) override;
     void visit(const std::shared_ptr<WhileStmt>& stmt) override;
+    void visit(const std::shared_ptr<ForStmt>& stmt) override;
 
     void visit(const std::shared_ptr<Binary>& expr) override;
     void visit(const std::shared_ptr<Grouping>& expr) override;
@@ -23,6 +24,7 @@ public:
     void visit(const std::shared_ptr<Unary>& expr) override;
     void visit(const std::shared_ptr<Variable>& expr) override;
     void visit(const std::shared_ptr<Assign>& expr) override;
+    void visit(const std::shared_ptr<Postfix>& expr) override;
 
 private:
     using Value = std::variant<std::monostate, int, double, std::string, bool>;

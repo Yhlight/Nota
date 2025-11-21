@@ -4,6 +4,22 @@
 
 namespace nota {
 
+class EnvironmentGuard {
+public:
+    EnvironmentGuard(std::shared_ptr<Environment>& current, std::shared_ptr<Environment> next)
+        : current_(current), previous_(current) {
+        current_ = std::move(next);
+    }
+
+    ~EnvironmentGuard() {
+        current_ = previous_;
+    }
+
+private:
+    std::shared_ptr<Environment>& current_;
+    std::shared_ptr<Environment> previous_;
+};
+
 class Function : public Callable {
 public:
     Function(std::shared_ptr<FunctionStmt> declaration) : declaration_(std::move(declaration)) {}
@@ -13,12 +29,17 @@ public:
     }
 
     Value call(Interpreter& interpreter, std::vector<Value> arguments) override {
-        auto environment = std::make_shared<Environment>(interpreter.environment_.get());
+        auto environment = std::make_shared<Environment>(interpreter.environment_);
         for (int i = 0; i < declaration_->params.size(); ++i) {
             environment->define(declaration_->params[i].lexeme, arguments[i]);
         }
 
-        interpreter.executeBlock(declaration_->body, environment);
+        try {
+            interpreter.executeBlock(declaration_->body, environment);
+        } catch (Interpreter::ReturnControl& returnValue) {
+            return returnValue.value;
+        }
+
         return {};
     }
 
@@ -51,14 +72,10 @@ void Interpreter::visit(const std::shared_ptr<VarStmt>& stmt) {
 }
 
 void Interpreter::executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment) {
-    std::shared_ptr<Environment> previous = this->environment_;
-    this->environment_ = std::move(environment);
-
+    EnvironmentGuard guard(this->environment_, std::move(environment));
     for (const auto& statement : statements) {
         execute(statement);
     }
-
-    this->environment_ = std::move(previous);
 }
 
 void Interpreter::visit(const std::shared_ptr<IfStmt>& stmt) {
@@ -104,13 +121,28 @@ void Interpreter::visit(const std::shared_ptr<FunctionStmt>& stmt) {
     environment_->define(stmt->name.lexeme, function);
 }
 
+void Interpreter::visit(const std::shared_ptr<ReturnStmt>& stmt) {
+    Value value = {};
+    if (stmt->value != nullptr) {
+        value = evaluate(stmt->value);
+    }
+    throw ReturnControl(value);
+}
+
+namespace {
+    void checkNumberOperands(const Token& op, const Value& left, const Value& right) {
+        if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) return;
+        if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) return;
+        throw Interpreter::RuntimeError(op, "Operands must be two numbers.");
+    }
+}
 void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
     Value left = evaluate(expr->left);
     Value right = evaluate(expr->right);
 
     switch (expr->op.type) {
         case TokenType::PLUS:
-            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+             if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
                 lastValue_ = std::get<int>(left) + std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) + std::get<double>(right);
@@ -125,39 +157,35 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
             lastValue_ = left != right;
             break;
         case TokenType::LESS:
-            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+            checkNumberOperands(expr->op, left, right);
+             if (std::holds_alternative<int>(left)) {
                 lastValue_ = std::get<int>(left) < std::get<int>(right);
-            } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
-                lastValue_ = std::get<double>(left) < std::get<double>(right);
             } else {
-                throw RuntimeError(expr->op, "Operands must be two numbers.");
+                lastValue_ = std::get<double>(left) < std::get<double>(right);
             }
             break;
         case TokenType::GREATER:
-            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+            checkNumberOperands(expr->op, left, right);
+            if (std::holds_alternative<int>(left)) {
                 lastValue_ = std::get<int>(left) > std::get<int>(right);
-            } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
-                lastValue_ = std::get<double>(left) > std::get<double>(right);
             } else {
-                throw RuntimeError(expr->op, "Operands must be two numbers.");
+                lastValue_ = std::get<double>(left) > std::get<double>(right);
             }
             break;
         case TokenType::LESS_EQUALS:
-            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+            checkNumberOperands(expr->op, left, right);
+            if (std::holds_alternative<int>(left)) {
                 lastValue_ = std::get<int>(left) <= std::get<int>(right);
-            } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
-                lastValue_ = std::get<double>(left) <= std::get<double>(right);
             } else {
-                throw RuntimeError(expr->op, "Operands must be two numbers.");
+                lastValue_ = std::get<double>(left) <= std::get<double>(right);
             }
             break;
         case TokenType::GREATER_EQUALS:
-            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+            checkNumberOperands(expr->op, left, right);
+            if (std::holds_alternative<int>(left)) {
                 lastValue_ = std::get<int>(left) >= std::get<int>(right);
-            } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
-                lastValue_ = std::get<double>(left) >= std::get<double>(right);
             } else {
-                throw RuntimeError(expr->op, "Operands must be two numbers.");
+                lastValue_ = std::get<double>(left) >= std::get<double>(right);
             }
             break;
         default:

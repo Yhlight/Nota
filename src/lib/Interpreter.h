@@ -8,16 +8,6 @@
 
 namespace nota {
 
-class Interpreter; // Forward declaration
-
-using Value = std::variant<std::monostate, int, double, std::string, bool, std::shared_ptr<Callable>>;
-
-class Callable {
-public:
-    virtual ~Callable() = default;
-    virtual int arity() = 0;
-    virtual Value call(Interpreter& interpreter, std::vector<Value> arguments) = 0;
-};
 
 class Interpreter : public StmtVisitor, public ExprVisitor {
 public:
@@ -30,6 +20,12 @@ public:
         const Token token;
     };
 
+    class ReturnControl : public std::exception {
+    public:
+        ReturnControl(Value value) : value(value) {}
+        const Value value;
+    };
+
     void interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
     std::shared_ptr<Environment> getEnvironment() { return environment_; }
 
@@ -40,6 +36,7 @@ public:
     void visit(const std::shared_ptr<WhileStmt>& stmt) override;
     void visit(const std::shared_ptr<DoWhileStmt>& stmt) override;
     void visit(const std::shared_ptr<FunctionStmt>& stmt) override;
+    void visit(const std::shared_ptr<ReturnStmt>& stmt) override;
 
     void visit(const std::shared_ptr<Binary>& expr) override;
     void visit(const std::shared_ptr<Grouping>& expr) override;

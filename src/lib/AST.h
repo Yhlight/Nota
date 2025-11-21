@@ -3,8 +3,21 @@
 #include "Token.h"
 #include <memory>
 #include <vector>
+#include <variant>
 
 namespace nota {
+
+class Interpreter; // Forward declaration
+
+class Callable;
+using Value = std::variant<std::monostate, int, double, std::string, bool, std::shared_ptr<Callable>>;
+
+class Callable {
+public:
+    virtual ~Callable() = default;
+    virtual int arity() = 0;
+    virtual Value call(Interpreter& interpreter, std::vector<Value> arguments) = 0;
+};
 
 // Forward declarations
 struct Binary;
@@ -138,6 +151,7 @@ struct IfStmt;
 struct WhileStmt;
 struct DoWhileStmt;
 struct FunctionStmt;
+struct ReturnStmt;
 
 class StmtVisitor {
 public:
@@ -149,6 +163,7 @@ public:
     virtual void visit(const std::shared_ptr<WhileStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<DoWhileStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<FunctionStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<ReturnStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -239,6 +254,18 @@ struct FunctionStmt : Stmt, public std::enable_shared_from_this<FunctionStmt> {
     Token name;
     std::vector<Token> params;
     std::vector<std::shared_ptr<Stmt>> body;
+};
+
+struct ReturnStmt : Stmt, public std::enable_shared_from_this<ReturnStmt> {
+    ReturnStmt(Token keyword, std::shared_ptr<Expr> value)
+        : keyword(keyword), value(value) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token keyword; // For error reporting
+    std::shared_ptr<Expr> value;
 };
 
 

@@ -22,8 +22,9 @@
 - [x] Implement control flow structures (if/else).
 - [x] Implement loops (while).
 - [x] Implement other loop structures (for, do-while).
-- [ ] **Current Focus: Implement functions.**
-- [ ] Implement classes and objects.
+- [x] Implement functions (declaration and call).
+- [x] Implement function return statements.
+- [ ] **Current Focus: Implement classes and objects.**
 
 ## Phase 4: Advanced Features
 

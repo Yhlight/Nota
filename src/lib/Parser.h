@@ -37,6 +37,7 @@ private:
     std::shared_ptr<Stmt> whileStatement();
     std::shared_ptr<Stmt> forStatement();
     std::shared_ptr<Stmt> doWhileStatement();
+    std::shared_ptr<Stmt> returnStatement();
     std::vector<std::shared_ptr<Stmt>> block();
     std::shared_ptr<Expr> finishCall(std::shared_ptr<Expr> callee);
 

@@ -198,6 +198,9 @@ std::shared_ptr<Stmt> Parser::statement() {
     if (match({TokenType::DO})) {
         return doWhileStatement();
     }
+    if (match({TokenType::RETURN})) {
+        return returnStatement();
+    }
     return expressionStatement();
 }
 
@@ -275,6 +278,17 @@ std::shared_ptr<Stmt> Parser::doWhileStatement() {
     std::shared_ptr<Expr> condition = expression();
     consume(TokenType::SEMICOLON, "Expect ';' after do-while condition.");
     return std::make_shared<DoWhileStmt>(body, condition);
+}
+
+std::shared_ptr<Stmt> Parser::returnStatement() {
+    Token keyword = previous();
+    std::shared_ptr<Expr> value = nullptr;
+    if (peek().type != TokenType::SEMICOLON) {
+        value = expression();
+    }
+
+    consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+    return std::make_shared<ReturnStmt>(keyword, value);
 }
 
 

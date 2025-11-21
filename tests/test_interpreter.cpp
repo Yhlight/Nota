@@ -17,6 +17,19 @@ TEST_CASE("Interpreter executes a while loop") {
     CHECK(std::get<int>(value) == 5);
 }
 
+TEST_CASE("Interpreter executes a function call with return") {
+    nota::Lexer lexer("fn add(a, b) return a + b; end mut result = add(3, 4);");
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+    nota::Interpreter interpreter;
+    interpreter.interpret(stmts);
+
+    auto value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "result", {}, 1});
+    REQUIRE(std::holds_alternative<int>(value));
+    CHECK(std::get<int>(value) == 7);
+}
+
 TEST_CASE("Interpreter executes a function call") {
     nota::Lexer lexer("mut a = 0; fn test(x) a = x; end test(5);");
     std::vector<nota::Token> tokens = lexer.scanTokens();

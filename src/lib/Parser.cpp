@@ -27,6 +27,8 @@ std::shared_ptr<Expr> Parser::assignment() {
         if (auto var = std::dynamic_pointer_cast<Variable>(expr)) {
             Token name = var->name;
             return std::make_shared<Assign>(name, value);
+        } else if (auto get = std::dynamic_pointer_cast<GetExpr>(expr)) {
+            return std::make_shared<SetExpr>(get->object, get->name, value);
         }
 
         error(equals, "Invalid assignment target.");
@@ -98,6 +100,9 @@ std::shared_ptr<Expr> Parser::call() {
     while (true) {
         if (match({TokenType::LPAREN})) {
             expr = finishCall(expr);
+        } else if (match({TokenType::DOT})) {
+            Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
+            expr = std::make_shared<GetExpr>(expr, name);
         } else if (match({TokenType::PLUS_PLUS})) {
             Token op = previous();
             expr = std::make_shared<Postfix>(expr, op);
@@ -130,6 +135,10 @@ std::shared_ptr<Expr> Parser::primary() {
         return std::make_shared<Literal>(false);
     }
 
+    if (match({TokenType::THIS})) {
+        return std::make_shared<ThisExpr>(previous());
+    }
+
     if (match({TokenType::INTEGER, TokenType::FLOAT, TokenType::STRING})) {
         return std::make_shared<Literal>(previous().literal);
     }
@@ -148,6 +157,9 @@ std::shared_ptr<Expr> Parser::primary() {
 }
 
 std::shared_ptr<Stmt> Parser::declaration() {
+    if (match({TokenType::CLASS})) {
+        return classDeclaration();
+    }
     if (match({TokenType::FN})) {
         return functionDeclaration();
     }
@@ -155,6 +167,22 @@ std::shared_ptr<Stmt> Parser::declaration() {
         return varDeclaration();
     }
     return statement();
+}
+
+std::shared_ptr<Stmt> Parser::classDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
+
+    std::vector<std::shared_ptr<FunctionStmt>> methods;
+    while (peek().type != TokenType::END && !isAtEnd()) {
+        if (match({TokenType::FN})) {
+            methods.push_back(std::dynamic_pointer_cast<FunctionStmt>(functionDeclaration()));
+        } else {
+            break;
+        }
+    }
+
+    consume(TokenType::END, "Expect 'end' after class body.");
+    return std::make_shared<ClassStmt>(name, methods);
 }
 
 std::shared_ptr<Stmt> Parser::functionDeclaration() {

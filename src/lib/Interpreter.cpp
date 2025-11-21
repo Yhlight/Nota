@@ -20,33 +20,6 @@ private:
     std::shared_ptr<Environment> previous_;
 };
 
-class Function : public Callable {
-public:
-    Function(std::shared_ptr<FunctionStmt> declaration) : declaration_(std::move(declaration)) {}
-
-    int arity() override {
-        return declaration_->params.size();
-    }
-
-    Value call(Interpreter& interpreter, std::vector<Value> arguments) override {
-        auto environment = std::make_shared<Environment>(interpreter.environment_);
-        for (int i = 0; i < declaration_->params.size(); ++i) {
-            environment->define(declaration_->params[i].lexeme, arguments[i]);
-        }
-
-        try {
-            interpreter.executeBlock(declaration_->body, environment);
-        } catch (Interpreter::ReturnControl& returnValue) {
-            return returnValue.value;
-        }
-
-        return {};
-    }
-
-private:
-    std::shared_ptr<FunctionStmt> declaration_;
-};
-
 void Interpreter::interpret(const std::vector<std::shared_ptr<Stmt>>& statements) {
     for (const auto& statement : statements) {
         execute(statement);
@@ -117,7 +90,7 @@ void Interpreter::visit(const std::shared_ptr<CallExpr>& expr) {
 }
 
 void Interpreter::visit(const std::shared_ptr<FunctionStmt>& stmt) {
-    auto function = std::make_shared<Function>(stmt);
+    auto function = std::make_shared<NotaFunction>(stmt, environment_);
     environment_->define(stmt->name.lexeme, function);
 }
 
@@ -127,6 +100,18 @@ void Interpreter::visit(const std::shared_ptr<ReturnStmt>& stmt) {
         value = evaluate(stmt->value);
     }
     throw ReturnControl(value);
+}
+
+void Interpreter::visit(const std::shared_ptr<ClassStmt>& stmt) {
+    std::map<std::string, std::shared_ptr<NotaFunction>> methods;
+    for (const auto& method : stmt->methods) {
+        bool isInitializer = method->name.lexeme == "init";
+        auto function = std::make_shared<NotaFunction>(method, environment_, isInitializer);
+        methods[method->name.lexeme] = function;
+    }
+
+    auto klass = std::make_shared<NotaClass>(stmt->name, methods);
+    environment_->define(stmt->name.lexeme, klass);
 }
 
 namespace {
@@ -218,6 +203,30 @@ void Interpreter::visit(const std::shared_ptr<Postfix>& expr) {
             throw RuntimeError(expr->op, "Operand of increment must be a number.");
         }
     }
+}
+
+void Interpreter::visit(const std::shared_ptr<GetExpr>& expr) {
+    Value object = evaluate(expr->object);
+    if (auto instance = std::get_if<std::shared_ptr<NotaInstance>>(&object)) {
+        lastValue_ = (*instance)->get(expr->name);
+        return;
+    }
+    throw RuntimeError(expr->name, "Only instances have properties.");
+}
+
+void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
+    Value object = evaluate(expr->object);
+    if (auto instance = std::get_if<std::shared_ptr<NotaInstance>>(&object)) {
+        Value value = evaluate(expr->value);
+        (*instance)->set(expr->name, value);
+        lastValue_ = value;
+        return;
+    }
+    throw RuntimeError(expr->name, "Only instances have fields.");
+}
+
+void Interpreter::visit(const std::shared_ptr<ThisExpr>& expr) {
+    lastValue_ = environment_->get(expr->keyword);
 }
 
 void Interpreter::visit(const std::shared_ptr<Grouping>& expr) {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Token.h"
+#include "NotaObjects.h"
 #include <memory>
 #include <vector>
 #include <variant>
@@ -8,16 +9,6 @@
 namespace nota {
 
 class Interpreter; // Forward declaration
-
-class Callable;
-using Value = std::variant<std::monostate, int, double, std::string, bool, std::shared_ptr<Callable>>;
-
-class Callable {
-public:
-    virtual ~Callable() = default;
-    virtual int arity() = 0;
-    virtual Value call(Interpreter& interpreter, std::vector<Value> arguments) = 0;
-};
 
 // Forward declarations
 struct Binary;
@@ -28,6 +19,9 @@ struct Variable;
 struct Assign;
 struct Postfix;
 struct CallExpr;
+struct GetExpr;
+struct SetExpr;
+struct ThisExpr;
 
 class ExprVisitor {
 public:
@@ -40,6 +34,9 @@ public:
     virtual void visit(const std::shared_ptr<Assign>& expr) = 0;
     virtual void visit(const std::shared_ptr<Postfix>& expr) = 0;
     virtual void visit(const std::shared_ptr<CallExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<GetExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<SetExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<ThisExpr>& expr) = 0;
 };
 
 class Expr {
@@ -143,6 +140,42 @@ struct CallExpr : Expr, public std::enable_shared_from_this<CallExpr> {
     std::vector<std::shared_ptr<Expr>> arguments;
 };
 
+struct GetExpr : Expr, public std::enable_shared_from_this<GetExpr> {
+    GetExpr(std::shared_ptr<Expr> object, Token name)
+        : object(object), name(name) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> object;
+    Token name;
+};
+
+struct SetExpr : Expr, public std::enable_shared_from_this<SetExpr> {
+    SetExpr(std::shared_ptr<Expr> object, Token name, std::shared_ptr<Expr> value)
+        : object(object), name(name), value(value) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> object;
+    Token name;
+    std::shared_ptr<Expr> value;
+};
+
+struct ThisExpr : Expr, public std::enable_shared_from_this<ThisExpr> {
+    ThisExpr(Token keyword)
+        : keyword(keyword) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token keyword;
+};
+
 // Statements
 struct Block;
 struct ExpressionStmt;
@@ -152,6 +185,7 @@ struct WhileStmt;
 struct DoWhileStmt;
 struct FunctionStmt;
 struct ReturnStmt;
+struct ClassStmt;
 
 class StmtVisitor {
 public:
@@ -164,6 +198,7 @@ public:
     virtual void visit(const std::shared_ptr<DoWhileStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<FunctionStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<ReturnStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<ClassStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -266,6 +301,18 @@ struct ReturnStmt : Stmt, public std::enable_shared_from_this<ReturnStmt> {
 
     Token keyword; // For error reporting
     std::shared_ptr<Expr> value;
+};
+
+struct ClassStmt : Stmt, public std::enable_shared_from_this<ClassStmt> {
+    ClassStmt(Token name, std::vector<std::shared_ptr<FunctionStmt>> methods)
+        : name(name), methods(methods) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token name;
+    std::vector<std::shared_ptr<FunctionStmt>> methods;
 };
 
 

@@ -29,6 +29,7 @@ private:
     std::shared_ptr<Expr> primary();
 
     std::shared_ptr<Stmt> declaration();
+    std::shared_ptr<Stmt> classDeclaration();
     std::shared_ptr<Stmt> functionDeclaration();
     std::shared_ptr<Stmt> statement();
     std::shared_ptr<Stmt> varDeclaration();

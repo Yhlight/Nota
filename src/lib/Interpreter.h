@@ -11,8 +11,6 @@ namespace nota {
 
 class Interpreter : public StmtVisitor, public ExprVisitor {
 public:
-    friend class Function;
-
     class RuntimeError : public std::runtime_error {
     public:
         RuntimeError(const Token& token, const std::string& message)
@@ -27,6 +25,7 @@ public:
     };
 
     void interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
+    void executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment);
     std::shared_ptr<Environment> getEnvironment() { return environment_; }
 
     void visit(const std::shared_ptr<Block>& stmt) override;
@@ -37,6 +36,7 @@ public:
     void visit(const std::shared_ptr<DoWhileStmt>& stmt) override;
     void visit(const std::shared_ptr<FunctionStmt>& stmt) override;
     void visit(const std::shared_ptr<ReturnStmt>& stmt) override;
+    void visit(const std::shared_ptr<ClassStmt>& stmt) override;
 
     void visit(const std::shared_ptr<Binary>& expr) override;
     void visit(const std::shared_ptr<Grouping>& expr) override;
@@ -46,10 +46,12 @@ public:
     void visit(const std::shared_ptr<Assign>& expr) override;
     void visit(const std::shared_ptr<Postfix>& expr) override;
     void visit(const std::shared_ptr<CallExpr>& expr) override;
+    void visit(const std::shared_ptr<GetExpr>& expr) override;
+    void visit(const std::shared_ptr<SetExpr>& expr) override;
+    void visit(const std::shared_ptr<ThisExpr>& expr) override;
 
 private:
     void execute(const std::shared_ptr<Stmt>& stmt);
-    void executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, std::shared_ptr<Environment> environment);
     Value evaluate(const std::shared_ptr<Expr>& expr);
     bool isTruthy(const Value& value);
 

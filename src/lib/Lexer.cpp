@@ -10,6 +10,7 @@ namespace {
         {"mut",    TokenType::MUT},
         {"fn",     TokenType::FN},
         {"class",  TokenType::CLASS},
+        {"this",   TokenType::THIS},
         {"if",     TokenType::IF},
         {"else",   TokenType::ELSE},
         {"while",  TokenType::WHILE},
@@ -49,6 +50,7 @@ void Lexer::scanToken() {
         case '[': addToken(TokenType::LBRACKET); break;
         case ']': addToken(TokenType::RBRACKET); break;
         case ',': addToken(TokenType::COMMA); break;
+        case '.': addToken(TokenType::DOT); break;
         case ':': addToken(TokenType::COLON); break;
         case ';': addToken(TokenType::SEMICOLON); break;
         case '+':

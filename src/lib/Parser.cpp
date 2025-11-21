@@ -108,8 +108,36 @@ std::shared_ptr<Stmt> Parser::varDeclaration() {
 }
 
 std::shared_ptr<Stmt> Parser::statement() {
+    if (match({TokenType::IF})) {
+        return ifStatement();
+    }
     return expressionStatement();
 }
+
+std::shared_ptr<Stmt> Parser::ifStatement() {
+    std::shared_ptr<Expr> condition = expression();
+    std::shared_ptr<Stmt> thenBranch = std::make_shared<Block>(block());
+    std::shared_ptr<Stmt> elseBranch = nullptr;
+
+    // The 'else' branch is parsed as a single statement to allow for 'else if' chaining.
+    if (match({TokenType::ELSE})) {
+        elseBranch = statement();
+    }
+
+    consume(TokenType::END, "Expect 'end' after if statement.");
+    return std::make_shared<IfStmt>(condition, thenBranch, elseBranch);
+}
+
+std::vector<std::shared_ptr<Stmt>> Parser::block() {
+    std::vector<std::shared_ptr<Stmt>> statements;
+
+    while (peek().type != TokenType::END && peek().type != TokenType::ELSE && !isAtEnd()) {
+        statements.push_back(declaration());
+    }
+
+    return statements;
+}
+
 
 std::shared_ptr<Stmt> Parser::expressionStatement() {
     std::shared_ptr<Expr> expr = expression();

@@ -14,12 +14,13 @@
 
 - [x] Implement a basic lexer to tokenize the source code.
 - [x] Implement a recursive descent parser for expressions.
+- [x] Implement parser for statements (variable declarations).
 - [ ] Set up the bytecode VM structure.
 
 ## Phase 3: Language Features - Statements and Control Flow
 
-- [ ] **Current Focus: Implement parser for statements (variable declarations).**
-- [ ] Implement control flow structures (if/else, while, for).
+- [ ] **Current Focus: Implement control flow structures (if/else).**
+- [ ] Implement loops (while, for).
 - [ ] Implement functions.
 - [ ] Implement classes and objects.
 

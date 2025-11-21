@@ -78,6 +78,7 @@ struct Unary : Expr, public std::enable_shared_from_this<Unary> {
 struct Block;
 struct ExpressionStmt;
 struct VarStmt;
+struct IfStmt;
 
 class StmtVisitor {
 public:
@@ -85,6 +86,7 @@ public:
     virtual void visit(const std::shared_ptr<Block>& stmt) = 0;
     virtual void visit(const std::shared_ptr<ExpressionStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<VarStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<IfStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -125,6 +127,19 @@ struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt> {
 
     Token name;
     std::shared_ptr<Expr> initializer;
+};
+
+struct IfStmt : Stmt, public std::enable_shared_from_this<IfStmt> {
+    IfStmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> thenBranch, std::shared_ptr<Stmt> elseBranch)
+        : condition(condition), thenBranch(thenBranch), elseBranch(elseBranch) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> thenBranch;
+    std::shared_ptr<Stmt> elseBranch;
 };
 
 

@@ -7,6 +7,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <functional>
 
 namespace nota {
 
@@ -18,6 +19,7 @@ class NotaClass;
 class Callable;
 class Environment;
 class NotaFunction;
+class NotaNativeFunction;
 class NotaString;
 
 using Value =
@@ -94,6 +96,21 @@ public:
 private:
   Token name_;
   std::map<std::string, NotaFunction*> methods_;
+};
+
+class NotaNativeFunction : public Callable {
+public:
+    using NativeFn = std::function<Value(Interpreter&, std::vector<Value>)>;
+
+    NotaNativeFunction(int arity, NativeFn function);
+
+    int arity() override;
+    Value call(Interpreter& interpreter, std::vector<Value> arguments) override;
+    size_t size() const override;
+
+private:
+    int arity_;
+    NativeFn function_;
 };
 
 } // namespace nota

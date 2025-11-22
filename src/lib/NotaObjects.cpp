@@ -154,4 +154,21 @@ size_t NotaClass::size() const {
     return totalSize;
 }
 
+// --- NotaNativeFunction ---
+NotaNativeFunction::NotaNativeFunction(int arity, NativeFn function)
+    : arity_(arity), function_(std::move(function)) {}
+
+int NotaNativeFunction::arity() {
+    return arity_;
+}
+
+Value NotaNativeFunction::call(Interpreter& interpreter, std::vector<Value> arguments) {
+    return function_(interpreter, std::move(arguments));
+}
+
+size_t NotaNativeFunction::size() const {
+    // This is an approximation, as the size of the std::function is not easily known.
+    return sizeof(NotaNativeFunction);
+}
+
 } // namespace nota

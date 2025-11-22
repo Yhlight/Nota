@@ -15,6 +15,8 @@ public:
 
     void setInterpreter(Interpreter* interpreter);
 
+    void raiseError(const std::string& message);
+
     template<typename T, typename... Args>
     T* newObject(Args&&... args);
 

@@ -17,6 +17,10 @@ void VM::setInterpreter(Interpreter* interpreter) {
     interpreter_ = interpreter;
 }
 
+void VM::raiseError(const std::string& message) {
+    throw Interpreter::RuntimeError(Token{TokenType::END_OF_FILE, "", {}, -1}, message);
+}
+
 void VM::collectGarbage() {
     if (interpreter_) {
         interpreter_->markRoots();

@@ -3,6 +3,7 @@
 #include "AST.h"
 #include "Environment.h"
 #include "VM.h"
+#include "FFI.h"
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -33,6 +34,9 @@ public:
     void executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, Environment* environment);
     Environment* getEnvironment() { return environment_; }
     void markRoots();
+
+    template<typename R, typename... Args>
+    void registerNative(const std::string& name, R (*func)(Args...));
 
     void visit(const std::shared_ptr<Block>& stmt) override;
     void visit(const std::shared_ptr<ExpressionStmt>& stmt) override;
@@ -74,5 +78,19 @@ private:
     std::vector<std::shared_ptr<Stmt>> statements_;
     std::vector<Value> stack_;
 };
+
+template<typename R, typename... Args>
+void Interpreter::registerNative(const std::string& name, R (*func)(Args...)) {
+    auto wrapper = [this, func](Interpreter&, std::vector<Value> args) -> Value {
+        try {
+            return ffi::NativeCaller<R, Args...>::Call(vm, func, args);
+        } catch (const std::exception& e) {
+            vm.raiseError(e.what());
+            return {};
+        }
+    };
+    auto native_fn = vm.newObject<NotaNativeFunction>(sizeof...(Args), wrapper);
+    environment_->define(name, native_fn);
+}
 
 } // namespace nota

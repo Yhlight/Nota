@@ -28,12 +28,12 @@
 - [x] Implement modules and packages.
 - [x] Implement garbage collection.
 - [x] Implement lambda functions.
-- [ ] **Current Focus: Implement FFI.**
+- [x] Implement FFI.
 
 ## Phase 4: Advanced Features
 
 ## Phase 5: Standard Library and Tooling
 
-- [ ] Develop a basic standard library.
+- [ ] **Current Focus: Develop a basic standard library.**
 - [ ] Create a command-line interface (CLI) for the Nota interpreter.
 - [ ] Write comprehensive documentation.

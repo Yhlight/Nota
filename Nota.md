@@ -141,10 +141,12 @@ add(1, 2)
 nota支持lambda函数  
 
 ```nota
-let add = (a: int, b: int): int => a + b;
+let add = (a: int, b: int): int => a + b  // lambda需要使用LL(K)预测一下  
 
-(a: int, b: int): int => do
-    return a + b;
+(a: int, b: int): int =>
+
+return a + b
+
 end
 ```
 

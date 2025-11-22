@@ -27,7 +27,7 @@
 - [x] Implement classes and objects.
 - [x] Implement modules and packages.
 - [x] Implement garbage collection.
-- [ ] Implement lambda functions (implementation being corrected to match spec).
+- [x] Implement lambda functions.
 - [x] Implement FFI.
 
 ## Phase 4: Advanced Features

@@ -176,8 +176,13 @@ std::shared_ptr<Expr> Parser::primary() {
             consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
 
             std::vector<std::shared_ptr<Stmt>> body;
-            if (match({TokenType::NEWLINE})) {
-                // Multi-line lambda
+
+            // Check for a block body
+            if (peek().type == TokenType::NEWLINE || peek().type == TokenType::DO) {
+                // Multi-line lambda. Skip newlines, then optionally match 'do'.
+                skipNewlines();
+                match({TokenType::DO}); // Optional 'do' keyword
+
                 body = block();
                 consume(TokenType::END, "Expect 'end' after lambda body.");
             } else {
@@ -185,6 +190,7 @@ std::shared_ptr<Expr> Parser::primary() {
                 std::shared_ptr<Expr> expr = expression();
                 body.push_back(std::make_shared<ReturnStmt>(Token{TokenType::RETURN, "return", {}, peek().line}, expr));
             }
+
             return std::make_shared<LambdaExpr>(parameters, body);
         } else {
             // It's a grouped expression

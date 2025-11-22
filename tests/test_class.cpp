@@ -164,4 +164,26 @@ TEST_CASE("Classes") {
         REQUIRE(std::holds_alternative<std::string>(result));
         CHECK(std::get<std::string>(result) == "Hello");
     }
+
+    SUBCASE("Property type checking") {
+        std::string source = R"(
+            class MyClass
+                foo: int
+                bar: string
+            end
+
+            let instance = MyClass()
+        )";
+
+        SUBCASE("Correct assignments") {
+            CHECK_NOTHROW(run(source + "instance.foo = 123"));
+            CHECK_NOTHROW(run(source + "instance.bar = \"hello\""));
+            CHECK_NOTHROW(run(source + "instance.foo = 12.3")); // implicit conversion
+        }
+
+        SUBCASE("Incorrect assignments") {
+            CHECK_THROWS_AS(run(source + "instance.foo = \"hello\""), nota::Interpreter::RuntimeError);
+            CHECK_THROWS_AS(run(source + "instance.bar = 123"), nota::Interpreter::RuntimeError);
+        }
+    }
 }

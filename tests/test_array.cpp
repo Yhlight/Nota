@@ -4,6 +4,7 @@
 #include "VM.h"
 #include "vendor/doctest.h"
 #include <string>
+#include "test_helpers.h"
 
 TEST_CASE("Array literals") {
     std::string source = "let a = [1, \"two\", true]";
@@ -79,6 +80,32 @@ TEST_CASE("Array index out of bounds") {
     auto parser = std::make_shared<nota::Parser>(tokens);
     auto statements = parser->parse();
     CHECK_THROWS_AS(interpreter->interpret(statements), nota::Interpreter::RuntimeError);
+}
+
+TEST_CASE("Static arrays") {
+    SUBCASE("Initialization within capacity") {
+        CHECK_NOTHROW(run("let a: int[3] = [1, 2, 3]"));
+    }
+
+    SUBCASE("Initialization exceeding capacity") {
+        CHECK_THROWS_AS(run("let a: int[2] = [1, 2, 3]"), nota::Interpreter::RuntimeError);
+    }
+
+    SUBCASE("Subscript access within capacity") {
+        CHECK(std::get<int>(run("let a: int[3] = [10, 20]; let result = a[1]")) == 20);
+    }
+
+    SUBCASE("Subscript access out of capacity") {
+        CHECK_THROWS_AS(run("let a: int[2] = [1]; let result = a[2]"), nota::Interpreter::RuntimeError);
+    }
+
+    SUBCASE("Subscript assignment within capacity") {
+        CHECK(std::get<int>(run("let a: int[3] = [1]; a[2] = 99; let result = a[2]")) == 99);
+    }
+
+    SUBCASE("Subscript assignment out of capacity") {
+        CHECK_THROWS_AS(run("let a: int[2] = [1]; a[2] = 99"), nota::Interpreter::RuntimeError);
+    }
 }
 
 TEST_CASE("Empty array") {

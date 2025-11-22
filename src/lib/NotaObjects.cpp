@@ -129,6 +129,15 @@ NotaFunction* NotaClass::findMethod(const std::string& name) {
     return nullptr;
 }
 
+std::shared_ptr<TypeExpr> NotaClass::findProperty(const std::string& name) {
+    for (const auto& prop : properties_) {
+        if (prop->name.lexeme == name) {
+            return prop->type;
+        }
+    }
+    return nullptr;
+}
+
 NotaFunction* NotaClass::findStaticMethod(const std::string& name) {
     auto it = static_methods_.find(name);
     if (it != static_methods_.end()) {

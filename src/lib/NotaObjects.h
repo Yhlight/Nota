@@ -20,6 +20,7 @@ namespace nota {
 class Interpreter;
 struct FunctionStmt;
 struct VarStmt;
+struct TypeExpr;
 class NotaInstance;
 class NotaClass;
 class Callable;
@@ -100,6 +101,7 @@ public:
   NotaInstance(NotaClass* klass);
   ~NotaInstance();
 
+  NotaClass* getClass() const { return klass_; }
   Value get(Interpreter& interpreter, const Token &name);
   void set(const Token &name, Value value);
   std::string toString();
@@ -129,6 +131,7 @@ public:
   std::string toString();
   NotaFunction* findMethod(const std::string& name);
   NotaFunction* findStaticMethod(const std::string& name);
+  std::shared_ptr<TypeExpr> findProperty(const std::string& name);
 
   void traceReferences(VM& vm) override;
     size_t size() const override;
@@ -146,10 +149,11 @@ private:
  */
 class NotaArray : public Object {
 public:
-    NotaArray(std::vector<Value> elements)
-        : Object(ObjectType::ARRAY), elements(std::move(elements)) {}
+    NotaArray(std::vector<Value> elements, int capacity = -1)
+        : Object(ObjectType::ARRAY), elements(std::move(elements)), capacity(capacity) {}
 
     std::vector<Value> elements;
+    int capacity; // -1 for dynamic arrays
     size_t size() const override;
     void traceReferences(VM& vm) override;
 };

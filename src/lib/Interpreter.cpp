@@ -76,7 +76,23 @@ void Interpreter::visit(const std::shared_ptr<VarStmt>& stmt) {
     }
 
     if (stmt->type) {
-        checkType(value, stmt->type);
+        if (stmt->type->is_array && stmt->type->size) {
+            if (auto* obj = std::get_if<Object*>(&value)) {
+                if ((*obj)->type == ObjectType::ARRAY) {
+                    auto* array = static_cast<NotaArray*>(*obj);
+                    Value size_val = evaluate(stmt->type->size);
+                    if (std::holds_alternative<int>(size_val)) {
+                        array->capacity = std::get<int>(size_val);
+                        if (array->elements.size() > array->capacity) {
+                            throw RuntimeError(stmt->type->name, "Array size exceeds static capacity.");
+                        }
+                    } else {
+                        throw RuntimeError(stmt->type->name, "Array capacity must be an integer.");
+                    }
+                }
+            }
+        }
+        checkType(value, stmt->type, true); // Allow implicit conversion
     }
 
     environment_->define(stmt->name.lexeme, value, stmt->is_mutable);
@@ -388,6 +404,10 @@ void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
     if (auto token = std::get_if<Token>(&expr->accessor)) {
         if (auto obj = std::get_if<Object*>(&object)) {
             if (auto instance = dynamic_cast<NotaInstance*>(*obj)) {
+                auto* klass = instance->getClass();
+                if (auto prop_type = klass->findProperty(token->lexeme)) {
+                    checkType(value, prop_type, true);
+                }
                 instance->set(*token, value);
                 lastValue_ = value;
                 stack_.push_back(lastValue_);
@@ -403,7 +423,17 @@ void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
                 auto array = static_cast<NotaArray*>(*obj);
                 if (std::holds_alternative<int>(index_val)) {
                     int index = std::get<int>(index_val);
+                     if (array->capacity != -1 && index >= array->capacity) {
+                        throw RuntimeError(expr->token_for_error, "Array index out of bounds for static array.");
+                    }
                     if (index >= 0 && index < array->elements.size()) {
+                        array->elements[index] = value;
+                        lastValue_ = value;
+                        stack_.push_back(lastValue_);
+                        return;
+                    } else if (index >= 0 && index < array->capacity) {
+                        // Grow the array to fit the new element
+                        array->elements.resize(index + 1);
                         array->elements[index] = value;
                         lastValue_ = value;
                         stack_.push_back(lastValue_);
@@ -555,6 +585,9 @@ void Interpreter::visit(const std::shared_ptr<SubscriptExpr>& expr) {
             auto array = static_cast<NotaArray*>(*obj);
             if (std::holds_alternative<int>(index_val)) {
                 int index = std::get<int>(index_val);
+                if (array->capacity != -1 && index >= array->capacity) {
+                    throw RuntimeError(expr->bracket, "Array index out of bounds for static array.");
+                }
                 if (index >= 0 && index < array->elements.size()) {
                     lastValue_ = array->elements[index];
                     stack_.push_back(lastValue_);
@@ -700,14 +733,36 @@ void Interpreter::visit(const std::shared_ptr<ForEachStmt>& stmt) {
     throw RuntimeError(stmt->variable, "Can only iterate over arrays.");
 }
 
-void Interpreter::checkType(const Value& value, const std::shared_ptr<TypeExpr>& type) {
+void Interpreter::checkType(Value& value, const std::shared_ptr<TypeExpr>& type, bool allow_implicit) {
     std::string type_name = type->name.lexeme;
-    bool type_matches = false;
 
+    if (allow_implicit) {
+        if (type_name == "float" && std::holds_alternative<int>(value)) {
+            value = static_cast<double>(std::get<int>(value));
+            return;
+        }
+        if (type_name == "int" && std::holds_alternative<double>(value)) {
+            value = static_cast<int>(std::get<double>(value));
+            return;
+        }
+        if (type_name == "bool") {
+            value = isTruthy(value);
+            return;
+        }
+        if (type_name == "int" && std::holds_alternative<bool>(value)) {
+            value = static_cast<int>(std::get<bool>(value));
+            return;
+        }
+        if (type_name == "float" && std::holds_alternative<bool>(value)) {
+            value = static_cast<double>(std::get<bool>(value));
+            return;
+        }
+    }
+
+    bool type_matches = false;
     if (type->is_array) {
         if (auto* obj = std::get_if<Object*>(&value)) {
             if ((*obj)->type == ObjectType::ARRAY) {
-                // TODO: Check element types for static arrays
                 type_matches = true;
             }
         }

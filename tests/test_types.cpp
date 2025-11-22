@@ -82,10 +82,15 @@ TEST_CASE("Runtime type checking") {
     }
 
     SUBCASE("Incorrect type assignments") {
-        CHECK_THROWS_AS(run("let x: int = 10.5"), nota::Interpreter::RuntimeError);
-        CHECK_THROWS_AS(run("let x: float = 10"), nota::Interpreter::RuntimeError);
-        CHECK_THROWS_AS(run("let x: bool = 0"), nota::Interpreter::RuntimeError);
         CHECK_THROWS_AS(run("let x: string = 123"), nota::Interpreter::RuntimeError);
         CHECK_THROWS_AS(run("let x: int[] = 1"), nota::Interpreter::RuntimeError);
+    }
+
+    SUBCASE("Implicit type conversions") {
+        CHECK(std::get<double>(run("let x: float = 10; let result = x")) == 10.0);
+        CHECK(std::get<int>(run("let x: int = 10.5; let result = x")) == 10);
+        CHECK(std::get<bool>(run("let x: bool = 1; let result = x")) == true);
+        CHECK(std::get<int>(run("let x: int = true; let result = x")) == 1);
+        CHECK(std::get<double>(run("let x: float = true; let result = x")) == 1.0);
     }
 }

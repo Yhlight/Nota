@@ -3,13 +3,14 @@
 #include "Parser.h"
 #include <fstream>
 #include <sstream>
+#include <memory>
 
 namespace nota {
 
 ModuleLoader::ModuleLoader(Interpreter& interpreter)
     : interpreter_(interpreter) {}
 
-std::shared_ptr<Environment> ModuleLoader::load(const std::string& path) {
+std::shared_ptr<Interpreter> ModuleLoader::load(const std::string& path, VM& vm) {
     std::ifstream file(path);
     if (!file) {
         throw std::runtime_error("Could not open file: " + path);
@@ -24,10 +25,10 @@ std::shared_ptr<Environment> ModuleLoader::load(const std::string& path) {
     Parser parser(tokens);
     auto statements = parser.parse();
 
-    auto module_interpreter = std::make_shared<Interpreter>();
-    module_interpreter->interpret(statements);
+    auto module_interpreter = std::make_shared<Interpreter>(vm);
+    module_interpreter->interpret(std::move(statements));
 
-    return module_interpreter->getEnvironment();
+    return module_interpreter;
 }
 
 } // namespace nota

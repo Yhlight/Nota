@@ -10,7 +10,7 @@ class ModuleLoader {
 public:
     ModuleLoader(Interpreter& interpreter);
 
-    std::shared_ptr<Environment> load(const std::string& path);
+    std::shared_ptr<Interpreter> load(const std::string& path, VM& vm);
 
 private:
     Interpreter& interpreter_;

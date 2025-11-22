@@ -2,21 +2,22 @@
 #include "AST.h"
 #include "Environment.h"
 #include "Interpreter.h"
+#include "VM.h"
 #include <utility>
 
 namespace nota {
 // --- NotaFunction ---
-NotaFunction::NotaFunction(std::shared_ptr<FunctionStmt> declaration,
-                           std::shared_ptr<Environment> closure,
+NotaFunction::NotaFunction(FunctionStmt* declaration,
+                           Environment* closure,
                            bool isInitializer)
-    : declaration_(std::move(declaration)), closure_(std::move(closure)),
+    : declaration_(declaration), closure_(closure),
       isInitializer_(isInitializer) {}
 
 int NotaFunction::arity() { return declaration_->params.size(); }
 
 Value NotaFunction::call(Interpreter &interpreter,
                          std::vector<Value> arguments) {
-  auto environment = std::make_shared<Environment>(closure_);
+  auto environment = interpreter.vm.newObject<Environment>(closure_);
   for (int i = 0; i < declaration_->params.size(); ++i) {
     environment->define(declaration_->params[i].lexeme, arguments[i]);
   }
@@ -24,11 +25,8 @@ Value NotaFunction::call(Interpreter &interpreter,
   try {
     interpreter.executeBlock(declaration_->body, environment);
   } catch (Interpreter::ReturnControl &returnValue) {
-    if (isInitializer_) {
-        // Fall through to the `this` return at the end of the function
-    } else {
-        return returnValue.value;
-    }
+    if (isInitializer_) return closure_->get({TokenType::THIS, "this", {}, -1});
+    return returnValue.value;
   }
 
   if (isInitializer_) return closure_->get({TokenType::THIS, "this", {}, -1});
@@ -36,15 +34,23 @@ Value NotaFunction::call(Interpreter &interpreter,
   return {};
 }
 
-std::shared_ptr<NotaFunction>
-NotaFunction::bind(std::shared_ptr<NotaInstance> instance) {
-  auto environment = std::make_shared<Environment>(closure_);
+NotaFunction*
+NotaFunction::bind(Interpreter& interpreter, NotaInstance* instance) {
+  auto environment = interpreter.vm.newObject<Environment>(closure_);
   environment->define("this", instance);
-  return std::make_shared<NotaFunction>(declaration_, environment, isInitializer_);
+  return interpreter.vm.newObject<NotaFunction>(declaration_, environment, isInitializer_);
 }
 
 std::string NotaFunction::toString() {
     return "<fn " + declaration_->name.lexeme + ">";
+}
+
+void NotaFunction::traceReferences(VM& vm) {
+    // We don't trace the declaration, because it's part of the AST and has a different lifetime
+    // We do trace the closure, because it's a heap-allocated environment
+    if (closure_ != nullptr) {
+        vm.markObject(closure_);
+    }
 }
 
 // --- NotaInstance PImpl ---
@@ -53,19 +59,19 @@ struct NotaInstance::Impl {
 };
 
 // --- NotaInstance ---
-NotaInstance::NotaInstance(std::shared_ptr<NotaClass> klass)
-    : klass_(std::move(klass)), pimpl_(std::make_unique<Impl>()) {}
+NotaInstance::NotaInstance(NotaClass* klass)
+    : klass_(klass), pimpl_(std::make_unique<Impl>()) {}
 
 NotaInstance::~NotaInstance() = default;
 
-Value NotaInstance::get(const Token &name) {
+Value NotaInstance::get(Interpreter& interpreter, const Token &name) {
   auto it = pimpl_->fields.find(name.lexeme);
   if (it != pimpl_->fields.end()) {
     return it->second;
   }
 
   auto method = klass_->findMethod(name.lexeme);
-  if (method) return method->bind(shared_from_this());
+  if (method) return method->bind(interpreter, this);
 
   throw Interpreter::RuntimeError(name, "Undefined property '" + name.lexeme +
                                             "'.");
@@ -79,9 +85,16 @@ std::string NotaInstance::toString() {
     return klass_->toString() + " instance";
 }
 
+void NotaInstance::traceReferences(VM& vm) {
+    vm.markObject(klass_);
+    for (auto const& [key, val] : pimpl_->fields) {
+        vm.markValue(val);
+    }
+}
+
 // --- NotaClass ---
 NotaClass::NotaClass(
-    Token name, std::map<std::string, std::shared_ptr<NotaFunction>> methods)
+    Token name, std::map<std::string, NotaFunction*> methods)
     : name_(std::move(name)), methods_(std::move(methods)) {}
 
 int NotaClass::arity() {
@@ -91,15 +104,15 @@ int NotaClass::arity() {
 }
 
 Value NotaClass::call(Interpreter &interpreter, std::vector<Value> arguments) {
-  auto instance = std::make_shared<NotaInstance>(shared_from_this());
+  auto instance = interpreter.vm.newObject<NotaInstance>(this);
   auto initializer = findMethod("init");
   if (initializer) {
-      initializer->bind(instance)->call(interpreter, arguments);
+      initializer->bind(interpreter, instance)->call(interpreter, arguments);
   }
   return instance;
 }
 
-std::shared_ptr<NotaFunction> NotaClass::findMethod(const std::string& name) {
+NotaFunction* NotaClass::findMethod(const std::string& name) {
     auto it = methods_.find(name);
     if (it != methods_.end()) {
         return it->second;
@@ -109,5 +122,11 @@ std::shared_ptr<NotaFunction> NotaClass::findMethod(const std::string& name) {
 
 
 std::string NotaClass::toString() { return name_.lexeme; }
+
+void NotaClass::traceReferences(VM& vm) {
+    for (auto const& [key, val] : methods_) {
+        vm.markObject(val);
+    }
+}
 
 } // namespace nota

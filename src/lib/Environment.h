@@ -3,21 +3,23 @@
 #include "Token.h"
 #include <map>
 #include <string>
-#include "AST.h"
+#include "NotaObjects.h"
 #include <memory>
 
 namespace nota {
 
-class Environment {
+class Environment : public Object {
 public:
-    Environment(std::shared_ptr<Environment> enclosing = nullptr) : enclosing_(enclosing) {}
+    Environment(Environment* enclosing = nullptr) : enclosing_(enclosing) {}
 
     void define(const std::string& name, const Value& value);
     Value get(const Token& name);
     void assign(const Token& name, const Value& value);
 
+    void traceReferences(VM& vm) override;
+
 private:
-    std::shared_ptr<Environment> enclosing_;
+    Environment* enclosing_;
     std::map<std::string, Value> values_;
 };
 

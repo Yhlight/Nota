@@ -2,16 +2,9 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "Interpreter.h"
+#include "test_helpers.h"
+#include "VM.h"
 #include <memory>
-#include <fstream>
-#include <filesystem>
-
-// Helper function to create a test file
-void createTestFile(const std::string& path, const std::string& content) {
-    std::filesystem::create_directories(std::filesystem::path(path).parent_path());
-    std::ofstream file(path);
-    file << content;
-}
 
 TEST_CASE("Modules") {
     SUBCASE("Import and access a function") {
@@ -30,11 +23,12 @@ TEST_CASE("Modules") {
         auto tokens = lexer.scanTokens();
         nota::Parser parser(tokens);
         auto statements = parser.parse();
-        auto interpreter = std::make_shared<nota::Interpreter>();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
 
-        interpreter->interpret(statements);
+        interpreter.interpret(statements);
 
-        auto env = interpreter->getEnvironment();
+        auto env = interpreter.getEnvironment();
         nota::Token result_token{nota::TokenType::IDENTIFIER, "result", {}, 1};
         auto result_val = env->get(result_token);
         CHECK(std::get<int>(result_val) == 3);
@@ -54,11 +48,12 @@ TEST_CASE("Modules") {
         auto tokens = lexer.scanTokens();
         nota::Parser parser(tokens);
         auto statements = parser.parse();
-        auto interpreter = std::make_shared<nota::Interpreter>();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
 
-        interpreter->interpret(statements);
+        interpreter.interpret(statements);
 
-        auto env = interpreter->getEnvironment();
+        auto env = interpreter.getEnvironment();
         nota::Token result_token{nota::TokenType::IDENTIFIER, "result", {}, 1};
         auto result_val = env->get(result_token);
         CHECK(std::get<int>(result_val) == 123);
@@ -83,11 +78,12 @@ TEST_CASE("Modules") {
         auto tokens = lexer.scanTokens();
         nota::Parser parser(tokens);
         auto statements = parser.parse();
-        auto interpreter = std::make_shared<nota::Interpreter>();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
 
-        interpreter->interpret(statements);
+        interpreter.interpret(statements);
 
-        auto env = interpreter->getEnvironment();
+        auto env = interpreter.getEnvironment();
         nota::Token result_token{nota::TokenType::IDENTIFIER, "result", {}, 1};
         auto result_val = env->get(result_token);
         CHECK(std::get<int>(result_val) == 456);

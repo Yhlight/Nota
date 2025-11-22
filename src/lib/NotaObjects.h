@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Token.h"
+#include "Object.h"
 #include <map>
 #include <memory>
 #include <string>
@@ -9,7 +10,7 @@
 
 namespace nota {
 
-// Forward declarations to break cycles
+// Forward declarations
 class Interpreter;
 struct FunctionStmt;
 class NotaInstance;
@@ -17,67 +18,78 @@ class NotaClass;
 class Callable;
 class Environment;
 class NotaFunction;
+class NotaString;
 
 using Value =
-    std::variant<std::monostate, int, double, std::string, bool,
-                 std::shared_ptr<Callable>, std::shared_ptr<NotaInstance>>;
+    std::variant<std::monostate, int, double, bool, Object*>;
 
-class Callable {
+class Callable : public Object {
 public:
-  virtual ~Callable() = default;
   virtual int arity() = 0;
   virtual Value call(Interpreter &interpreter,
                      std::vector<Value> arguments) = 0;
 };
 
+// Runtime representation of a string
+class NotaString : public Object {
+public:
+    NotaString(std::string value) : value(value) {}
+    std::string value;
+};
+
 // Runtime representation of a function
 class NotaFunction : public Callable {
 public:
-  NotaFunction(std::shared_ptr<FunctionStmt> declaration, std::shared_ptr<Environment> closure, bool isInitializer = false);
+  NotaFunction(FunctionStmt* declaration, Environment* closure, bool isInitializer = false);
   int arity() override;
   Value call(Interpreter &interpreter, std::vector<Value> arguments) override;
-  std::shared_ptr<NotaFunction> bind(std::shared_ptr<NotaInstance> instance);
+  NotaFunction* bind(Interpreter& interpreter, NotaInstance* instance);
   std::string toString();
   bool isInitializer_;
 
+  void traceReferences(VM& vm) override;
+
 private:
-  std::shared_ptr<FunctionStmt> declaration_;
-  std::shared_ptr<Environment> closure_;
+  FunctionStmt* declaration_;
+  Environment* closure_;
 };
 
 
 // Runtime representation of an instance
-class NotaInstance : public std::enable_shared_from_this<NotaInstance> {
+class NotaInstance : public Object {
 public:
-  NotaInstance(std::shared_ptr<NotaClass> klass);
+  NotaInstance(NotaClass* klass);
   ~NotaInstance();
 
-  Value get(const Token &name);
+  Value get(Interpreter& interpreter, const Token &name);
   void set(const Token &name, Value value);
   std::string toString();
 
+  void traceReferences(VM& vm) override;
+
 
 private:
-  std::shared_ptr<NotaClass> klass_;
+  NotaClass* klass_;
   // PImpl idiom to break circular dependency with Value
   struct Impl;
   std::unique_ptr<Impl> pimpl_;
 };
 
 // Runtime representation of a class
-class NotaClass : public Callable,
-                  public std::enable_shared_from_this<NotaClass> {
+class NotaClass : public Callable {
 public:
-  NotaClass(Token name, std::map<std::string, std::shared_ptr<NotaFunction>> methods);
+  NotaClass(Token name, std::map<std::string, NotaFunction*> methods);
 
   int arity() override;
   Value call(Interpreter &interpreter, std::vector<Value> arguments) override;
   std::string toString();
-  std::shared_ptr<NotaFunction> findMethod(const std::string& name);
+  NotaFunction* findMethod(const std::string& name);
+
+  void traceReferences(VM& vm) override;
 
 private:
   Token name_;
-  std::map<std::string, std::shared_ptr<NotaFunction>> methods_;
+  std::map<std::string, NotaFunction*> methods_;
 };
 
 } // namespace nota

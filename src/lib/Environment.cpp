@@ -33,4 +33,13 @@ void Environment::assign(const Token& name, const Value& value) {
     throw Interpreter::RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
 }
 
+void Environment::traceReferences(VM& vm) {
+    for (auto const& [key, val] : values_) {
+        vm.markValue(val);
+    }
+    if (enclosing_ != nullptr) {
+        vm.markObject(enclosing_);
+    }
+}
+
 } // namespace nota

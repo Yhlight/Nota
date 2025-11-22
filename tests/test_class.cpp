@@ -3,6 +3,8 @@
 #include "Parser.h"
 #include "Interpreter.h"
 #include "NotaObjects.h"
+#include "test_helpers.h"
+#include "VM.h"
 #include <memory>
 
 TEST_CASE("Classes") {
@@ -18,15 +20,17 @@ TEST_CASE("Classes") {
         auto tokens = lexer.scanTokens();
         nota::Parser parser(tokens);
         auto statements = parser.parse();
-        auto interpreter = std::make_shared<nota::Interpreter>();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
 
-        interpreter->interpret(statements);
+        interpreter.interpret(statements);
 
-        auto env = interpreter->getEnvironment();
+        auto env = interpreter.getEnvironment();
         nota::Token instance_token{nota::TokenType::IDENTIFIER, "instance", {}, 1};
         auto val = env->get(instance_token);
 
-        CHECK(std::holds_alternative<std::shared_ptr<nota::NotaInstance>>(val));
+        CHECK(std::holds_alternative<nota::Object*>(val));
+        CHECK(dynamic_cast<nota::NotaInstance*>(std::get<nota::Object*>(val)) != nullptr);
     }
 
     SUBCASE("Get and set properties") {
@@ -42,17 +46,18 @@ TEST_CASE("Classes") {
         auto tokens = lexer.scanTokens();
         nota::Parser parser(tokens);
         auto statements = parser.parse();
-        auto interpreter = std::make_shared<nota::Interpreter>();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
 
-        interpreter->interpret(statements);
+        interpreter.interpret(statements);
 
-        auto env = interpreter->getEnvironment();
+        auto env = interpreter.getEnvironment();
         nota::Token instance_token{nota::TokenType::IDENTIFIER, "instance", {}, 1};
         auto val = env->get(instance_token);
-        auto instance = std::get<std::shared_ptr<nota::NotaInstance>>(val);
+        auto instance = dynamic_cast<nota::NotaInstance*>(std::get<nota::Object*>(val));
 
         nota::Token prop_token{nota::TokenType::IDENTIFIER, "foo", {}, 1};
-        auto prop_val = instance->get(prop_token);
+        auto prop_val = instance->get(interpreter, prop_token);
         CHECK(std::get<int>(prop_val) == 123);
     }
 
@@ -73,11 +78,12 @@ TEST_CASE("Classes") {
         auto tokens = lexer.scanTokens();
         nota::Parser parser(tokens);
         auto statements = parser.parse();
-        auto interpreter = std::make_shared<nota::Interpreter>();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
 
-        interpreter->interpret(statements);
+        interpreter.interpret(statements);
 
-        auto env = interpreter->getEnvironment();
+        auto env = interpreter.getEnvironment();
         nota::Token result_token{nota::TokenType::IDENTIFIER, "result", {}, 1};
         auto result_val = env->get(result_token);
         CHECK(std::get<int>(result_val) == 123);
@@ -99,11 +105,12 @@ TEST_CASE("Classes") {
         auto tokens = lexer.scanTokens();
         nota::Parser parser(tokens);
         auto statements = parser.parse();
-        auto interpreter = std::make_shared<nota::Interpreter>();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
 
-        interpreter->interpret(statements);
+        interpreter.interpret(statements);
 
-        auto env = interpreter->getEnvironment();
+        auto env = interpreter.getEnvironment();
         nota::Token result_token{nota::TokenType::IDENTIFIER, "result", {}, 1};
         auto result_val = env->get(result_token);
         CHECK(std::get<int>(result_val) == 456);

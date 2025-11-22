@@ -13,6 +13,7 @@ add_library(libnota STATIC
     lib/Environment.cpp
     lib/NotaObjects.cpp
     lib/ModuleLoader.cpp
+    lib/VM.cpp
 )
 target_include_directories(libnota PUBLIC lib)
 

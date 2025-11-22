@@ -1,3 +1,8 @@
+/**
+ * @file Interpreter.h
+ * @brief The AST-walking interpreter for the Nota language.
+ */
+
 #pragma once
 
 #include "AST.h"
@@ -14,8 +19,16 @@ namespace nota {
 
 class ModuleLoader; // Forward declaration
 
+/**
+ * @class Interpreter
+ * @brief The AST-walking interpreter for the Nota language.
+ */
 class Interpreter : public StmtVisitor, public ExprVisitor {
 public:
+    /**
+     * @class RuntimeError
+     * @brief An exception thrown at runtime.
+     */
     class RuntimeError : public std::runtime_error {
     public:
         RuntimeError(const Token& token, const std::string& message)
@@ -23,6 +36,10 @@ public:
         const Token token;
     };
 
+    /**
+     * @class ReturnControl
+     * @brief An exception used to unwind the stack for a return statement.
+     */
     class ReturnControl : public std::exception {
     public:
         ReturnControl(Value value) : value(value) {}
@@ -31,13 +48,47 @@ public:
 
     Interpreter(VM& vm);
     ~Interpreter(); // Add destructor declaration
+
+    /**
+     * @brief Interpret a vector of statements.
+     * @param statements The statements to interpret.
+     */
     void interpret(const std::vector<std::shared_ptr<Stmt>>& statements);
+
+    /**
+     * @brief Execute a block of statements in a new environment.
+     * @param statements The statements to execute.
+     * @param environment The environment to execute in.
+     */
     void executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, Environment* environment);
+
+    /**
+     * @brief Get the current environment.
+     * @return The current environment.
+     */
     Environment* getEnvironment() { return environment_; }
+
+    /**
+     * @brief Mark all roots for the garbage collector.
+     */
     void markRoots();
 
+    /**
+     * @brief Register a native C++ function with the interpreter.
+     * @tparam R The return type of the function.
+     * @tparam Args The argument types of the function.
+     * @param name The name of the function.
+     * @param func The function to register.
+     */
     template<typename R, typename... Args>
     void registerNative(const std::string& name, R (*func)(Args...));
+
+    /**
+     * @brief Register a native C++ function with the interpreter.
+     * @param name The name of the function.
+     * @param arity The arity of the function.
+     * @param fn The function to register.
+     */
     void registerNative(const std::string& name, int arity, NotaNativeFunction::NativeFn fn);
 
     void visit(const std::shared_ptr<Block>& stmt) override;

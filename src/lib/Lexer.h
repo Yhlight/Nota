@@ -1,3 +1,8 @@
+/**
+ * @file Lexer.h
+ * @brief The lexical analyzer for the Nota language.
+ */
+
 #pragma once
 
 #include "Token.h"
@@ -6,29 +11,46 @@
 
 namespace nota {
 
+/**
+ * @class Lexer
+ * @brief The lexical analyzer for the Nota language.
+ */
 class Lexer {
 public:
+    /**
+     * @brief Construct a new Lexer.
+     * @param source The source code to scan.
+     */
     Lexer(const std::string& source);
+
+    /**
+     * @brief Scan all tokens from the source code.
+     * @return A vector of tokens.
+     */
     std::vector<Token> scanTokens();
+
+    /**
+     * @brief Check if the lexer encountered an error.
+     * @return True if an error was encountered, false otherwise.
+     */
     bool hadError() const { return hadError_; }
 
 private:
-    bool isAtEnd() const;
     void scanToken();
     char advance();
-    void addToken(TokenType type);
-    void addToken(TokenType type, const std::variant<std::monostate, int, double, std::string, bool>& literal);
     bool match(char expected);
     char peek() const;
+    char peekNext() const;
+    void string();
     void number();
     void identifier();
-    void string();
+    bool isAtEnd() const;
+    void addToken(TokenType type);
+    void addToken(TokenType type, const std::variant<std::monostate, int, double, std::string, bool>& literal);
     bool isDigit(char c) const;
     bool isAlpha(char c) const;
     bool isAlphaNumeric(char c) const;
-    char peekNext() const;
     void report(int line, const std::string& where, const std::string& message);
-
 
     const std::string source_;
     std::vector<Token> tokens_;

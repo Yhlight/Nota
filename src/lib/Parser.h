@@ -1,3 +1,8 @@
+/**
+ * @file Parser.h
+ * @brief The recursive descent parser for the Nota language.
+ */
+
 #pragma once
 
 #include "Token.h"
@@ -8,14 +13,38 @@
 
 namespace nota {
 
+/**
+ * @class Parser
+ * @brief The recursive descent parser for the Nota language.
+ */
 class Parser {
 public:
+    /**
+     * @brief Construct a new Parser.
+     * @param tokens The tokens to parse.
+     */
     Parser(const std::vector<Token>& tokens);
+
+    /**
+     * @brief Parse the tokens.
+     * @return A vector of statements.
+     */
     std::vector<std::shared_ptr<Stmt>> parse();
+
+    /**
+     * @class ParseError
+     * @brief An exception thrown when a parse error occurs.
+     */
     class ParseError : public std::runtime_error {
     public:
         ParseError(const std::string& message) : std::runtime_error(message) {}
     };
+
+    /**
+     * @brief Check if the parser encountered an error.
+     * @return True if an error was encountered, false otherwise.
+     */
+    bool hadError() const { return hadError_; }
 
 private:
     std::shared_ptr<Expr> expression();
@@ -59,8 +88,6 @@ private:
     std::vector<Token> tokens_;
     size_t current_ = 0;
     bool hadError_ = false;
-public:
-    bool hadError() const { return hadError_; }
 };
 
 } // namespace nota

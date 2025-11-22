@@ -399,3 +399,27 @@ RegisterNative(&nota_vm, "print", &native_print_message);
 let result = add(10, 20)
 print("Hello from Nota")
 ```
+
+## Standard Library
+
+Nota provides a small standard library of built-in functions.
+
+### `print(...values)`
+
+Prints one or more values to the console, separated by spaces, and followed by a newline.
+
+```nota
+print("Hello, world!")
+print(1, 2, 3)
+```
+
+### `clock()`
+
+Returns the number of seconds since the program started.
+
+```nota
+let start = clock()
+// Do some work...
+let end = clock()
+print("Elapsed time:", end - start)
+```

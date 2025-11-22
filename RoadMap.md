@@ -38,4 +38,4 @@
   - [x] Implement `print()` for basic output.
   - [x] Implement `clock()` for performance measurement.
 - [x] Create a command-line interface (CLI) for the Nota interpreter.
-- [ ] Write comprehensive documentation.
+- [x] Write comprehensive documentation.

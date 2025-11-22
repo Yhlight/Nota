@@ -1,3 +1,8 @@
+/**
+ * @file NotaObjects.h
+ * @brief Defines the runtime representations of Nota objects.
+ */
+
 #pragma once
 
 #include "Token.h"
@@ -22,18 +27,39 @@ class NotaFunction;
 class NotaNativeFunction;
 class NotaString;
 
+/**
+ * @brief A variant that can hold any Nota value.
+ */
 using Value =
     std::variant<std::monostate, int, double, bool, Object*>;
 
+/**
+ * @class Callable
+ * @brief An abstract base class for all callable objects in Nota.
+ */
 class Callable : public Object {
 public:
     Callable(ObjectType type) : Object(type) {}
+  /**
+   * @brief Get the number of arguments the callable expects.
+   * @return The arity of the callable.
+   */
   virtual int arity() = 0;
+
+  /**
+   * @brief Call the object.
+   * @param interpreter The interpreter instance.
+   * @param arguments The arguments to the call.
+   * @return The return value of the call.
+   */
   virtual Value call(Interpreter &interpreter,
                      std::vector<Value> arguments) = 0;
 };
 
-// Runtime representation of a string
+/**
+ * @class NotaString
+ * @brief The runtime representation of a string.
+ */
 class NotaString : public Object {
 public:
     NotaString(std::string value) : Object(ObjectType::STRING), value(value) {}
@@ -41,7 +67,10 @@ public:
     size_t size() const override;
 };
 
-// Runtime representation of a function
+/**
+ * @class NotaFunction
+ * @brief The runtime representation of a function.
+ */
 class NotaFunction : public Callable {
 public:
   NotaFunction(std::shared_ptr<FunctionStmt> declaration, Environment* closure, bool isInitializer = false)
@@ -61,7 +90,10 @@ private:
 };
 
 
-// Runtime representation of an instance
+/**
+ * @class NotaInstance
+ * @brief The runtime representation of an instance of a class.
+ */
 class NotaInstance : public Object {
 public:
   NotaInstance(NotaClass* klass);
@@ -82,7 +114,10 @@ private:
   std::unique_ptr<Impl> pimpl_;
 };
 
-// Runtime representation of a class
+/**
+ * @class NotaClass
+ * @brief The runtime representation of a class.
+ */
 class NotaClass : public Callable {
 public:
   NotaClass(Token name, std::map<std::string, NotaFunction*> methods)
@@ -101,6 +136,10 @@ private:
   std::map<std::string, NotaFunction*> methods_;
 };
 
+/**
+ * @class NotaNativeFunction
+ * @brief The runtime representation of a native C++ function.
+ */
 class NotaNativeFunction : public Callable {
 public:
     using NativeFn = std::function<Value(Interpreter&, std::vector<Value>)>;

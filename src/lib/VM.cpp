@@ -29,7 +29,7 @@ void VM::collectGarbage() {
     nextGC_ = bytesAllocated_ * kGCHeapGrowFactor;
 }
 
-void VM::markValue(Value value) {
+void VM::markValue(const Value& value) {
     if (std::holds_alternative<Object*>(value)) {
         markObject(std::get<Object*>(value));
     }

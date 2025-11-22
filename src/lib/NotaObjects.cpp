@@ -11,6 +11,16 @@ size_t NotaString::size() const {
     return sizeof(NotaString) + value.capacity();
 }
 
+void NotaArray::traceReferences(VM& vm) {
+    for (const auto& element : elements) {
+        vm.markValue(element);
+    }
+}
+
+size_t NotaArray::size() const {
+    return sizeof(NotaArray) + elements.capacity() * sizeof(Value);
+}
+
 // --- NotaFunction ---
 NotaFunction::NotaFunction(std::shared_ptr<FunctionStmt> declaration,
                            Environment* closure,

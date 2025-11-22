@@ -25,6 +25,7 @@ struct SetExpr;
 struct ThisExpr;
 struct ModuleAccessExpr;
 struct LambdaExpr;
+struct ArrayLiteralExpr;
 
 struct Stmt;
 
@@ -44,6 +45,7 @@ public:
     virtual void visit(const std::shared_ptr<ThisExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<ModuleAccessExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<LambdaExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<ArrayLiteralExpr>& expr) = 0;
 };
 
 class Expr : public std::enable_shared_from_this<Expr> {
@@ -148,27 +150,27 @@ struct CallExpr : Expr {
 };
 
 struct GetExpr : Expr {
-    GetExpr(std::shared_ptr<Expr> object, Token name)
-        : object(object), name(name) {}
+    GetExpr(std::shared_ptr<Expr> object, std::variant<Token, std::shared_ptr<Expr>> accessor)
+        : object(object), accessor(std::move(accessor)) {}
 
     void accept(ExprVisitor& visitor) override {
         visitor.visit(std::static_pointer_cast<GetExpr>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> object;
-    Token name;
+    std::variant<Token, std::shared_ptr<Expr>> accessor;
 };
 
 struct SetExpr : Expr {
-    SetExpr(std::shared_ptr<Expr> object, Token name, std::shared_ptr<Expr> value)
-        : object(object), name(name), value(value) {}
+    SetExpr(std::shared_ptr<Expr> object, std::variant<Token, std::shared_ptr<Expr>> accessor, std::shared_ptr<Expr> value)
+        : object(object), accessor(std::move(accessor)), value(value) {}
 
     void accept(ExprVisitor& visitor) override {
         visitor.visit(std::static_pointer_cast<SetExpr>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> object;
-    Token name;
+    std::variant<Token, std::shared_ptr<Expr>> accessor;
     std::shared_ptr<Expr> value;
 };
 
@@ -200,6 +202,12 @@ struct LambdaExpr : Expr {
     void accept(ExprVisitor& visitor) override { visitor.visit(std::static_pointer_cast<LambdaExpr>(shared_from_this())); }
     std::vector<Token> params;
     std::vector<std::shared_ptr<Stmt>> body;
+};
+
+struct ArrayLiteralExpr : Expr {
+    ArrayLiteralExpr(std::vector<std::shared_ptr<Expr>> elements) : elements(elements) {}
+    void accept(ExprVisitor& visitor) override { visitor.visit(std::static_pointer_cast<ArrayLiteralExpr>(shared_from_this())); }
+    std::vector<std::shared_ptr<Expr>> elements;
 };
 
 // Statements

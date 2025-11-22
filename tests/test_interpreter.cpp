@@ -19,6 +19,47 @@ TEST_CASE("Interpreter executes a while loop") {
     CHECK(std::get<int>(value) == 5);
 }
 
+TEST_CASE("Interpreter handles array creation, access, and assignment") {
+    std::string source = R"(
+        let a = [1, 2, 3];
+        let b = a[0];
+        a[1] = 5;
+    )";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+    nota::VM vm;
+    nota::Interpreter interpreter(vm);
+    interpreter.interpret(stmts);
+
+    auto b_val = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "b", {}, 1});
+    REQUIRE(std::holds_alternative<int>(b_val));
+    CHECK(std::get<int>(b_val) == 1);
+
+    auto a_val = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "a", {}, 1});
+    REQUIRE(std::holds_alternative<nota::Object*>(a_val));
+    auto array = dynamic_cast<nota::NotaArray*>(std::get<nota::Object*>(a_val));
+    REQUIRE(array);
+    REQUIRE(array->elements.size() == 3);
+    REQUIRE(std::holds_alternative<int>(array->elements[1]));
+    CHECK(std::get<int>(array->elements[1]) == 5);
+}
+
+TEST_CASE("Interpreter throws error for out-of-bounds array access") {
+    std::string source = R"(
+        let a = [1, 2, 3];
+        a[3];
+    )";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+    nota::VM vm;
+    nota::Interpreter interpreter(vm);
+    CHECK_THROWS_AS(interpreter.interpret(stmts), nota::Interpreter::RuntimeError);
+}
+
 TEST_CASE("Interpreter handles correct scoping in a do-while loop") {
     std::string source = R"(
         mut a = 0;

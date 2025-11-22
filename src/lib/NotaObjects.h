@@ -21,6 +21,7 @@ class Environment;
 class NotaFunction;
 class NotaNativeFunction;
 class NotaString;
+class NotaArray;
 
 using Value =
     std::variant<std::monostate, int, double, bool, Object*>;
@@ -37,6 +38,15 @@ class NotaString : public Object {
 public:
     NotaString(std::string value) : value(value) {}
     std::string value;
+    size_t size() const override;
+};
+
+// Runtime representation of an array
+class NotaArray : public Object {
+public:
+    NotaArray(std::vector<Value> elements) : elements(std::move(elements)) {}
+    std::vector<Value> elements;
+    void traceReferences(VM& vm) override;
     size_t size() const override;
 };
 

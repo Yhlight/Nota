@@ -20,7 +20,7 @@
 ## Phase 3: Language Features - Statements and Control Flow (In Progress)
 
 - [x] Implement control flow structures (if/else).
-- [x] Implement loops (while, do-while).
+- [x] Implement loops (while, do-while, for).
 - [x] Implement functions (declaration and call).
 - [x] Implement lambda functions.
 - [x] Implement function return statements.
@@ -28,7 +28,8 @@
 - [x] Implement modules and packages.
 - [x] Implement garbage collection.
 - [x] Implement FFI.
-- [ ] **Current Focus: Implement `for` loops.**
+- [x] Implement `for` loops.
+- [ ] **Current Focus: Implement Arrays.**
 - [ ] Implement `for-each` loops.
 - [ ] Implement `match` statements.
 - [ ] Implement type annotations.

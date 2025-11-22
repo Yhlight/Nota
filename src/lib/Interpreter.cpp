@@ -293,30 +293,65 @@ void Interpreter::visit(const std::shared_ptr<Postfix>& expr) {
 void Interpreter::visit(const std::shared_ptr<GetExpr>& expr) {
     Value object = evaluate(expr->object);
     stack_.pop_back();
+
     if (auto obj = std::get_if<Object*>(&object)) {
         if (auto instance = dynamic_cast<NotaInstance*>(*obj)) {
-            lastValue_ = instance->get(*this, expr->name);
-            stack_.push_back(lastValue_);
-            return;
+            if (auto name = std::get_if<Token>(&expr->accessor)) {
+                lastValue_ = instance->get(*this, *name);
+                stack_.push_back(lastValue_);
+                return;
+            }
+        } else if (auto array = dynamic_cast<NotaArray*>(*obj)) {
+            if (auto index_expr = std::get_if<std::shared_ptr<Expr>>(&expr->accessor)) {
+                Value index_value = evaluate(*index_expr);
+                stack_.pop_back();
+                if (auto index = std::get_if<int>(&index_value)) {
+                    if (*index >= 0 && *index < array->elements.size()) {
+                        lastValue_ = array->elements[*index];
+                        stack_.push_back(lastValue_);
+                        return;
+                    }
+                }
+                throw RuntimeError(Token{TokenType::LBRACKET, "[", {}, -1}, "Array index must be a non-negative integer.");
+            }
         }
     }
-    throw RuntimeError(expr->name, "Only instances have properties.");
+    throw RuntimeError(Token{TokenType::IDENTIFIER, "", {}, -1}, "Invalid get operation.");
 }
 
 void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
     Value object = evaluate(expr->object);
     stack_.pop_back();
+
     if (auto obj = std::get_if<Object*>(&object)) {
         if (auto instance = dynamic_cast<NotaInstance*>(*obj)) {
-            Value value = evaluate(expr->value);
-            stack_.pop_back();
-            instance->set(expr->name, value);
-            lastValue_ = value;
-            stack_.push_back(lastValue_);
-            return;
+            if (auto name = std::get_if<Token>(&expr->accessor)) {
+                Value value = evaluate(expr->value);
+                stack_.pop_back();
+                instance->set(*name, value);
+                lastValue_ = value;
+                stack_.push_back(lastValue_);
+                return;
+            }
+        } else if (auto array = dynamic_cast<NotaArray*>(*obj)) {
+            if (auto index_expr = std::get_if<std::shared_ptr<Expr>>(&expr->accessor)) {
+                Value index_value = evaluate(*index_expr);
+                stack_.pop_back();
+                if (auto index = std::get_if<int>(&index_value)) {
+                    if (*index >= 0 && *index < array->elements.size()) {
+                        Value value = evaluate(expr->value);
+                        stack_.pop_back();
+                        array->elements[*index] = value;
+                        lastValue_ = value;
+                        stack_.push_back(lastValue_);
+                        return;
+                    }
+                }
+                throw RuntimeError(Token{TokenType::LBRACKET, "[", {}, -1}, "Array index must be a non-negative integer.");
+            }
         }
     }
-    throw RuntimeError(expr->name, "Only instances have fields.");
+    throw RuntimeError(Token{TokenType::IDENTIFIER, "", {}, -1}, "Invalid set operation.");
 }
 
 void Interpreter::visit(const std::shared_ptr<ThisExpr>& expr) {
@@ -340,6 +375,16 @@ void Interpreter::visit(const std::shared_ptr<LambdaExpr>& expr) {
 
     auto function = vm.newObject<NotaFunction>(functionStmt, environment_);
     lastValue_ = function;
+    stack_.push_back(lastValue_);
+}
+
+void Interpreter::visit(const std::shared_ptr<ArrayLiteralExpr>& expr) {
+    std::vector<Value> elements;
+    for (const auto& element_expr : expr->elements) {
+        elements.push_back(evaluate(element_expr));
+        stack_.pop_back();
+    }
+    lastValue_ = vm.newObject<NotaArray>(elements);
     stack_.push_back(lastValue_);
 }
 

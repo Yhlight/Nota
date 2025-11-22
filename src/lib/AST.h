@@ -166,8 +166,8 @@ struct GetExpr : Expr {
 };
 
 struct SetExpr : Expr {
-    SetExpr(std::shared_ptr<Expr> object, std::variant<Token, std::shared_ptr<Expr>> accessor, std::shared_ptr<Expr> value)
-        : object(object), accessor(accessor), value(value) {}
+    SetExpr(std::shared_ptr<Expr> object, std::variant<Token, std::shared_ptr<Expr>> accessor, std::shared_ptr<Expr> value, Token token_for_error)
+        : object(object), accessor(accessor), value(value), token_for_error(token_for_error) {}
 
     void accept(ExprVisitor& visitor) override {
         visitor.visit(std::static_pointer_cast<SetExpr>(shared_from_this()));
@@ -176,6 +176,7 @@ struct SetExpr : Expr {
     std::shared_ptr<Expr> object;
     std::variant<Token, std::shared_ptr<Expr>> accessor;
     std::shared_ptr<Expr> value;
+    Token token_for_error;
 };
 
 struct ThisExpr : Expr {
@@ -248,6 +249,7 @@ struct ReturnStmt;
 struct ClassStmt;
 struct ImportStmt;
 struct PackageStmt;
+struct ForEachStmt;
 
 class StmtVisitor {
 public:
@@ -263,6 +265,7 @@ public:
     virtual void visit(const std::shared_ptr<ClassStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<ImportStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<PackageStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<ForEachStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -400,6 +403,19 @@ struct PackageStmt : Stmt, public std::enable_shared_from_this<PackageStmt> {
     }
 
     Token name;
+};
+
+struct ForEachStmt : Stmt, public std::enable_shared_from_this<ForEachStmt> {
+    ForEachStmt(Token variable, std::shared_ptr<Expr> collection, std::shared_ptr<Stmt> body)
+        : variable(variable), collection(collection), body(body) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    Token variable;
+    std::shared_ptr<Expr> collection;
+    std::shared_ptr<Stmt> body;
 };
 
 

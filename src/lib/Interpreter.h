@@ -102,6 +102,7 @@ public:
     void visit(const std::shared_ptr<ClassStmt>& stmt) override;
     void visit(const std::shared_ptr<ImportStmt>& stmt) override;
     void visit(const std::shared_ptr<PackageStmt>& stmt) override;
+    void visit(const std::shared_ptr<ForEachStmt>& stmt) override;
 
     void visit(const std::shared_ptr<Binary>& expr) override;
     void visit(const std::shared_ptr<Grouping>& expr) override;

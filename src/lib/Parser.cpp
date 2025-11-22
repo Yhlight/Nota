@@ -39,9 +39,9 @@ std::shared_ptr<Expr> Parser::assignment() {
             Token name = var->name;
             return std::make_shared<Assign>(name, value);
         } else if (auto get = std::dynamic_pointer_cast<GetExpr>(expr)) {
-            return std::make_shared<SetExpr>(get->object, get->accessor, value);
+            return std::make_shared<SetExpr>(get->object, get->accessor, value, std::get<Token>(get->accessor));
         } else if (auto sub = std::dynamic_pointer_cast<SubscriptExpr>(expr)) {
-            return std::make_shared<SetExpr>(sub->object, sub->index, value);
+            return std::make_shared<SetExpr>(sub->object, sub->index, value, sub->bracket);
         }
 
         error(equals, "Invalid assignment target.");
@@ -377,6 +377,21 @@ std::shared_ptr<Stmt> Parser::ifStatement() {
 }
 
 std::shared_ptr<Stmt> Parser::forStatement() {
+    // Check if it's a for-each loop
+    // Look for 'let'/'mut' IDENTIFIER ':'
+    if ((peek().type == TokenType::LET || peek().type == TokenType::MUT) &&
+        tokens_[current_ + 2].type == TokenType::COLON) {
+
+        advance(); // consume 'let' or 'mut'
+        Token variable = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        consume(TokenType::COLON, "Expect ':' after variable name in for-each loop.");
+        std::shared_ptr<Expr> collection = expression();
+        std::shared_ptr<Stmt> body = std::make_shared<Block>(block());
+        consume(TokenType::END, "Expect 'end' after for-each loop body.");
+        return std::make_shared<ForEachStmt>(variable, collection, body);
+    }
+
+
     // Initializer
     std::shared_ptr<Stmt> initializer;
     if (match({TokenType::SEMICOLON})) {

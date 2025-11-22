@@ -33,6 +33,7 @@
 
 ## Phase 3 In-Progress
 - [x] Implement logical operators.
+- [x] Implement for-each loops.
 
 ## Phase 4: Advanced Features
 

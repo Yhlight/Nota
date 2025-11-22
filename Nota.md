@@ -152,9 +152,22 @@ end
 ```
 
 ```nota
-for let/mut i : 容器  // 默认let，即不可变，可以不写，也可以显性写出来
+for let/mut i : collection  // 默认let，即不可变，可以不写，也可以显性写出来
 
 end
+```
+
+The `for-each` loop iterates over a collection, such as an array.
+
+```nota
+let a = [1, 2, 3]
+for let i : a
+    print(i)
+end
+// Output:
+// 1
+// 2
+// 3
 ```
 
 ```nota

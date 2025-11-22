@@ -339,10 +339,10 @@ void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
                         return;
                     }
                 }
-                throw RuntimeError(Token{TokenType::END_OF_FILE, "", {}, -1}, "Array index must be a non-negative integer.");
+                throw RuntimeError(expr->token_for_error, "Array index must be a non-negative integer.");
             }
         }
-        throw RuntimeError(Token{TokenType::END_OF_FILE, "", {}, -1}, "Can only subscript arrays.");
+        throw RuntimeError(expr->token_for_error, "Can only subscript arrays.");
     }
 }
 
@@ -491,6 +491,25 @@ void Interpreter::visit(const std::shared_ptr<LogicalExpr>& expr) {
     lastValue_ = evaluate(expr->right);
     stack_.pop_back();
     stack_.push_back(lastValue_);
+}
+
+void Interpreter::visit(const std::shared_ptr<ForEachStmt>& stmt) {
+    Value collection = evaluate(stmt->collection);
+    stack_.pop_back();
+
+    if (auto obj = std::get_if<Object*>(&collection)) {
+        if ((*obj)->type == ObjectType::ARRAY) {
+            auto array = static_cast<NotaArray*>(*obj);
+            for (const auto& element : array->elements) {
+                Environment* loopEnvironment = vm.newObject<Environment>(environment_);
+                loopEnvironment->define(stmt->variable.lexeme, element);
+                executeBlock({stmt->body}, loopEnvironment);
+            }
+            return;
+        }
+    }
+
+    throw RuntimeError(stmt->variable, "Can only iterate over arrays.");
 }
 
 } // namespace nota

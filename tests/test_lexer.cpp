@@ -17,11 +17,11 @@ TEST_CASE("Lexer tokenizes a simple let statement") {
 }
 
 TEST_CASE("Lexer tokenizes all single-character tokens") {
-    std::string source = "(){}[],:;+-*/%=";
+    std::string source = "(){}[],:;+-*/%";
     nota::Lexer lexer(source);
     std::vector<nota::Token> tokens = lexer.scanTokens();
 
-    REQUIRE(tokens.size() == 16);
+    REQUIRE(tokens.size() == 15);
     CHECK(tokens[0].type == nota::TokenType::LPAREN);
     CHECK(tokens[1].type == nota::TokenType::RPAREN);
     CHECK(tokens[2].type == nota::TokenType::LBRACE);
@@ -36,8 +36,20 @@ TEST_CASE("Lexer tokenizes all single-character tokens") {
     CHECK(tokens[11].type == nota::TokenType::STAR);
     CHECK(tokens[12].type == nota::TokenType::SLASH);
     CHECK(tokens[13].type == nota::TokenType::PERCENT);
-    CHECK(tokens[14].type == nota::TokenType::ASSIGN);
-    CHECK(tokens[15].type == nota::TokenType::END_OF_FILE);
+}
+
+TEST_CASE("Lexer tokenizes compound assignment operators") {
+    std::string source = "+= -= *= /= %=";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+
+    REQUIRE(tokens.size() == 6);
+    CHECK(tokens[0].type == nota::TokenType::PLUS_ASSIGN);
+    CHECK(tokens[1].type == nota::TokenType::MINUS_ASSIGN);
+    CHECK(tokens[2].type == nota::TokenType::STAR_ASSIGN);
+    CHECK(tokens[3].type == nota::TokenType::SLASH_ASSIGN);
+    CHECK(tokens[4].type == nota::TokenType::PERCENT_ASSIGN);
+    CHECK(tokens[5].type == nota::TokenType::END_OF_FILE);
 }
 
 TEST_CASE("Lexer tokenizes multi-character tokens") {

@@ -214,6 +214,38 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 throw RuntimeError(expr->op, "Operands must be two numbers.");
             }
             break;
+        case TokenType::MINUS:
+            checkNumberOperands(expr->op, left, right);
+            if (std::holds_alternative<int>(left)) {
+                lastValue_ = std::get<int>(left) - std::get<int>(right);
+            } else {
+                lastValue_ = std::get<double>(left) - std::get<double>(right);
+            }
+            break;
+        case TokenType::STAR:
+            checkNumberOperands(expr->op, left, right);
+            if (std::holds_alternative<int>(left)) {
+                lastValue_ = std::get<int>(left) * std::get<int>(right);
+            } else {
+                lastValue_ = std::get<double>(left) * std::get<double>(right);
+            }
+            break;
+        case TokenType::SLASH:
+            checkNumberOperands(expr->op, left, right);
+            if (std::holds_alternative<int>(left)) {
+                lastValue_ = std::get<int>(left) / std::get<int>(right);
+            } else {
+                lastValue_ = std::get<double>(left) / std::get<double>(right);
+            }
+            break;
+        case TokenType::PERCENT:
+            checkNumberOperands(expr->op, left, right);
+            if (std::holds_alternative<int>(left)) {
+                lastValue_ = std::get<int>(left) % std::get<int>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operands of '%' must be integers.");
+            }
+            break;
         case TokenType::EQUALS:
             lastValue_ = left == right;
             break;

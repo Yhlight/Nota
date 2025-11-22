@@ -45,6 +45,23 @@ std::shared_ptr<Expr> Parser::assignment() {
         }
 
         error(equals, "Invalid assignment target.");
+    } else if (match({TokenType::PLUS_ASSIGN, TokenType::MINUS_ASSIGN, TokenType::STAR_ASSIGN, TokenType::SLASH_ASSIGN, TokenType::PERCENT_ASSIGN})) {
+        Token op = previous();
+        std::shared_ptr<Expr> value = assignment();
+
+        if (auto var = std::dynamic_pointer_cast<Variable>(expr)) {
+            Token name = var->name;
+            Token binary_op = Token{op.type == TokenType::PLUS_ASSIGN ? TokenType::PLUS :
+                                     op.type == TokenType::MINUS_ASSIGN ? TokenType::MINUS :
+                                     op.type == TokenType::STAR_ASSIGN ? TokenType::STAR :
+                                     op.type == TokenType::SLASH_ASSIGN ? TokenType::SLASH :
+                                     TokenType::PERCENT,
+                                     "", {}, op.line};
+            auto binary = std::make_shared<Binary>(expr, binary_op, value);
+            return std::make_shared<Assign>(name, binary);
+        }
+
+        error(op, "Invalid assignment target.");
     }
 
     return expr;
@@ -379,6 +396,7 @@ std::shared_ptr<Stmt> Parser::forStatement() {
     // Check if it's a for-each loop
     // Look for 'let'/'mut' IDENTIFIER ':'
     if ((peek().type == TokenType::LET || peek().type == TokenType::MUT) &&
+        current_ + 2 < tokens_.size() &&
         tokens_[current_ + 2].type == TokenType::COLON) {
 
         advance(); // consume 'let' or 'mut'

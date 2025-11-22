@@ -101,6 +101,18 @@ let a = true && false // false
 let b = true || false // true
 ```
 
+### Compound Assignment Operators
+
+Nota supports compound assignment operators for arithmetic operations.
+
+```nota
+mut a = 10
+a += 5 // a is now 15
+a -= 3 // a is now 12
+a *= 2 // a is now 24
+a /= 4 // a is now 6
+```
+
 ## 选择结构
 Nota支持2种选择结构  
 if...else  

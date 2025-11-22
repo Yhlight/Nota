@@ -42,4 +42,15 @@ void Environment::traceReferences(VM& vm) {
     }
 }
 
+size_t Environment::size() const {
+    size_t totalSize = sizeof(Environment);
+    for (const auto& pair : values_) {
+        totalSize += pair.first.capacity();
+        // The size of the Value variant itself is already accounted for
+        // by the map's size, but if it contains heap-allocated data,
+        // that would need to be added.
+    }
+    return totalSize;
+}
+
 } // namespace nota

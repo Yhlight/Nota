@@ -6,6 +6,11 @@
 #include <utility>
 
 namespace nota {
+
+size_t NotaString::size() const {
+    return sizeof(NotaString) + value.capacity();
+}
+
 // --- NotaFunction ---
 NotaFunction::NotaFunction(FunctionStmt* declaration,
                            Environment* closure,
@@ -53,6 +58,10 @@ void NotaFunction::traceReferences(VM& vm) {
     }
 }
 
+size_t NotaFunction::size() const {
+    return sizeof(NotaFunction);
+}
+
 // --- NotaInstance PImpl ---
 struct NotaInstance::Impl {
   std::map<std::string, Value> fields;
@@ -92,6 +101,14 @@ void NotaInstance::traceReferences(VM& vm) {
     }
 }
 
+size_t NotaInstance::size() const {
+    size_t totalSize = sizeof(NotaInstance);
+    for (const auto& pair : pimpl_->fields) {
+        totalSize += pair.first.capacity();
+    }
+    return totalSize;
+}
+
 // --- NotaClass ---
 NotaClass::NotaClass(
     Token name, std::map<std::string, NotaFunction*> methods)
@@ -127,6 +144,14 @@ void NotaClass::traceReferences(VM& vm) {
     for (auto const& [key, val] : methods_) {
         vm.markObject(val);
     }
+}
+
+size_t NotaClass::size() const {
+    size_t totalSize = sizeof(NotaClass);
+    for (const auto& pair : methods_) {
+        totalSize += pair.first.capacity();
+    }
+    return totalSize;
 }
 
 } // namespace nota

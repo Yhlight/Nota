@@ -17,6 +17,7 @@ public:
     void assign(const Token& name, const Value& value);
 
     void traceReferences(VM& vm) override;
+    size_t size() const override;
 
 private:
     Environment* enclosing_;

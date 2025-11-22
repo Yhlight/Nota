@@ -35,6 +35,7 @@ class NotaString : public Object {
 public:
     NotaString(std::string value) : value(value) {}
     std::string value;
+    size_t size() const override;
 };
 
 // Runtime representation of a function
@@ -48,6 +49,7 @@ public:
   bool isInitializer_;
 
   void traceReferences(VM& vm) override;
+    size_t size() const override;
 
 private:
   FunctionStmt* declaration_;
@@ -66,6 +68,7 @@ public:
   std::string toString();
 
   void traceReferences(VM& vm) override;
+    size_t size() const override;
 
 
 private:
@@ -86,6 +89,7 @@ public:
   NotaFunction* findMethod(const std::string& name);
 
   void traceReferences(VM& vm) override;
+    size_t size() const override;
 
 private:
   Token name_;

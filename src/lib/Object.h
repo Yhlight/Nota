@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 namespace nota {
 
 class VM;
@@ -12,6 +14,7 @@ public:
 
     // For GC tracing
     virtual void traceReferences(VM& vm) {}
+    virtual size_t size() const = 0;
 };
 
 } // namespace nota

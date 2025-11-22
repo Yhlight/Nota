@@ -26,12 +26,11 @@
 - [x] Implement function return statements.
 - [x] Implement classes and objects.
 - [x] Implement modules and packages.
-- [ ] **Current Focus: Implement garbage collection.**
+- [x] Implement garbage collection.
+- [ ] **Current Focus: Implement lambda functions.**
 
 ## Phase 4: Advanced Features
 
-- [ ] Implement FFI.
-- [ ] Implement garbage collection.
 - [ ] Implement FFI.
 
 ## Phase 5: Standard Library and Tooling

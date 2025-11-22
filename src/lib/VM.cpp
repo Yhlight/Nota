@@ -5,15 +5,24 @@
 
 namespace nota {
 
+VM::VM() = default;
+
 VM::~VM() {
     for (auto object : objects_) {
         delete object;
     }
 }
 
-void VM::collectGarbage(Interpreter& interpreter) {
-    interpreter.markRoots();
+void VM::setInterpreter(Interpreter* interpreter) {
+    interpreter_ = interpreter;
+}
+
+void VM::collectGarbage() {
+    if (interpreter_) {
+        interpreter_->markRoots();
+    }
     sweep();
+    nextGC_ = bytesAllocated_ * kGCHeapGrowFactor;
 }
 
 void VM::markValue(Value value) {
@@ -32,10 +41,12 @@ void VM::markObject(Object* object) {
 
 void VM::sweep() {
     std::vector<Object*> survivors;
+    bytesAllocated_ = 0;
     for (auto object : objects_) {
         if (object->isMarked) {
             object->isMarked = false;
             survivors.push_back(object);
+            bytesAllocated_ += object->size();
         } else {
             delete object;
         }

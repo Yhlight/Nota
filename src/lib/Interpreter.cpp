@@ -21,9 +21,14 @@ private:
     Environment* previous_;
 };
 
-Interpreter::Interpreter(VM& vm) : vm(vm), environment_(vm.newObject<Environment>()), moduleLoader_(std::make_unique<ModuleLoader>(*this)) {}
+Interpreter::Interpreter(VM& vm) : vm(vm), environment_(nullptr), moduleLoader_(std::make_unique<ModuleLoader>(*this)) {
+    environment_ = vm.newObject<Environment>();
+    vm.setInterpreter(this);
+}
 
-Interpreter::~Interpreter() = default;
+Interpreter::~Interpreter() {
+    vm.setInterpreter(nullptr);
+}
 
 void Interpreter::interpret(const std::vector<std::shared_ptr<Stmt>>& statements) {
     statements_ = statements;

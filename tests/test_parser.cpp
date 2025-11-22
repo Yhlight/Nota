@@ -140,11 +140,12 @@ TEST_CASE("Parser parses a while statement with a block") {
     REQUIRE(varStmt);
 }
 
-TEST_CASE("Parser throws an error for an invalid expression") {
+TEST_CASE("Parser flags an error for an invalid expression") {
     nota::Lexer lexer("1 +\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
-    CHECK_THROWS_AS(parser.parse(), nota::Parser::ParseError);
+    parser.parse();
+    CHECK(parser.hadError());
 }
 
 TEST_CASE("Parser parses multiple statements separated by semicolons") {

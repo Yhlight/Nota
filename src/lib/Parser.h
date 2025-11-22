@@ -58,6 +58,9 @@ private:
 
     std::vector<Token> tokens_;
     size_t current_ = 0;
+    bool hadError_ = false;
+public:
+    bool hadError() const { return hadError_; }
 };
 
 } // namespace nota

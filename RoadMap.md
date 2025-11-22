@@ -37,5 +37,5 @@
 - [x] **Current Focus: Develop a basic standard library.**
   - [x] Implement `print()` for basic output.
   - [x] Implement `clock()` for performance measurement.
-- [ ] Create a command-line interface (CLI) for the Nota interpreter.
+- [x] Create a command-line interface (CLI) for the Nota interpreter.
 - [ ] Write comprehensive documentation.

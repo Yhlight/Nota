@@ -14,7 +14,7 @@ def run_command(command):
 def main():
     """Main function to build the Nota project."""
     parser = argparse.ArgumentParser(description="Build and run the Nota project.")
-    parser.add_argument("--run", action="store_true", help="Run the Nota executable after building.")
+    parser.add_argument("--run", nargs='*', help="Run the Nota executable after building, with optional arguments.")
     parser.add_argument("--test", action="store_true", help="Run the tests after building.")
     args = parser.parse_args()
 
@@ -32,9 +32,10 @@ def main():
     cmake_build_command = ["cmake", "--build", build_dir]
     run_command(cmake_build_command)
 
-    if args.run:
+    if args.run is not None:
         print("\n--- Running Nota ---")
-        run_command([os.path.join(build_dir, "src", "nota")])
+        command = [os.path.join(build_dir, "src", "nota")] + args.run
+        run_command(command)
 
     if args.test:
         print("\n--- Running Tests ---")

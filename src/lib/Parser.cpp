@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include <stdexcept>
+#include <iostream>
 
 namespace nota {
 
@@ -8,9 +9,17 @@ Parser::Parser(const std::vector<Token>& tokens) : tokens_(tokens) {}
 std::vector<std::shared_ptr<Stmt>> Parser::parse() {
     std::vector<std::shared_ptr<Stmt>> statements;
     while (!isAtEnd()) {
-        skipNewlines();
-        if (isAtEnd()) break;
-        statements.push_back(declaration());
+        try {
+            skipNewlines();
+            if (isAtEnd()) break;
+            statements.push_back(declaration());
+        } catch (ParseError& error) {
+            // In a real implementation, we would synchronize here.
+            // For now, just report the error and stop.
+            std::cerr << "Parse error: " << error.what() << std::endl;
+            hadError_ = true;
+            return {};
+        }
     }
     return statements;
 }

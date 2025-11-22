@@ -29,6 +29,7 @@
 - [x] Implement garbage collection.
 - [x] Implement lambda functions.
 - [x] Implement FFI.
+- [x] Implement arrays.
 
 ## Phase 4: Advanced Features
 

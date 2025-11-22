@@ -158,4 +158,15 @@ size_t NotaNativeFunction::size() const {
     return sizeof(NotaNativeFunction);
 }
 
+// --- NotaArray ---
+size_t NotaArray::size() const {
+    return sizeof(NotaArray) + elements.capacity() * sizeof(Value);
+}
+
+void NotaArray::traceReferences(VM& vm) {
+    for (const auto& element : elements) {
+        vm.markValue(element);
+    }
+}
+
 } // namespace nota

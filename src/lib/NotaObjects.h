@@ -137,6 +137,20 @@ private:
 };
 
 /**
+ * @class NotaArray
+ * @brief The runtime representation of an array.
+ */
+class NotaArray : public Object {
+public:
+    NotaArray(std::vector<Value> elements)
+        : Object(ObjectType::ARRAY), elements(std::move(elements)) {}
+
+    std::vector<Value> elements;
+    size_t size() const override;
+    void traceReferences(VM& vm) override;
+};
+
+/**
  * @class NotaNativeFunction
  * @brief The runtime representation of a native C++ function.
  */

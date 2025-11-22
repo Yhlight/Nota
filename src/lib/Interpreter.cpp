@@ -293,30 +293,57 @@ void Interpreter::visit(const std::shared_ptr<Postfix>& expr) {
 void Interpreter::visit(const std::shared_ptr<GetExpr>& expr) {
     Value object = evaluate(expr->object);
     stack_.pop_back();
-    if (auto obj = std::get_if<Object*>(&object)) {
-        if (auto instance = dynamic_cast<NotaInstance*>(*obj)) {
-            lastValue_ = instance->get(*this, expr->name);
-            stack_.push_back(lastValue_);
-            return;
+
+    if (auto token = std::get_if<Token>(&expr->accessor)) {
+        if (auto obj = std::get_if<Object*>(&object)) {
+            if (auto instance = dynamic_cast<NotaInstance*>(*obj)) {
+                lastValue_ = instance->get(*this, *token);
+                stack_.push_back(lastValue_);
+                return;
+            }
         }
+        throw RuntimeError(*token, "Only instances have properties.");
     }
-    throw RuntimeError(expr->name, "Only instances have properties.");
+
+    throw std::runtime_error("Invalid accessor type in GetExpr.");
 }
 
 void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
     Value object = evaluate(expr->object);
     stack_.pop_back();
-    if (auto obj = std::get_if<Object*>(&object)) {
-        if (auto instance = dynamic_cast<NotaInstance*>(*obj)) {
-            Value value = evaluate(expr->value);
-            stack_.pop_back();
-            instance->set(expr->name, value);
-            lastValue_ = value;
-            stack_.push_back(lastValue_);
-            return;
+    Value value = evaluate(expr->value);
+    stack_.pop_back();
+
+    if (auto token = std::get_if<Token>(&expr->accessor)) {
+        if (auto obj = std::get_if<Object*>(&object)) {
+            if (auto instance = dynamic_cast<NotaInstance*>(*obj)) {
+                instance->set(*token, value);
+                lastValue_ = value;
+                stack_.push_back(lastValue_);
+                return;
+            }
         }
+        throw RuntimeError(*token, "Only instances have fields.");
+    } else if (auto index_expr = std::get_if<std::shared_ptr<Expr>>(&expr->accessor)) {
+        Value index_val = evaluate(*index_expr);
+        stack_.pop_back();
+        if (auto obj = std::get_if<Object*>(&object)) {
+            if ((*obj)->type == ObjectType::ARRAY) {
+                auto array = static_cast<NotaArray*>(*obj);
+                if (std::holds_alternative<int>(index_val)) {
+                    int index = std::get<int>(index_val);
+                    if (index >= 0 && index < array->elements.size()) {
+                        array->elements[index] = value;
+                        lastValue_ = value;
+                        stack_.push_back(lastValue_);
+                        return;
+                    }
+                }
+                throw RuntimeError(Token{TokenType::END_OF_FILE, "", {}, -1}, "Array index must be a non-negative integer.");
+            }
+        }
+        throw RuntimeError(Token{TokenType::END_OF_FILE, "", {}, -1}, "Can only subscript arrays.");
     }
-    throw RuntimeError(expr->name, "Only instances have fields.");
 }
 
 void Interpreter::visit(const std::shared_ptr<ThisExpr>& expr) {
@@ -406,6 +433,41 @@ bool Interpreter::isTruthy(const Value& value) {
         if (*obj == nullptr) return false;
     }
     return true;
+}
+
+void Interpreter::visit(const std::shared_ptr<ArrayExpr>& expr) {
+    std::vector<Value> elements;
+    for (const auto& element : expr->elements) {
+        elements.push_back(evaluate(element));
+        stack_.pop_back();
+    }
+
+    lastValue_ = vm.newObject<NotaArray>(elements);
+    stack_.push_back(lastValue_);
+}
+
+void Interpreter::visit(const std::shared_ptr<SubscriptExpr>& expr) {
+    Value object = evaluate(expr->object);
+    stack_.pop_back();
+    Value index_val = evaluate(expr->index);
+    stack_.pop_back();
+
+    if (auto obj = std::get_if<Object*>(&object)) {
+        if ((*obj)->type == ObjectType::ARRAY) {
+            auto array = static_cast<NotaArray*>(*obj);
+            if (std::holds_alternative<int>(index_val)) {
+                int index = std::get<int>(index_val);
+                if (index >= 0 && index < array->elements.size()) {
+                    lastValue_ = array->elements[index];
+                    stack_.push_back(lastValue_);
+                    return;
+                }
+            }
+            throw RuntimeError(expr->bracket, "Array index must be a non-negative integer.");
+        }
+    }
+
+    throw RuntimeError(expr->bracket, "Can only subscript arrays.");
 }
 
 } // namespace nota

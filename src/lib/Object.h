@@ -19,7 +19,8 @@ enum class ObjectType {
     NATIVE_FUNCTION,
     CLASS,
     INSTANCE,
-    ENVIRONMENT
+    ENVIRONMENT,
+    ARRAY
 };
 
 class VM;

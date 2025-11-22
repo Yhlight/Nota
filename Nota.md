@@ -50,6 +50,34 @@ let e: int[] = [1, 2, 3]  // 动态数组
 let f: int[10] = [1, 2, 3]  // 静态数组
 let g: (int, int): int = add  // 函数
 let h: className = Person()  // 类
+
+let i = [1, "two", true] // Array
+```
+
+## Arrays
+
+Nota supports array literals, which are ordered collections of values.
+
+```nota
+let a = [1, 2, 3]
+let b = ["hello", "world"]
+let c = [1, "two", true]
+```
+
+You can access array elements using subscript notation. Indexing is zero-based.
+
+```nota
+let a = [10, 20, 30]
+print(a[0]) // 10
+print(a[1]) // 20
+```
+
+You can also modify array elements using subscript notation.
+
+```nota
+let a = [10, 20, 30]
+a[1] = 99
+print(a[1]) // 99
 ```
 
 ## 运算符

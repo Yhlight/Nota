@@ -39,7 +39,9 @@ std::shared_ptr<Expr> Parser::assignment() {
             Token name = var->name;
             return std::make_shared<Assign>(name, value);
         } else if (auto get = std::dynamic_pointer_cast<GetExpr>(expr)) {
-            return std::make_shared<SetExpr>(get->object, get->name, value);
+            return std::make_shared<SetExpr>(get->object, get->accessor, value);
+        } else if (auto sub = std::dynamic_pointer_cast<SubscriptExpr>(expr)) {
+            return std::make_shared<SetExpr>(sub->object, sub->index, value);
         }
 
         error(equals, "Invalid assignment target.");
@@ -111,6 +113,10 @@ std::shared_ptr<Expr> Parser::call() {
     while (true) {
         if (match({TokenType::LPAREN})) {
             expr = finishCall(expr);
+        } else if (match({TokenType::LBRACKET})) {
+            std::shared_ptr<Expr> index = expression();
+            Token bracket = consume(TokenType::RBRACKET, "Expect ']' after index.");
+            expr = std::make_shared<SubscriptExpr>(expr, index, bracket);
         } else if (match({TokenType::DOT})) {
             Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
             expr = std::make_shared<GetExpr>(expr, name);
@@ -161,6 +167,17 @@ std::shared_ptr<Expr> Parser::primary() {
             return std::make_shared<ModuleAccessExpr>(identifier, member);
         }
         return std::make_shared<Variable>(identifier);
+    }
+
+    if (match({TokenType::LBRACKET})) {
+        std::vector<std::shared_ptr<Expr>> elements;
+        if (peek().type != TokenType::RBRACKET) {
+            do {
+                elements.push_back(expression());
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RBRACKET, "Expect ']' after array elements.");
+        return std::make_shared<ArrayExpr>(elements);
     }
 
     if (match({TokenType::LPAREN})) {

@@ -12,12 +12,6 @@ size_t NotaString::size() const {
 }
 
 // --- NotaFunction ---
-NotaFunction::NotaFunction(std::shared_ptr<FunctionStmt> declaration,
-                           Environment* closure,
-                           bool isInitializer)
-    : declaration_(declaration), closure_(closure),
-      isInitializer_(isInitializer) {}
-
 int NotaFunction::arity() { return declaration_->params.size(); }
 
 Value NotaFunction::call(Interpreter &interpreter,
@@ -69,7 +63,7 @@ struct NotaInstance::Impl {
 
 // --- NotaInstance ---
 NotaInstance::NotaInstance(NotaClass* klass)
-    : klass_(klass), pimpl_(std::make_unique<Impl>()) {}
+    : Object(ObjectType::INSTANCE), klass_(klass), pimpl_(std::make_unique<Impl>()) {}
 
 NotaInstance::~NotaInstance() = default;
 
@@ -110,10 +104,6 @@ size_t NotaInstance::size() const {
 }
 
 // --- NotaClass ---
-NotaClass::NotaClass(
-    Token name, std::map<std::string, NotaFunction*> methods)
-    : name_(std::move(name)), methods_(std::move(methods)) {}
-
 int NotaClass::arity() {
   auto initializer = findMethod("init");
   if (initializer) return initializer->arity();
@@ -155,9 +145,6 @@ size_t NotaClass::size() const {
 }
 
 // --- NotaNativeFunction ---
-NotaNativeFunction::NotaNativeFunction(int arity, NativeFn function)
-    : arity_(arity), function_(std::move(function)) {}
-
 int NotaNativeFunction::arity() {
     return arity_;
 }

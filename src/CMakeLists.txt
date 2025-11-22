@@ -14,6 +14,7 @@ add_library(libnota STATIC
     lib/NotaObjects.cpp
     lib/ModuleLoader.cpp
     lib/VM.cpp
+    lib/StdLib.cpp
 )
 target_include_directories(libnota PUBLIC lib)
 

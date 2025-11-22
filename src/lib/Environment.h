@@ -10,7 +10,8 @@ namespace nota {
 
 class Environment : public Object {
 public:
-    Environment(Environment* enclosing = nullptr) : enclosing_(enclosing) {}
+    Environment(Environment* enclosing = nullptr)
+        : Object(ObjectType::ENVIRONMENT), enclosing_(enclosing) {}
 
     void define(const std::string& name, const Value& value);
     Value get(const Token& name);

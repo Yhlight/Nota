@@ -27,6 +27,7 @@ using Value =
 
 class Callable : public Object {
 public:
+    Callable(ObjectType type) : Object(type) {}
   virtual int arity() = 0;
   virtual Value call(Interpreter &interpreter,
                      std::vector<Value> arguments) = 0;
@@ -35,7 +36,7 @@ public:
 // Runtime representation of a string
 class NotaString : public Object {
 public:
-    NotaString(std::string value) : value(value) {}
+    NotaString(std::string value) : Object(ObjectType::STRING), value(value) {}
     std::string value;
     size_t size() const override;
 };
@@ -43,7 +44,8 @@ public:
 // Runtime representation of a function
 class NotaFunction : public Callable {
 public:
-  NotaFunction(std::shared_ptr<FunctionStmt> declaration, Environment* closure, bool isInitializer = false);
+  NotaFunction(std::shared_ptr<FunctionStmt> declaration, Environment* closure, bool isInitializer = false)
+    : Callable(ObjectType::FUNCTION), declaration_(declaration), closure_(closure), isInitializer_(isInitializer) {}
   int arity() override;
   Value call(Interpreter &interpreter, std::vector<Value> arguments) override;
   NotaFunction* bind(Interpreter& interpreter, NotaInstance* instance);
@@ -83,7 +85,8 @@ private:
 // Runtime representation of a class
 class NotaClass : public Callable {
 public:
-  NotaClass(Token name, std::map<std::string, NotaFunction*> methods);
+  NotaClass(Token name, std::map<std::string, NotaFunction*> methods)
+    : Callable(ObjectType::CLASS), name_(name), methods_(methods) {}
 
   int arity() override;
   Value call(Interpreter &interpreter, std::vector<Value> arguments) override;
@@ -102,7 +105,8 @@ class NotaNativeFunction : public Callable {
 public:
     using NativeFn = std::function<Value(Interpreter&, std::vector<Value>)>;
 
-    NotaNativeFunction(int arity, NativeFn function);
+    NotaNativeFunction(int arity, NativeFn function)
+        : Callable(ObjectType::NATIVE_FUNCTION), arity_(arity), function_(function) {}
 
     int arity() override;
     Value call(Interpreter& interpreter, std::vector<Value> arguments) override;

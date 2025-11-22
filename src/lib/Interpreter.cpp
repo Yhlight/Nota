@@ -1,5 +1,6 @@
 #include "Interpreter.h"
 #include "ModuleLoader.h"
+#include "StdLib.h"
 #include <iostream>
 #include <utility>
 
@@ -24,6 +25,9 @@ private:
 Interpreter::Interpreter(VM& vm) : vm(vm), environment_(nullptr), moduleLoader_(std::make_unique<ModuleLoader>(*this)) {
     environment_ = vm.newObject<Environment>();
     vm.setInterpreter(this);
+
+    registerNative("print", -1, stdlib::print);
+    registerNative("clock", 0, stdlib::clock);
 }
 
 void Interpreter::registerNative(const std::string& name, int arity, NotaNativeFunction::NativeFn fn) {
@@ -128,7 +132,7 @@ void Interpreter::visit(const std::shared_ptr<CallExpr>& expr) {
 
     if (auto callable = std::get_if<Object*>(&callee)) {
         if (auto c = dynamic_cast<Callable*>(*callable)) {
-            if (arguments.size() != c->arity()) {
+            if (c->arity() != -1 && arguments.size() != c->arity()) {
                 throw RuntimeError(expr->paren, "Expected " + std::to_string(c->arity()) + " arguments but got " + std::to_string(arguments.size()) + ".");
             }
             lastValue_ = c->call(*this, arguments);

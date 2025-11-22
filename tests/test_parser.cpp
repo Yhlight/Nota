@@ -146,3 +146,19 @@ TEST_CASE("Parser throws an error for an invalid expression") {
     nota::Parser parser(tokens);
     CHECK_THROWS_AS(parser.parse(), nota::Parser::ParseError);
 }
+
+TEST_CASE("Parser parses a for statement") {
+    nota::Lexer lexer("for (let i = 0; i < 10; i++) end");
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+
+    REQUIRE(stmts.size() == 1);
+    auto block = std::dynamic_pointer_cast<nota::Block>(stmts[0]);
+    REQUIRE(block);
+    REQUIRE(block->statements.size() == 2);
+    auto varStmt = std::dynamic_pointer_cast<nota::VarStmt>(block->statements[0]);
+    REQUIRE(varStmt);
+    auto whileStmt = std::dynamic_pointer_cast<nota::WhileStmt>(block->statements[1]);
+    REQUIRE(whileStmt);
+}

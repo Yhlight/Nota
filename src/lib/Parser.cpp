@@ -313,6 +313,7 @@ std::shared_ptr<Stmt> Parser::ifStatement() {
 }
 
 std::shared_ptr<Stmt> Parser::forStatement() {
+    consume(TokenType::LPAREN, "Expect '(' after 'for'.");
     // Initializer
     std::shared_ptr<Stmt> initializer;
     if (match({TokenType::SEMICOLON})) {
@@ -332,9 +333,10 @@ std::shared_ptr<Stmt> Parser::forStatement() {
 
     // Increment
     std::shared_ptr<Expr> increment = nullptr;
-    if (peek().type != TokenType::END) {
+    if (peek().type != TokenType::RPAREN) {
         increment = expression();
     }
+    consume(TokenType::RPAREN, "Expect ')' after for clauses.");
 
     // Body
     std::shared_ptr<Stmt> body = std::make_shared<Block>(block());
@@ -342,7 +344,9 @@ std::shared_ptr<Stmt> Parser::forStatement() {
 
     // Desugar into a while loop
     if (increment != nullptr) {
-        std::vector<std::shared_ptr<Stmt>> statements = { body, std::make_shared<ExpressionStmt>(increment) };
+        std::vector<std::shared_ptr<Stmt>> statements;
+        statements.push_back(body);
+        statements.push_back(std::make_shared<ExpressionStmt>(increment));
         body = std::make_shared<Block>(statements);
     }
 
@@ -352,7 +356,9 @@ std::shared_ptr<Stmt> Parser::forStatement() {
     body = std::make_shared<WhileStmt>(condition, body);
 
     if (initializer != nullptr) {
-        std::vector<std::shared_ptr<Stmt>> statements = { initializer, body };
+        std::vector<std::shared_ptr<Stmt>> statements;
+        statements.push_back(initializer);
+        statements.push_back(body);
         body = std::make_shared<Block>(statements);
     }
 

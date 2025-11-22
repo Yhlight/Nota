@@ -100,6 +100,10 @@ void Interpreter::visit(const std::shared_ptr<WhileStmt>& stmt) {
     }
 }
 
+void Interpreter::visit(const std::shared_ptr<ForStmt>& stmt) {
+    // This should not be called, as for loops are desugared.
+}
+
 void Interpreter::visit(const std::shared_ptr<DoWhileStmt>& stmt) {
     Environment* loopEnvironment = vm.newObject<Environment>(environment_);
     do {

@@ -15,25 +15,31 @@
 - [x] Implement a basic lexer to tokenize the source code.
 - [x] Implement a recursive descent parser for expressions.
 - [x] Implement parser for statements (variable declarations).
-- [ ] Set up the bytecode VM structure.
+- [x] Set up the bytecode VM structure.
 
-## Phase 3: Language Features - Statements and Control Flow
+## Phase 3: Language Features - Statements and Control Flow (In Progress)
 
 - [x] Implement control flow structures (if/else).
-- [x] Implement loops (while).
-- [x] Implement other loop structures (for, do-while).
+- [x] Implement loops (while, do-while).
 - [x] Implement functions (declaration and call).
+- [x] Implement lambda functions.
 - [x] Implement function return statements.
 - [x] Implement classes and objects.
 - [x] Implement modules and packages.
 - [x] Implement garbage collection.
-- [x] Implement lambda functions.
 - [x] Implement FFI.
+- [ ] **Current Focus: Implement `for` loops.**
+- [ ] Implement `for-each` loops.
+- [ ] Implement `match` statements.
+- [ ] Implement type annotations.
+- [ ] Implement `none` keyword.
+- [ ] Implement type casting.
+- [ ] Implement references, copying, and moving.
 
 ## Phase 4: Advanced Features
 
 ## Phase 5: Standard Library and Tooling
 
-- [ ] **Current Focus: Develop a basic standard library.**
+- [ ] Develop a basic standard library.
 - [ ] Create a command-line interface (CLI) for the Nota interpreter.
 - [ ] Write comprehensive documentation.

@@ -13,7 +13,7 @@ TEST_CASE("Garbage Collection") {
       end
     end
 
-    for mut i = 0; i < 1000; i++
+    for (mut i = 0; i < 1000; i++)
       MyClass("instance");
     end
   )";

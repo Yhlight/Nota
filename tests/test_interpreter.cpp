@@ -92,7 +92,7 @@ TEST_CASE("Interpreter executes an if statement") {
 }
 
 TEST_CASE("Interpreter executes a for loop") {
-    nota::Lexer lexer("mut a = 0; for mut i = 0; i < 5; i++ a = a + i; end");
+    nota::Lexer lexer("mut a = 0; for (mut i = 0; i < 5; i++) a = a + i; end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();

@@ -67,7 +67,7 @@ void Lexer::scanToken() {
         case '%': addToken(TokenType::PERCENT); break;
 
         case '=':
-            addToken(match('=') ? TokenType::EQUALS : TokenType::ASSIGN);
+            addToken(match('>') ? TokenType::ARROW : (match('=') ? TokenType::EQUALS : TokenType::ASSIGN));
             break;
         case '!':
             addToken(match('=') ? TokenType::NOT_EQUALS : TokenType::NOT);

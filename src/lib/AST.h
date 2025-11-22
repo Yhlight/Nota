@@ -24,6 +24,9 @@ struct GetExpr;
 struct SetExpr;
 struct ThisExpr;
 struct ModuleAccessExpr;
+struct LambdaExpr;
+
+struct Stmt;
 
 class ExprVisitor {
 public:
@@ -40,20 +43,21 @@ public:
     virtual void visit(const std::shared_ptr<SetExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<ThisExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<ModuleAccessExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<LambdaExpr>& expr) = 0;
 };
 
-class Expr {
+class Expr : public std::enable_shared_from_this<Expr> {
 public:
     virtual ~Expr() = default;
     virtual void accept(ExprVisitor& visitor) = 0;
 };
 
-struct Binary : Expr, public std::enable_shared_from_this<Binary> {
+struct Binary : Expr {
     Binary(std::shared_ptr<Expr> left, Token op, std::shared_ptr<Expr> right)
         : left(left), op(op), right(right) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<Binary>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> left;
@@ -61,81 +65,81 @@ struct Binary : Expr, public std::enable_shared_from_this<Binary> {
     std::shared_ptr<Expr> right;
 };
 
-struct Grouping : Expr, public std::enable_shared_from_this<Grouping> {
+struct Grouping : Expr {
     Grouping(std::shared_ptr<Expr> expression)
         : expression(expression) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<Grouping>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> expression;
 };
 
-struct Literal : Expr, public std::enable_shared_from_this<Literal> {
+struct Literal : Expr {
     Literal(std::variant<std::monostate, int, double, std::string, bool> value)
         : value(value) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<Literal>(shared_from_this()));
     }
 
     std::variant<std::monostate, int, double, std::string, bool> value;
 };
 
-struct Unary : Expr, public std::enable_shared_from_this<Unary> {
+struct Unary : Expr {
     Unary(Token op, std::shared_ptr<Expr> right)
         : op(op), right(right) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<Unary>(shared_from_this()));
     }
 
     Token op;
     std::shared_ptr<Expr> right;
 };
 
-struct Variable : Expr, public std::enable_shared_from_this<Variable> {
+struct Variable : Expr {
     Variable(Token name)
         : name(name) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<Variable>(shared_from_this()));
     }
 
     Token name;
 };
 
-struct Assign : Expr, public std::enable_shared_from_this<Assign> {
+struct Assign : Expr {
     Assign(Token name, std::shared_ptr<Expr> value)
         : name(name), value(value) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<Assign>(shared_from_this()));
     }
 
     Token name;
     std::shared_ptr<Expr> value;
 };
 
-struct Postfix : Expr, public std::enable_shared_from_this<Postfix> {
+struct Postfix : Expr {
     Postfix(std::shared_ptr<Expr> left, Token op)
         : left(left), op(op) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<Postfix>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> left;
     Token op;
 };
 
-struct CallExpr : Expr, public std::enable_shared_from_this<CallExpr> {
+struct CallExpr : Expr {
     CallExpr(std::shared_ptr<Expr> callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments)
         : callee(callee), paren(paren), arguments(arguments) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<CallExpr>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> callee;
@@ -143,24 +147,24 @@ struct CallExpr : Expr, public std::enable_shared_from_this<CallExpr> {
     std::vector<std::shared_ptr<Expr>> arguments;
 };
 
-struct GetExpr : Expr, public std::enable_shared_from_this<GetExpr> {
+struct GetExpr : Expr {
     GetExpr(std::shared_ptr<Expr> object, Token name)
         : object(object), name(name) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<GetExpr>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> object;
     Token name;
 };
 
-struct SetExpr : Expr, public std::enable_shared_from_this<SetExpr> {
+struct SetExpr : Expr {
     SetExpr(std::shared_ptr<Expr> object, Token name, std::shared_ptr<Expr> value)
         : object(object), name(name), value(value) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<SetExpr>(shared_from_this()));
     }
 
     std::shared_ptr<Expr> object;
@@ -168,27 +172,34 @@ struct SetExpr : Expr, public std::enable_shared_from_this<SetExpr> {
     std::shared_ptr<Expr> value;
 };
 
-struct ThisExpr : Expr, public std::enable_shared_from_this<ThisExpr> {
+struct ThisExpr : Expr {
     ThisExpr(Token keyword)
         : keyword(keyword) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<ThisExpr>(shared_from_this()));
     }
 
     Token keyword;
 };
 
-struct ModuleAccessExpr : Expr, public std::enable_shared_from_this<ModuleAccessExpr> {
+struct ModuleAccessExpr : Expr {
     ModuleAccessExpr(Token module, Token member)
         : module(module), member(member) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(shared_from_this());
+        visitor.visit(std::static_pointer_cast<ModuleAccessExpr>(shared_from_this()));
     }
 
     Token module;
     Token member;
+};
+
+struct LambdaExpr : Expr {
+    LambdaExpr(std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body) : params(params), body(body) {}
+    void accept(ExprVisitor& visitor) override { visitor.visit(std::static_pointer_cast<LambdaExpr>(shared_from_this())); }
+    std::vector<Token> params;
+    std::vector<std::shared_ptr<Stmt>> body;
 };
 
 // Statements

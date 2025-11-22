@@ -8,6 +8,7 @@ add_executable(nota_tests
     test_class.cpp
     test_modules.cpp
     test_gc.cpp
+    test_lambda.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE libnota)

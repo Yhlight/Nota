@@ -41,7 +41,7 @@ public:
 // Runtime representation of a function
 class NotaFunction : public Callable {
 public:
-  NotaFunction(FunctionStmt* declaration, Environment* closure, bool isInitializer = false);
+  NotaFunction(std::shared_ptr<FunctionStmt> declaration, Environment* closure, bool isInitializer = false);
   int arity() override;
   Value call(Interpreter &interpreter, std::vector<Value> arguments) override;
   NotaFunction* bind(Interpreter& interpreter, NotaInstance* instance);
@@ -52,7 +52,7 @@ public:
     size_t size() const override;
 
 private:
-  FunctionStmt* declaration_;
+  std::shared_ptr<FunctionStmt> declaration_;
   Environment* closure_;
 };
 

@@ -27,11 +27,10 @@
 - [x] Implement classes and objects.
 - [x] Implement modules and packages.
 - [x] Implement garbage collection.
-- [ ] **Current Focus: Implement lambda functions.**
+- [x] Implement lambda functions.
+- [ ] **Current Focus: Implement FFI.**
 
 ## Phase 4: Advanced Features
-
-- [ ] Implement FFI.
 
 ## Phase 5: Standard Library and Tooling
 

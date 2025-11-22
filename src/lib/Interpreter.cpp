@@ -137,7 +137,7 @@ void Interpreter::visit(const std::shared_ptr<CallExpr>& expr) {
 }
 
 void Interpreter::visit(const std::shared_ptr<FunctionStmt>& stmt) {
-    auto function = vm.newObject<NotaFunction>(stmt.get(), environment_);
+    auto function = vm.newObject<NotaFunction>(stmt, environment_);
     environment_->define(stmt->name.lexeme, function);
 }
 
@@ -154,7 +154,7 @@ void Interpreter::visit(const std::shared_ptr<ClassStmt>& stmt) {
     std::map<std::string, NotaFunction*> methods;
     for (const auto& method : stmt->methods) {
         bool isInitializer = method->name.lexeme == "init";
-        auto function = vm.newObject<NotaFunction>(method.get(), environment_, isInitializer);
+        auto function = vm.newObject<NotaFunction>(method, environment_, isInitializer);
         methods[method->name.lexeme] = function;
     }
 
@@ -321,6 +321,16 @@ void Interpreter::visit(const std::shared_ptr<ModuleAccessExpr>& expr) {
         throw RuntimeError(expr->module, "Module not found: " + expr->module.lexeme);
     }
     lastValue_ = it->second->getEnvironment()->get(expr->member);
+    stack_.push_back(lastValue_);
+}
+
+void Interpreter::visit(const std::shared_ptr<LambdaExpr>& expr) {
+    // Create a synthetic FunctionStmt to represent the lambda
+    Token name{TokenType::IDENTIFIER, "lambda", {}, -1};
+    auto functionStmt = std::make_shared<FunctionStmt>(name, expr->params, expr->body);
+
+    auto function = vm.newObject<NotaFunction>(functionStmt, environment_);
+    lastValue_ = function;
     stack_.push_back(lastValue_);
 }
 

@@ -153,9 +153,41 @@ std::shared_ptr<Expr> Parser::primary() {
     }
 
     if (match({TokenType::LPAREN})) {
-        std::shared_ptr<Expr> expr = expression();
-        consume(TokenType::RPAREN, "Expect ')' after expression.");
-        return std::make_shared<Grouping>(expr);
+        // This could be a grouped expression or a lambda.
+        // To decide, we need to find the matching right parenthesis and see if it's followed by an arrow.
+        int paren_count = 1;
+        size_t lookahead_pos = current_;
+        while (paren_count > 0 && lookahead_pos < tokens_.size()) {
+            if (tokens_[lookahead_pos].type == TokenType::LPAREN) paren_count++;
+            if (tokens_[lookahead_pos].type == TokenType::RPAREN) paren_count--;
+            lookahead_pos++;
+        }
+        if (lookahead_pos < tokens_.size() && tokens_[lookahead_pos].type == TokenType::ARROW) {
+             // It's a lambda
+            std::vector<Token> parameters;
+            if (peek().type != TokenType::RPAREN) {
+                do {
+                    parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+                } while (match({TokenType::COMMA}));
+            }
+            consume(TokenType::RPAREN, "Expect ')' after parameters.");
+            consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
+
+            std::vector<std::shared_ptr<Stmt>> body;
+            if (match({TokenType::DO})) {
+                body = block();
+                consume(TokenType::END, "Expect 'end' after lambda body.");
+            } else {
+                std::shared_ptr<Expr> expr = expression();
+                body.push_back(std::make_shared<ReturnStmt>(Token{TokenType::RETURN, "return", {}, peek().line}, expr));
+            }
+            return std::make_shared<LambdaExpr>(parameters, body);
+        } else {
+            // It's a grouped expression
+            std::shared_ptr<Expr> expr = expression();
+            consume(TokenType::RPAREN, "Expect ')' after expression.");
+            return std::make_shared<Grouping>(expr);
+        }
     }
 
     throw error(peek(), "Expect expression.");

@@ -12,7 +12,7 @@ size_t NotaString::size() const {
 }
 
 // --- NotaFunction ---
-NotaFunction::NotaFunction(FunctionStmt* declaration,
+NotaFunction::NotaFunction(std::shared_ptr<FunctionStmt> declaration,
                            Environment* closure,
                            bool isInitializer)
     : declaration_(declaration), closure_(closure),

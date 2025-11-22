@@ -74,6 +74,11 @@ void Interpreter::visit(const std::shared_ptr<VarStmt>& stmt) {
         value = evaluate(stmt->initializer);
         stack_.pop_back();
     }
+
+    if (stmt->type) {
+        checkType(value, stmt->type);
+    }
+
     environment_->define(stmt->name.lexeme, value, stmt->is_mutable);
 }
 
@@ -160,13 +165,18 @@ void Interpreter::visit(const std::shared_ptr<ReturnStmt>& stmt) {
 
 void Interpreter::visit(const std::shared_ptr<ClassStmt>& stmt) {
     std::map<std::string, NotaFunction*> methods;
+    std::map<std::string, NotaFunction*> static_methods;
     for (const auto& method : stmt->methods) {
         bool isInitializer = method->name.lexeme == "init";
         auto function = vm.newObject<NotaFunction>(method, environment_, isInitializer);
-        methods[method->name.lexeme] = function;
+        if (method->is_static) {
+            static_methods[method->name.lexeme] = function;
+        } else {
+            methods[method->name.lexeme] = function;
+        }
     }
 
-    auto klass = vm.newObject<NotaClass>(stmt->name, methods);
+    auto klass = vm.newObject<NotaClass>(stmt->name, stmt->properties, methods, static_methods);
     environment_->define(stmt->name.lexeme, klass, false);
 }
 
@@ -187,7 +197,7 @@ void Interpreter::visit(const std::shared_ptr<ImportStmt>& stmt) {
 }
 
 void Interpreter::visit(const std::shared_ptr<PackageStmt>& stmt) {
-    // Not implemented yet
+    packageName_ = stmt->name.lexeme;
 }
 
 namespace {
@@ -414,13 +424,31 @@ void Interpreter::visit(const std::shared_ptr<ThisExpr>& expr) {
     stack_.push_back(lastValue_);
 }
 
-void Interpreter::visit(const std::shared_ptr<ModuleAccessExpr>& expr) {
-    auto it = modules_.find(expr->module.lexeme);
-    if (it == modules_.end()) {
-        throw RuntimeError(expr->module, "Module not found: " + expr->module.lexeme);
+void Interpreter::visit(const std::shared_ptr<ScopeAccessExpr>& expr) {
+    // Check if the scope is a class variable
+    if (environment_->isDefined(expr->scope.lexeme)) {
+        Value scope = environment_->get(expr->scope);
+        if (auto* obj = std::get_if<Object*>(&scope)) {
+            if (auto* klass = dynamic_cast<NotaClass*>(*obj)) {
+                if (auto* method = klass->findStaticMethod(expr->member.lexeme)) {
+                    lastValue_ = method;
+                    stack_.push_back(lastValue_);
+                    return;
+                }
+                throw RuntimeError(expr->member, "Undefined static method '" + expr->member.lexeme + "'.");
+            }
+        }
     }
-    lastValue_ = it->second->getEnvironment()->get(expr->member);
-    stack_.push_back(lastValue_);
+
+    // Check if the scope is a module
+    auto it = modules_.find(expr->scope.lexeme);
+    if (it != modules_.end()) {
+        lastValue_ = it->second->getEnvironment()->get(expr->member);
+        stack_.push_back(lastValue_);
+        return;
+    }
+
+    throw RuntimeError(expr->scope, "Undefined variable or module '" + expr->scope.lexeme + "'.");
 }
 
 void Interpreter::visit(const std::shared_ptr<LambdaExpr>& expr) {
@@ -574,6 +602,85 @@ void Interpreter::visit(const std::shared_ptr<LogicalExpr>& expr) {
     stack_.push_back(lastValue_);
 }
 
+void Interpreter::visit(const std::shared_ptr<TypeExpr>& expr) {
+    // This should not be called directly during normal execution
+    throw RuntimeError(expr->name, "Cannot evaluate a type expression.");
+}
+
+void Interpreter::visit(const std::shared_ptr<CastExpr>& expr) {
+    Value value = evaluate(expr->expression);
+    stack_.pop_back();
+    std::string type_name = expr->type->name.lexeme;
+
+    if (expr->type->is_array) {
+        // For now, only allow casting to a generic array type without checking element types
+        if (auto* obj = std::get_if<Object*>(&value)) {
+            if ((*obj)->type == ObjectType::ARRAY) {
+                lastValue_ = value;
+                stack_.push_back(lastValue_);
+                return;
+            }
+        }
+        throw RuntimeError(expr->type->name, "Can only cast arrays to array types.");
+    }
+
+    if (type_name == "int") {
+        if (std::holds_alternative<double>(value)) {
+            lastValue_ = static_cast<int>(std::get<double>(value));
+        } else if (std::holds_alternative<bool>(value)) {
+            lastValue_ = static_cast<int>(std::get<bool>(value));
+        } else if (auto* obj = std::get_if<Object*>(&value)) {
+            if ((*obj)->type == ObjectType::STRING) {
+                try {
+                    lastValue_ = std::stoi(static_cast<NotaString*>(*obj)->value);
+                } catch (const std::invalid_argument&) {
+                    throw RuntimeError(expr->type->name, "Invalid string to int cast.");
+                }
+            } else {
+                throw RuntimeError(expr->type->name, "Invalid cast to int.");
+            }
+        } else {
+            lastValue_ = value; // No conversion needed
+        }
+    } else if (type_name == "float") {
+        if (std::holds_alternative<int>(value)) {
+            lastValue_ = static_cast<double>(std::get<int>(value));
+        } else if (std::holds_alternative<bool>(value)) {
+            lastValue_ = static_cast<double>(std::get<bool>(value));
+        } else if (auto* obj = std::get_if<Object*>(&value)) {
+            if ((*obj)->type == ObjectType::STRING) {
+                 try {
+                    lastValue_ = std::stod(static_cast<NotaString*>(*obj)->value);
+                } catch (const std::invalid_argument&) {
+                    throw RuntimeError(expr->type->name, "Invalid string to float cast.");
+                }
+            } else {
+                throw RuntimeError(expr->type->name, "Invalid cast to float.");
+            }
+        } else {
+            lastValue_ = value; // No conversion needed
+        }
+    } else if (type_name == "string") {
+        if (std::holds_alternative<int>(value)) {
+            lastValue_ = vm.newObject<NotaString>(std::to_string(std::get<int>(value)));
+        } else if (std::holds_alternative<double>(value)) {
+            lastValue_ = vm.newObject<NotaString>(std::to_string(std::get<double>(value)));
+        } else if (std::holds_alternative<bool>(value)) {
+            lastValue_ = vm.newObject<NotaString>(std::get<bool>(value) ? "true" : "false");
+        } else if (std::holds_alternative<Object*>(value) && std::get<Object*>(value)->type == ObjectType::STRING) {
+            lastValue_ = value; // No conversion needed
+        } else {
+             throw RuntimeError(expr->type->name, "Invalid cast to string.");
+        }
+    } else if (type_name == "bool") {
+        lastValue_ = isTruthy(value);
+    } else {
+        throw RuntimeError(expr->type->name, "Invalid cast type.");
+    }
+
+    stack_.push_back(lastValue_);
+}
+
 void Interpreter::visit(const std::shared_ptr<ForEachStmt>& stmt) {
     Value collection = evaluate(stmt->collection);
     stack_.pop_back();
@@ -591,6 +698,30 @@ void Interpreter::visit(const std::shared_ptr<ForEachStmt>& stmt) {
     }
 
     throw RuntimeError(stmt->variable, "Can only iterate over arrays.");
+}
+
+void Interpreter::checkType(const Value& value, const std::shared_ptr<TypeExpr>& type) {
+    std::string type_name = type->name.lexeme;
+    bool type_matches = false;
+
+    if (type->is_array) {
+        if (auto* obj = std::get_if<Object*>(&value)) {
+            if ((*obj)->type == ObjectType::ARRAY) {
+                // TODO: Check element types for static arrays
+                type_matches = true;
+            }
+        }
+    } else {
+        if (type_name == "int" && std::holds_alternative<int>(value)) type_matches = true;
+        else if (type_name == "float" && std::holds_alternative<double>(value)) type_matches = true;
+        else if (type_name == "bool" && std::holds_alternative<bool>(value)) type_matches = true;
+        else if (type_name == "string" && std::holds_alternative<Object*>(value) && std::get<Object*>(value)->type == ObjectType::STRING) type_matches = true;
+        else if (std::holds_alternative<std::monostate>(value)) type_matches = true; // allow none
+    }
+
+    if (!type_matches) {
+        throw RuntimeError(type->name, "Type mismatch.");
+    }
 }
 
 } // namespace nota

@@ -21,6 +21,7 @@ public:
     void define(const std::string& name, const Value& value, bool is_mutable);
     Value get(const Token& name);
     void assign(const Token& name, const Value& value);
+    bool isDefined(const std::string& name);
 
     void traceReferences(VM& vm) override;
     size_t size() const override;

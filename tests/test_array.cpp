@@ -80,3 +80,58 @@ TEST_CASE("Array index out of bounds") {
     auto statements = parser->parse();
     CHECK_THROWS_AS(interpreter->interpret(statements), nota::Interpreter::RuntimeError);
 }
+
+TEST_CASE("Empty array") {
+    std::string source = "let a = []";
+    nota::VM vm;
+    auto interpreter = std::make_shared<nota::Interpreter>(vm);
+    auto lexer = std::make_shared<nota::Lexer>(source);
+    auto tokens = lexer->scanTokens();
+    auto parser = std::make_shared<nota::Parser>(tokens);
+    auto statements = parser->parse();
+    interpreter->interpret(statements);
+
+    auto env = interpreter->getEnvironment();
+    nota::Token a_token{nota::TokenType::IDENTIFIER, "a", {}, 1};
+    auto a_val = env->get(a_token);
+    REQUIRE(std::holds_alternative<nota::Object*>(a_val));
+    auto obj = std::get<nota::Object*>(a_val);
+    REQUIRE(obj->type == nota::ObjectType::ARRAY);
+    auto array = static_cast<nota::NotaArray*>(obj);
+    REQUIRE(array->elements.size() == 0);
+}
+
+TEST_CASE("Nested arrays") {
+    std::string source = "let a = [1, [2, 3]]";
+    nota::VM vm;
+    auto interpreter = std::make_shared<nota::Interpreter>(vm);
+    auto lexer = std::make_shared<nota::Lexer>(source);
+    auto tokens = lexer->scanTokens();
+    auto parser = std::make_shared<nota::Parser>(tokens);
+    auto statements = parser->parse();
+    interpreter->interpret(statements);
+
+    auto env = interpreter->getEnvironment();
+    nota::Token a_token{nota::TokenType::IDENTIFIER, "a", {}, 1};
+    auto a_val = env->get(a_token);
+    auto obj = std::get<nota::Object*>(a_val);
+    auto array = static_cast<nota::NotaArray*>(obj);
+    REQUIRE(array->elements.size() == 2);
+    auto nested_obj = std::get<nota::Object*>(array->elements[1]);
+    REQUIRE(nested_obj->type == nota::ObjectType::ARRAY);
+    auto nested_array = static_cast<nota::NotaArray*>(nested_obj);
+    REQUIRE(nested_array->elements.size() == 2);
+    CHECK(std::get<int>(nested_array->elements[0]) == 2);
+    CHECK(std::get<int>(nested_array->elements[1]) == 3);
+}
+
+TEST_CASE("Array index with negative number") {
+    std::string source = "let a = [1, 2, 3]; a[-1]";
+    nota::VM vm;
+    auto interpreter = std::make_shared<nota::Interpreter>(vm);
+    auto lexer = std::make_shared<nota::Lexer>(source);
+    auto tokens = lexer->scanTokens();
+    auto parser = std::make_shared<nota::Parser>(tokens);
+    auto statements = parser->parse();
+    CHECK_THROWS_AS(interpreter->interpret(statements), nota::Interpreter::RuntimeError);
+}

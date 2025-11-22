@@ -19,6 +19,7 @@ namespace nota {
 // Forward declarations
 class Interpreter;
 struct FunctionStmt;
+struct VarStmt;
 class NotaInstance;
 class NotaClass;
 class Callable;
@@ -120,20 +121,23 @@ private:
  */
 class NotaClass : public Callable {
 public:
-  NotaClass(Token name, std::map<std::string, NotaFunction*> methods)
-    : Callable(ObjectType::CLASS), name_(name), methods_(methods) {}
+  NotaClass(Token name, std::vector<std::shared_ptr<VarStmt>> properties, std::map<std::string, NotaFunction*> methods, std::map<std::string, NotaFunction*> static_methods)
+    : Callable(ObjectType::CLASS), name_(name), properties_(properties), methods_(methods), static_methods_(static_methods) {}
 
   int arity() override;
   Value call(Interpreter &interpreter, std::vector<Value> arguments) override;
   std::string toString();
   NotaFunction* findMethod(const std::string& name);
+  NotaFunction* findStaticMethod(const std::string& name);
 
   void traceReferences(VM& vm) override;
     size_t size() const override;
 
 private:
   Token name_;
+  std::vector<std::shared_ptr<VarStmt>> properties_;
   std::map<std::string, NotaFunction*> methods_;
+  std::map<std::string, NotaFunction*> static_methods_;
 };
 
 /**

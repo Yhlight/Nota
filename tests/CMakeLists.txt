@@ -20,6 +20,8 @@ add_executable(nota_tests
     test_mutability.cpp
     test_string.cpp
     test_do_while.cpp
+    test_types.cpp
+    test_casting.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE libnota)

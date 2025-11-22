@@ -6,6 +6,7 @@
 #include "test_helpers.h"
 #include "VM.h"
 #include <memory>
+#include "test_helpers.h"
 
 TEST_CASE("Classes") {
     SUBCASE("Declare and instantiate a class") {
@@ -114,5 +115,53 @@ TEST_CASE("Classes") {
         nota::Token result_token{nota::TokenType::IDENTIFIER, "result", {}, 1};
         auto result_val = env->get(result_token);
         CHECK(std::get<int>(result_val) == 456);
+    }
+
+    SUBCASE("Parse typed properties") {
+        std::string source = R"(
+            class MyClass
+                foo: int
+                bar: string[]
+            end
+        )";
+
+        nota::Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        nota::Parser parser(tokens);
+        auto statements = parser.parse();
+
+        REQUIRE(statements.size() == 1);
+        auto class_stmt = std::dynamic_pointer_cast<nota::ClassStmt>(statements[0]);
+        REQUIRE(class_stmt);
+        REQUIRE(class_stmt->properties.size() == 2);
+
+        auto prop1 = class_stmt->properties[0];
+        CHECK(prop1->name.lexeme == "foo");
+        REQUIRE(prop1->type);
+        CHECK(prop1->type->name.lexeme == "int");
+        CHECK(!prop1->type->is_array);
+
+        auto prop2 = class_stmt->properties[1];
+        CHECK(prop2->name.lexeme == "bar");
+        REQUIRE(prop2->type);
+        CHECK(prop2->type->name.lexeme == "string");
+        CHECK(prop2->type->is_array);
+        CHECK(prop2->type->size == nullptr);
+    }
+
+    SUBCASE("Static methods") {
+        std::string source = R"(
+            class MyClass
+                static fn sayHello()
+                    return "Hello"
+                end
+            end
+
+            let result = MyClass::sayHello()
+        )";
+
+        auto result = run(source);
+        REQUIRE(std::holds_alternative<std::string>(result));
+        CHECK(std::get<std::string>(result) == "Hello");
     }
 }

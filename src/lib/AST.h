@@ -23,11 +23,13 @@ struct CallExpr;
 struct GetExpr;
 struct SetExpr;
 struct ThisExpr;
-struct ModuleAccessExpr;
+struct ScopeAccessExpr;
 struct LambdaExpr;
 struct ArrayExpr;
 struct SubscriptExpr;
 struct LogicalExpr;
+struct TypeExpr;
+struct CastExpr;
 
 struct Stmt;
 
@@ -45,11 +47,13 @@ public:
     virtual void visit(const std::shared_ptr<GetExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<SetExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<ThisExpr>& expr) = 0;
-    virtual void visit(const std::shared_ptr<ModuleAccessExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<ScopeAccessExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<LambdaExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<ArrayExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<SubscriptExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<LogicalExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<TypeExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<CastExpr>& expr) = 0;
 };
 
 class Expr : public std::enable_shared_from_this<Expr> {
@@ -190,15 +194,15 @@ struct ThisExpr : Expr {
     Token keyword;
 };
 
-struct ModuleAccessExpr : Expr {
-    ModuleAccessExpr(Token module, Token member)
-        : module(module), member(member) {}
+struct ScopeAccessExpr : Expr {
+    ScopeAccessExpr(Token scope, Token member)
+        : scope(scope), member(member) {}
 
     void accept(ExprVisitor& visitor) override {
-        visitor.visit(std::static_pointer_cast<ModuleAccessExpr>(shared_from_this()));
+        visitor.visit(std::static_pointer_cast<ScopeAccessExpr>(shared_from_this()));
     }
 
-    Token module;
+    Token scope;
     Token member;
 };
 
@@ -236,6 +240,32 @@ struct LogicalExpr : Expr {
     Token op;
     std::shared_ptr<Expr> right;
 };
+
+struct TypeExpr : Expr {
+    TypeExpr(Token name, std::shared_ptr<Expr> size = nullptr, bool is_array = false)
+        : name(name), size(size), is_array(is_array) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(std::static_pointer_cast<TypeExpr>(shared_from_this()));
+    }
+
+    Token name;
+    std::shared_ptr<Expr> size; // For static arrays
+    bool is_array;
+};
+
+struct CastExpr : Expr {
+    CastExpr(std::shared_ptr<TypeExpr> type, std::shared_ptr<Expr> expression)
+        : type(type), expression(expression) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(std::static_pointer_cast<CastExpr>(shared_from_this()));
+    }
+
+    std::shared_ptr<TypeExpr> type;
+    std::shared_ptr<Expr> expression;
+};
+
 
 // Statements
 struct Block;
@@ -297,8 +327,8 @@ struct ExpressionStmt : Stmt, public std::enable_shared_from_this<ExpressionStmt
 };
 
 struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt> {
-    VarStmt(Token name, std::shared_ptr<Expr> initializer, bool is_mutable)
-        : name(name), initializer(initializer), is_mutable(is_mutable) {}
+    VarStmt(Token name, std::shared_ptr<Expr> initializer, bool is_mutable, std::shared_ptr<TypeExpr> type = nullptr)
+        : name(name), initializer(initializer), is_mutable(is_mutable), type(type) {}
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(shared_from_this());
@@ -307,6 +337,7 @@ struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt> {
     Token name;
     std::shared_ptr<Expr> initializer;
     bool is_mutable;
+    std::shared_ptr<TypeExpr> type;
 };
 
 struct IfStmt : Stmt, public std::enable_shared_from_this<IfStmt> {
@@ -347,8 +378,8 @@ struct DoWhileStmt : Stmt, public std::enable_shared_from_this<DoWhileStmt> {
 };
 
 struct FunctionStmt : Stmt, public std::enable_shared_from_this<FunctionStmt> {
-    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body)
-        : name(name), params(params), body(body) {}
+    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body, bool is_static = false)
+        : name(name), params(params), body(body), is_static(is_static) {}
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(shared_from_this());
@@ -357,6 +388,7 @@ struct FunctionStmt : Stmt, public std::enable_shared_from_this<FunctionStmt> {
     Token name;
     std::vector<Token> params;
     std::vector<std::shared_ptr<Stmt>> body;
+    bool is_static;
 };
 
 struct ReturnStmt : Stmt, public std::enable_shared_from_this<ReturnStmt> {
@@ -372,14 +404,15 @@ struct ReturnStmt : Stmt, public std::enable_shared_from_this<ReturnStmt> {
 };
 
 struct ClassStmt : Stmt, public std::enable_shared_from_this<ClassStmt> {
-    ClassStmt(Token name, std::vector<std::shared_ptr<FunctionStmt>> methods)
-        : name(name), methods(methods) {}
+    ClassStmt(Token name, std::vector<std::shared_ptr<VarStmt>> properties, std::vector<std::shared_ptr<FunctionStmt>> methods)
+        : name(name), properties(properties), methods(methods) {}
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(shared_from_this());
     }
 
     Token name;
+    std::vector<std::shared_ptr<VarStmt>> properties;
     std::vector<std::shared_ptr<FunctionStmt>> methods;
 };
 

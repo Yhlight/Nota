@@ -54,4 +54,16 @@ size_t Environment::size() const {
     return totalSize;
 }
 
+bool Environment::isDefined(const std::string& name) {
+    if (values_.find(name) != values_.end()) {
+        return true;
+    }
+
+    if (enclosing_ != nullptr) {
+        return enclosing_->isDefined(name);
+    }
+
+    return false;
+}
+
 } // namespace nota

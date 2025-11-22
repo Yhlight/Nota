@@ -88,4 +88,21 @@ TEST_CASE("Modules") {
         auto result_val = env->get(result_token);
         CHECK(std::get<int>(result_val) == 456);
     }
+
+    SUBCASE("Package statement") {
+        std::string source = R"(
+            package my_package
+        )";
+
+        nota::Lexer lexer(source);
+        auto tokens = lexer.scanTokens();
+        nota::Parser parser(tokens);
+        auto statements = parser.parse();
+        nota::VM vm;
+        nota::Interpreter interpreter(vm);
+
+        interpreter.interpret(statements);
+
+        CHECK(interpreter.getPackageName() == "my_package");
+    }
 }

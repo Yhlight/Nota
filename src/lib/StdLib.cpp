@@ -1,5 +1,7 @@
 #include "StdLib.h"
 #include "Object.h"
+#include "NotaObjects.h"
+#include "Interpreter.h"
 #include <iostream>
 #include <chrono>
 
@@ -22,8 +24,19 @@ std::string toString(const Value& value) {
     }
     if (std::holds_alternative<Object*>(value)) {
         Object* obj = std::get<Object*>(value);
-        if (obj->type == ObjectType::STRING) {
-            return static_cast<NotaString*>(obj)->value;
+        switch (obj->type) {
+            case ObjectType::STRING:
+                return static_cast<NotaString*>(obj)->value;
+            case ObjectType::FUNCTION:
+                return static_cast<NotaFunction*>(obj)->toString();
+            case ObjectType::NATIVE_FUNCTION:
+                return "<native fn>";
+            case ObjectType::CLASS:
+                return static_cast<NotaClass*>(obj)->toString();
+            case ObjectType::INSTANCE:
+                return static_cast<NotaInstance*>(obj)->toString();
+            default:
+                return "object";
         }
     }
     return "object";

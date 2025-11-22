@@ -192,6 +192,9 @@ std::shared_ptr<Expr> Parser::primary() {
     if (match({TokenType::FALSE})) {
         return std::make_shared<Literal>(false);
     }
+    if (match({TokenType::NONE})) {
+        return std::make_shared<Literal>(std::monostate{});
+    }
 
     if (match({TokenType::THIS})) {
         return std::make_shared<ThisExpr>(previous());

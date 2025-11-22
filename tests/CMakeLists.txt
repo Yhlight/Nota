@@ -15,6 +15,7 @@ add_executable(nota_tests
     test_logical_operators.cpp
     test_for_each.cpp
     test_compound_assignment.cpp
+    test_none.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE libnota)

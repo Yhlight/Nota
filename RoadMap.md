@@ -35,6 +35,7 @@
 - [x] Implement logical operators.
 - [x] Implement for-each loops.
 - [x] Implement compound assignment operators.
+- [x] Implement `none` keyword.
 
 ## Phase 4: Advanced Features
 

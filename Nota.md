@@ -101,6 +101,15 @@ let a = true && false // false
 let b = true || false // true
 ```
 
+### None
+
+The `none` keyword represents a null or undefined value.
+
+```nota
+let a = none
+print(a) // none
+```
+
 ### Compound Assignment Operators
 
 Nota supports compound assignment operators for arithmetic operations.

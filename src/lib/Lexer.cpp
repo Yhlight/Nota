@@ -22,7 +22,8 @@ namespace {
         {"end",    TokenType::END},
         {"import", TokenType::IMPORT},
         {"as",     TokenType::AS},
-        {"package",TokenType::PACKAGE}
+        {"package",TokenType::PACKAGE},
+        {"none",   TokenType::NONE}
     };
 }
 

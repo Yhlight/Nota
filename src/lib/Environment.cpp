@@ -5,13 +5,13 @@
 
 namespace nota {
 
-void Environment::define(const std::string& name, const Value& value) {
-    values_[name] = value;
+void Environment::define(const std::string& name, const Value& value, bool is_mutable) {
+    values_[name] = {value, is_mutable};
 }
 
 Value Environment::get(const Token& name) {
     if (values_.find(name.lexeme) != values_.end()) {
-        return values_.at(name.lexeme);
+        return values_.at(name.lexeme).value;
     }
 
     if (enclosing_ != nullptr) return enclosing_->get(name);
@@ -21,7 +21,10 @@ Value Environment::get(const Token& name) {
 
 void Environment::assign(const Token& name, const Value& value) {
     if (values_.find(name.lexeme) != values_.end()) {
-        values_[name.lexeme] = value;
+        if (!values_.at(name.lexeme).is_mutable) {
+            throw Interpreter::RuntimeError(name, "Cannot assign to immutable variable '" + name.lexeme + "'.");
+        }
+        values_[name.lexeme].value = value;
         return;
     }
 
@@ -35,7 +38,7 @@ void Environment::assign(const Token& name, const Value& value) {
 
 void Environment::traceReferences(VM& vm) {
     for (auto const& [key, val] : values_) {
-        vm.markValue(val);
+        vm.markValue(val.value);
     }
     if (enclosing_ != nullptr) {
         vm.markObject(enclosing_);
@@ -46,9 +49,7 @@ size_t Environment::size() const {
     size_t totalSize = sizeof(Environment);
     for (const auto& pair : values_) {
         totalSize += pair.first.capacity();
-        // The size of the Value variant itself is already accounted for
-        // by the map's size, but if it contains heap-allocated data,
-        // that would need to be added.
+        totalSize += sizeof(VariableInfo); // Add size of VariableInfo struct
     }
     return totalSize;
 }

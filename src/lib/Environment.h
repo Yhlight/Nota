@@ -8,12 +8,17 @@
 
 namespace nota {
 
+struct VariableInfo {
+    Value value;
+    bool is_mutable;
+};
+
 class Environment : public Object {
 public:
     Environment(Environment* enclosing = nullptr)
         : Object(ObjectType::ENVIRONMENT), enclosing_(enclosing) {}
 
-    void define(const std::string& name, const Value& value);
+    void define(const std::string& name, const Value& value, bool is_mutable);
     Value get(const Token& name);
     void assign(const Token& name, const Value& value);
 
@@ -22,7 +27,7 @@ public:
 
 private:
     Environment* enclosing_;
-    std::map<std::string, Value> values_;
+    std::map<std::string, VariableInfo> values_;
 };
 
 } // namespace nota

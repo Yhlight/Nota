@@ -32,7 +32,8 @@ Interpreter::Interpreter(VM& vm) : vm(vm), environment_(nullptr), moduleLoader_(
 
 void Interpreter::registerNative(const std::string& name, int arity, NotaNativeFunction::NativeFn fn) {
     auto native_fn = vm.newObject<NotaNativeFunction>(arity, std::move(fn));
-    environment_->define(name, native_fn);
+    // Native functions are immutable
+    environment_->define(name, native_fn, false);
 }
 
 Interpreter::~Interpreter() {
@@ -73,7 +74,7 @@ void Interpreter::visit(const std::shared_ptr<VarStmt>& stmt) {
         value = evaluate(stmt->initializer);
         stack_.pop_back();
     }
-    environment_->define(stmt->name.lexeme, value);
+    environment_->define(stmt->name.lexeme, value, stmt->is_mutable);
 }
 
 void Interpreter::executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, Environment* environment) {
@@ -106,11 +107,9 @@ void Interpreter::visit(const std::shared_ptr<WhileStmt>& stmt) {
 
 void Interpreter::visit(const std::shared_ptr<DoWhileStmt>& stmt) {
     Environment* loopEnvironment = vm.newObject<Environment>(environment_);
+    EnvironmentGuard guard(this->environment_, loopEnvironment);
     do {
-        {
-            EnvironmentGuard guard(this->environment_, loopEnvironment);
-            execute(stmt->body);
-        }
+        execute(stmt->body);
 
         Value condition = evaluate(stmt->condition);
         stack_.pop_back();
@@ -147,7 +146,7 @@ void Interpreter::visit(const std::shared_ptr<CallExpr>& expr) {
 
 void Interpreter::visit(const std::shared_ptr<FunctionStmt>& stmt) {
     auto function = vm.newObject<NotaFunction>(stmt, environment_);
-    environment_->define(stmt->name.lexeme, function);
+    environment_->define(stmt->name.lexeme, function, false);
 }
 
 void Interpreter::visit(const std::shared_ptr<ReturnStmt>& stmt) {
@@ -168,7 +167,7 @@ void Interpreter::visit(const std::shared_ptr<ClassStmt>& stmt) {
     }
 
     auto klass = vm.newObject<NotaClass>(stmt->name, methods);
-    environment_->define(stmt->name.lexeme, klass);
+    environment_->define(stmt->name.lexeme, klass, false);
 }
 
 void Interpreter::visit(const std::shared_ptr<ImportStmt>& stmt) {
@@ -206,12 +205,22 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
 
     switch (expr->op.type) {
         case TokenType::PLUS:
-             if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
+            if (std::holds_alternative<int>(left) && std::holds_alternative<int>(right)) {
                 lastValue_ = std::get<int>(left) + std::get<int>(right);
             } else if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right)) {
                 lastValue_ = std::get<double>(left) + std::get<double>(right);
+            } else if (std::holds_alternative<Object*>(left) && std::holds_alternative<Object*>(right)) {
+                auto* left_obj = std::get<Object*>(left);
+                auto* right_obj = std::get<Object*>(right);
+                if (left_obj && right_obj && left_obj->type == ObjectType::STRING && right_obj->type == ObjectType::STRING) {
+                    auto* left_str = static_cast<NotaString*>(left_obj);
+                    auto* right_str = static_cast<NotaString*>(right_obj);
+                    lastValue_ = vm.newObject<NotaString>(left_str->value + right_str->value);
+                } else {
+                    throw RuntimeError(expr->op, "Operands must be two numbers or two strings.");
+                }
             } else {
-                throw RuntimeError(expr->op, "Operands must be two numbers.");
+                throw RuntimeError(expr->op, "Operands must be two numbers or two strings.");
             }
             break;
         case TokenType::MINUS:
@@ -392,6 +401,8 @@ void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
                     }
                 }
                 throw RuntimeError(expr->token_for_error, "Array index must be a non-negative integer.");
+            } else if ((*obj)->type == ObjectType::STRING) {
+                throw RuntimeError(expr->token_for_error, "Strings are immutable.");
             }
         }
         throw RuntimeError(expr->token_for_error, "Can only subscript arrays.");
@@ -523,10 +534,21 @@ void Interpreter::visit(const std::shared_ptr<SubscriptExpr>& expr) {
                 }
             }
             throw RuntimeError(expr->bracket, "Array index must be a non-negative integer.");
+        } else if ((*obj)->type == ObjectType::STRING) {
+            auto str = static_cast<NotaString*>(*obj);
+            if (std::holds_alternative<int>(index_val)) {
+                int index = std::get<int>(index_val);
+                if (index >= 0 && index < str->value.length()) {
+                    lastValue_ = vm.newObject<NotaString>(std::string(1, str->value[index]));
+                    stack_.push_back(lastValue_);
+                    return;
+                }
+            }
+            throw RuntimeError(expr->bracket, "String index out of bounds.");
         }
     }
 
-    throw RuntimeError(expr->bracket, "Can only subscript arrays.");
+    throw RuntimeError(expr->bracket, "Can only subscript arrays and strings.");
 }
 
 void Interpreter::visit(const std::shared_ptr<LogicalExpr>& expr) {
@@ -561,7 +583,7 @@ void Interpreter::visit(const std::shared_ptr<ForEachStmt>& stmt) {
             auto array = static_cast<NotaArray*>(*obj);
             for (const auto& element : array->elements) {
                 Environment* loopEnvironment = vm.newObject<Environment>(environment_);
-                loopEnvironment->define(stmt->variable.lexeme, element);
+                loopEnvironment->define(stmt->variable.lexeme, element, false);
                 executeBlock({stmt->body}, loopEnvironment);
             }
             return;

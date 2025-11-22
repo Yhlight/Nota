@@ -17,6 +17,9 @@ add_executable(nota_tests
     test_compound_assignment.cpp
     test_none.cpp
     test_bitwise_operators.cpp
+    test_mutability.cpp
+    test_string.cpp
+    test_do_while.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE libnota)

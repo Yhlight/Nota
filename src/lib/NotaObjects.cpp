@@ -18,7 +18,8 @@ Value NotaFunction::call(Interpreter &interpreter,
                          std::vector<Value> arguments) {
   auto environment = interpreter.vm.newObject<Environment>(closure_);
   for (int i = 0; i < declaration_->params.size(); ++i) {
-    environment->define(declaration_->params[i].lexeme, arguments[i]);
+    // Function parameters are mutable
+    environment->define(declaration_->params[i].lexeme, arguments[i], true);
   }
 
   try {
@@ -36,7 +37,8 @@ Value NotaFunction::call(Interpreter &interpreter,
 NotaFunction*
 NotaFunction::bind(Interpreter& interpreter, NotaInstance* instance) {
   auto environment = interpreter.vm.newObject<Environment>(closure_);
-  environment->define("this", instance);
+  // 'this' is immutable
+  environment->define("this", instance, false);
   return interpreter.vm.newObject<NotaFunction>(declaration_, environment, isInitializer_);
 }
 

@@ -392,6 +392,8 @@ std::shared_ptr<Stmt> Parser::functionDeclaration() {
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration() {
+    Token keyword = previous();
+    bool is_mutable = keyword.type == TokenType::MUT;
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
     std::shared_ptr<Expr> initializer = nullptr;
@@ -400,7 +402,7 @@ std::shared_ptr<Stmt> Parser::varDeclaration() {
     }
 
     consumeTerminators();
-    return std::make_shared<VarStmt>(name, initializer);
+    return std::make_shared<VarStmt>(name, initializer, is_mutable);
 }
 
 std::shared_ptr<Stmt> Parser::statement() {
@@ -466,13 +468,14 @@ std::shared_ptr<Stmt> Parser::forStatement() {
         initializer = nullptr;
     } else if (peek().type == TokenType::LET || peek().type == TokenType::MUT) {
         // It's a variable declaration, but we handle the semicolon here.
-        advance(); // consume 'let' or 'mut'
+        Token keyword = advance(); // consume 'let' or 'mut'
+        bool is_mutable = keyword.type == TokenType::MUT;
         Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
         std::shared_ptr<Expr> init_expr = nullptr;
         if (match({TokenType::ASSIGN})) {
             init_expr = expression();
         }
-        initializer = std::make_shared<VarStmt>(name, init_expr);
+        initializer = std::make_shared<VarStmt>(name, init_expr, is_mutable);
         consume(TokenType::SEMICOLON, "Expect ';' after for loop initializer.");
     } else {
         // It's an expression statement, but we handle the semicolon here.

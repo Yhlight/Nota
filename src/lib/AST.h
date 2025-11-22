@@ -297,8 +297,8 @@ struct ExpressionStmt : Stmt, public std::enable_shared_from_this<ExpressionStmt
 };
 
 struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt> {
-    VarStmt(Token name, std::shared_ptr<Expr> initializer)
-        : name(name), initializer(initializer) {}
+    VarStmt(Token name, std::shared_ptr<Expr> initializer, bool is_mutable)
+        : name(name), initializer(initializer), is_mutable(is_mutable) {}
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(shared_from_this());
@@ -306,6 +306,7 @@ struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt> {
 
     Token name;
     std::shared_ptr<Expr> initializer;
+    bool is_mutable;
 };
 
 struct IfStmt : Stmt, public std::enable_shared_from_this<IfStmt> {

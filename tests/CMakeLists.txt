@@ -12,6 +12,7 @@ add_executable(nota_tests
     test_ffi.cpp
     test_stdlib.cpp
     test_array.cpp
+    test_logical_operators.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE libnota)

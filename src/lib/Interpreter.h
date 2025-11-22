@@ -118,6 +118,7 @@ public:
     void visit(const std::shared_ptr<LambdaExpr>& expr) override;
     void visit(const std::shared_ptr<ArrayExpr>& expr) override;
     void visit(const std::shared_ptr<SubscriptExpr>& expr) override;
+    void visit(const std::shared_ptr<LogicalExpr>& expr) override;
 
     VM& vm;
 

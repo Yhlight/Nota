@@ -92,6 +92,15 @@ Nota支持标准的运算符
 ++ --
 ```
 
+### Logical Operators
+
+Nota supports the logical AND (`&&`) and OR (`||`) operators. They are short-circuiting.
+
+```nota
+let a = true && false // false
+let b = true || false // true
+```
+
 ## 选择结构
 Nota支持2种选择结构  
 if...else  

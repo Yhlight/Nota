@@ -470,4 +470,27 @@ void Interpreter::visit(const std::shared_ptr<SubscriptExpr>& expr) {
     throw RuntimeError(expr->bracket, "Can only subscript arrays.");
 }
 
+void Interpreter::visit(const std::shared_ptr<LogicalExpr>& expr) {
+    Value left = evaluate(expr->left);
+    stack_.pop_back();
+
+    if (expr->op.type == TokenType::OR) {
+        if (isTruthy(left)) {
+            lastValue_ = left;
+            stack_.push_back(lastValue_);
+            return;
+        }
+    } else { // AND
+        if (!isTruthy(left)) {
+            lastValue_ = left;
+            stack_.push_back(lastValue_);
+            return;
+        }
+    }
+
+    lastValue_ = evaluate(expr->right);
+    stack_.pop_back();
+    stack_.push_back(lastValue_);
+}
+
 } // namespace nota

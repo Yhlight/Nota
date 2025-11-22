@@ -31,6 +31,9 @@
 - [x] Implement FFI.
 - [x] Implement arrays.
 
+## Phase 3 In-Progress
+- [x] Implement logical operators.
+
 ## Phase 4: Advanced Features
 
 ## Phase 5: Standard Library and Tooling

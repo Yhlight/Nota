@@ -27,6 +27,7 @@ struct ModuleAccessExpr;
 struct LambdaExpr;
 struct ArrayExpr;
 struct SubscriptExpr;
+struct LogicalExpr;
 
 struct Stmt;
 
@@ -48,6 +49,7 @@ public:
     virtual void visit(const std::shared_ptr<LambdaExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<ArrayExpr>& expr) = 0;
     virtual void visit(const std::shared_ptr<SubscriptExpr>& expr) = 0;
+    virtual void visit(const std::shared_ptr<LogicalExpr>& expr) = 0;
 };
 
 class Expr : public std::enable_shared_from_this<Expr> {
@@ -219,6 +221,19 @@ struct SubscriptExpr : Expr {
     std::shared_ptr<Expr> object;
     std::shared_ptr<Expr> index;
     Token bracket; // For error reporting
+};
+
+struct LogicalExpr : Expr {
+    LogicalExpr(std::shared_ptr<Expr> left, Token op, std::shared_ptr<Expr> right)
+        : left(left), op(op), right(right) {}
+
+    void accept(ExprVisitor& visitor) override {
+        visitor.visit(std::static_pointer_cast<LogicalExpr>(shared_from_this()));
+    }
+
+    std::shared_ptr<Expr> left;
+    Token op;
+    std::shared_ptr<Expr> right;
 };
 
 // Statements

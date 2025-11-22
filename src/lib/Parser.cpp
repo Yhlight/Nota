@@ -80,12 +80,48 @@ std::shared_ptr<Expr> Parser::logicOr() {
 }
 
 std::shared_ptr<Expr> Parser::logicAnd() {
-    std::shared_ptr<Expr> expr = equality();
+    std::shared_ptr<Expr> expr = bitwiseOr();
 
     while (match({TokenType::AND})) {
         Token op = previous();
-        std::shared_ptr<Expr> right = equality();
+        std::shared_ptr<Expr> right = bitwiseOr();
         expr = std::make_shared<LogicalExpr>(expr, op, right);
+    }
+
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::bitwiseOr() {
+    std::shared_ptr<Expr> expr = bitwiseXor();
+
+    while (match({TokenType::PIPE})) {
+        Token op = previous();
+        std::shared_ptr<Expr> right = bitwiseXor();
+        expr = std::make_shared<Binary>(expr, op, right);
+    }
+
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::bitwiseXor() {
+    std::shared_ptr<Expr> expr = bitwiseAnd();
+
+    while (match({TokenType::CARET})) {
+        Token op = previous();
+        std::shared_ptr<Expr> right = bitwiseAnd();
+        expr = std::make_shared<Binary>(expr, op, right);
+    }
+
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::bitwiseAnd() {
+    std::shared_ptr<Expr> expr = equality();
+
+    while (match({TokenType::AMPERSAND})) {
+        Token op = previous();
+        std::shared_ptr<Expr> right = equality();
+        expr = std::make_shared<Binary>(expr, op, right);
     }
 
     return expr;
@@ -104,11 +140,11 @@ std::shared_ptr<Expr> Parser::equality() {
 }
 
 std::shared_ptr<Expr> Parser::comparison() {
-    std::shared_ptr<Expr> expr = term();
+    std::shared_ptr<Expr> expr = shift();
 
     while (match({TokenType::GREATER, TokenType::GREATER_EQUALS, TokenType::LESS, TokenType::LESS_EQUALS})) {
         Token op = previous();
-        std::shared_ptr<Expr> right = term();
+        std::shared_ptr<Expr> right = shift();
         expr = std::make_shared<Binary>(expr, op, right);
     }
 
@@ -121,6 +157,18 @@ std::shared_ptr<Expr> Parser::term() {
     while (match({TokenType::MINUS, TokenType::PLUS})) {
         Token op = previous();
         std::shared_ptr<Expr> right = factor();
+        expr = std::make_shared<Binary>(expr, op, right);
+    }
+
+    return expr;
+}
+
+std::shared_ptr<Expr> Parser::shift() {
+    std::shared_ptr<Expr> expr = term();
+
+    while (match({TokenType::LEFT_SHIFT, TokenType::RIGHT_SHIFT})) {
+        Token op = previous();
+        std::shared_ptr<Expr> right = term();
         expr = std::make_shared<Binary>(expr, op, right);
     }
 
@@ -140,7 +188,7 @@ std::shared_ptr<Expr> Parser::factor() {
 }
 
 std::shared_ptr<Expr> Parser::unary() {
-    if (match({TokenType::NOT, TokenType::MINUS})) {
+    if (match({TokenType::NOT, TokenType::MINUS, TokenType::TILDE})) {
         Token op = previous();
         std::shared_ptr<Expr> right = unary();
         return std::make_shared<Unary>(op, right);

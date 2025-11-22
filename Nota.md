@@ -122,6 +122,19 @@ a *= 2 // a is now 24
 a /= 4 // a is now 6
 ```
 
+### Bitwise Operators
+
+Nota supports bitwise operators for integer types.
+
+```nota
+let a = 5 & 3 // 1 (AND)
+let b = 5 | 3 // 7 (OR)
+let c = 5 ^ 3 // 6 (XOR)
+let d = ~5    // -6 (NOT)
+let e = 5 << 1 // 10 (Left Shift)
+let f = 5 >> 1 // 2 (Right Shift)
+```
+
 ## 选择结构
 Nota支持2种选择结构  
 if...else  

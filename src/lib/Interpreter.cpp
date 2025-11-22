@@ -284,6 +284,26 @@ void Interpreter::visit(const std::shared_ptr<Binary>& expr) {
                 lastValue_ = std::get<double>(left) >= std::get<double>(right);
             }
             break;
+        case TokenType::AMPERSAND:
+            checkNumberOperands(expr->op, left, right);
+            lastValue_ = std::get<int>(left) & std::get<int>(right);
+            break;
+        case TokenType::PIPE:
+            checkNumberOperands(expr->op, left, right);
+            lastValue_ = std::get<int>(left) | std::get<int>(right);
+            break;
+        case TokenType::CARET:
+            checkNumberOperands(expr->op, left, right);
+            lastValue_ = std::get<int>(left) ^ std::get<int>(right);
+            break;
+        case TokenType::LEFT_SHIFT:
+            checkNumberOperands(expr->op, left, right);
+            lastValue_ = std::get<int>(left) << std::get<int>(right);
+            break;
+        case TokenType::RIGHT_SHIFT:
+            checkNumberOperands(expr->op, left, right);
+            lastValue_ = std::get<int>(left) >> std::get<int>(right);
+            break;
         default:
             lastValue_ = {};
             break;
@@ -439,6 +459,13 @@ void Interpreter::visit(const std::shared_ptr<Unary>& expr) {
             break;
         case TokenType::NOT:
             lastValue_ = !isTruthy(right);
+            break;
+        case TokenType::TILDE:
+            if (std::holds_alternative<int>(right)) {
+                lastValue_ = ~std::get<int>(right);
+            } else {
+                throw RuntimeError(expr->op, "Operand must be an integer.");
+            }
             break;
         default:
             lastValue_ = {};

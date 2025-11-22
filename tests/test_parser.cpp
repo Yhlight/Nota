@@ -146,3 +146,18 @@ TEST_CASE("Parser throws an error for an invalid expression") {
     nota::Parser parser(tokens);
     CHECK_THROWS_AS(parser.parse(), nota::Parser::ParseError);
 }
+
+TEST_CASE("Parser parses multiple statements separated by semicolons") {
+    nota::Lexer lexer("let a = 1; let b = 2;");
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+
+    REQUIRE(stmts.size() == 2);
+    auto varStmtA = std::dynamic_pointer_cast<nota::VarStmt>(stmts[0]);
+    REQUIRE(varStmtA);
+    CHECK(varStmtA->name.lexeme == "a");
+    auto varStmtB = std::dynamic_pointer_cast<nota::VarStmt>(stmts[1]);
+    REQUIRE(varStmtB);
+    CHECK(varStmtB->name.lexeme == "b");
+}

@@ -19,6 +19,20 @@ TEST_CASE("Interpreter executes a while loop") {
     CHECK(std::get<int>(value) == 5);
 }
 
+TEST_CASE("Interpreter handles mixed terminators") {
+    nota::Lexer lexer("mut a = 0; mut b = 1\n a = a + b;");
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+    nota::Parser parser(tokens);
+    std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
+    nota::VM vm;
+    nota::Interpreter interpreter(vm);
+    interpreter.interpret(stmts);
+
+    auto value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "a", {}, 1});
+    REQUIRE(std::holds_alternative<int>(value));
+    CHECK(std::get<int>(value) == 1);
+}
+
 TEST_CASE("Interpreter handles correct scoping in a do-while loop") {
     std::string source = R"(
         mut a = 0

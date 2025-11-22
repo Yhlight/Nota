@@ -8,10 +8,7 @@ Parser::Parser(const std::vector<Token>& tokens) : tokens_(tokens) {}
 std::vector<std::shared_ptr<Stmt>> Parser::parse() {
     std::vector<std::shared_ptr<Stmt>> statements;
     while (!isAtEnd()) {
-        // Skip blank lines.
-        while (peek().type == TokenType::NEWLINE) {
-            advance();
-        }
+        skipNewlines();
         if (isAtEnd()) break;
         statements.push_back(declaration());
     }
@@ -245,13 +242,13 @@ std::shared_ptr<Stmt> Parser::importStatement() {
     if (match({TokenType::AS})) {
         alias = consume(TokenType::IDENTIFIER, "Expect alias name.");
     }
-    consumeNewlines();
+    consumeTerminators();
     return std::make_shared<ImportStmt>(path, alias);
 }
 
 std::shared_ptr<Stmt> Parser::packageStatement() {
     Token name = consume(TokenType::IDENTIFIER, "Expect package name.");
-    consumeNewlines();
+    consumeTerminators();
     return std::make_shared<PackageStmt>(name);
 }
 
@@ -279,7 +276,7 @@ std::shared_ptr<Stmt> Parser::varDeclaration() {
         initializer = expression();
     }
 
-    consumeNewlines();
+    consumeTerminators();
     return std::make_shared<VarStmt>(name, initializer);
 }
 
@@ -385,18 +382,18 @@ std::shared_ptr<Stmt> Parser::doWhileStatement() {
     std::shared_ptr<Stmt> body = std::make_shared<Block>(block());
     consume(TokenType::WHILE, "Expect 'while' after do-while body.");
     std::shared_ptr<Expr> condition = expression();
-    consumeNewlines();
+    consumeTerminators();
     return std::make_shared<DoWhileStmt>(body, condition);
 }
 
 std::shared_ptr<Stmt> Parser::returnStatement() {
     Token keyword = previous();
     std::shared_ptr<Expr> value = nullptr;
-    if (peek().type != TokenType::NEWLINE && peek().type != TokenType::END_OF_FILE) {
+    if (peek().type != TokenType::NEWLINE && peek().type != TokenType::END_OF_FILE && peek().type != TokenType::SEMICOLON) {
         value = expression();
     }
 
-    consumeNewlines();
+    consumeTerminators();
     return std::make_shared<ReturnStmt>(keyword, value);
 }
 
@@ -405,10 +402,7 @@ std::vector<std::shared_ptr<Stmt>> Parser::block() {
     std::vector<std::shared_ptr<Stmt>> statements;
 
     while (peek().type != TokenType::END && peek().type != TokenType::ELSE && peek().type != TokenType::WHILE && !isAtEnd()) {
-        // Skip blank lines.
-        while (peek().type == TokenType::NEWLINE) {
-            advance();
-        }
+        skipNewlines();
         if (peek().type == TokenType::END || peek().type == TokenType::ELSE || peek().type == TokenType::WHILE || isAtEnd()) break;
         statements.push_back(declaration());
     }
@@ -419,7 +413,7 @@ std::vector<std::shared_ptr<Stmt>> Parser::block() {
 
 std::shared_ptr<Stmt> Parser::expressionStatement() {
     std::shared_ptr<Expr> expr = expression();
-    consumeNewlines();
+    consumeTerminators();
     return std::make_shared<ExpressionStmt>(expr);
 }
 
@@ -456,17 +450,26 @@ Token Parser::consume(TokenType type, const std::string& message) {
     throw error(peek(), message);
 }
 
-void Parser::consumeNewlines() {
-    bool consumed = false;
+void Parser::consumeTerminators() {
+    if (match({TokenType::SEMICOLON})) {
+        // Consume an optional semicolon.
+        return;
+    }
+
+    bool consumed_newline = false;
     while (peek().type == TokenType::NEWLINE) {
         advance();
-        consumed = true;
+        consumed_newline = true;
     }
-    if (!consumed) {
-        // It's not an error to have no newlines if we are at the end of the file.
-        if (!isAtEnd()) {
-            throw error(peek(), "Expect newline after statement.");
-        }
+
+    if (!consumed_newline && !isAtEnd()) {
+        throw error(peek(), "Expect newline or ';' after statement.");
+    }
+}
+
+void Parser::skipNewlines() {
+    while (peek().type == TokenType::NEWLINE) {
+        advance();
     }
 }
 

@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <vector>
 #include <map>
+#include <functional>
 
 namespace nota {
 
@@ -37,6 +38,7 @@ public:
 
     template<typename R, typename... Args>
     void registerNative(const std::string& name, R (*func)(Args...));
+    void registerNative(const std::string& name, int arity, NotaNativeFunction::NativeFn fn);
 
     void visit(const std::shared_ptr<Block>& stmt) override;
     void visit(const std::shared_ptr<ExpressionStmt>& stmt) override;
@@ -81,16 +83,14 @@ private:
 
 template<typename R, typename... Args>
 void Interpreter::registerNative(const std::string& name, R (*func)(Args...)) {
-    auto wrapper = [this, func](Interpreter&, std::vector<Value> args) -> Value {
+    registerNative(name, sizeof...(Args), [this, func](Interpreter&, std::vector<Value> args) {
         try {
             return ffi::NativeCaller<R, Args...>::Call(vm, func, args);
         } catch (const std::exception& e) {
             vm.raiseError(e.what());
-            return {};
+            return Value{};
         }
-    };
-    auto native_fn = vm.newObject<NotaNativeFunction>(sizeof...(Args), wrapper);
-    environment_->define(name, native_fn);
+    });
 }
 
 } // namespace nota

@@ -26,6 +26,11 @@ Interpreter::Interpreter(VM& vm) : vm(vm), environment_(nullptr), moduleLoader_(
     vm.setInterpreter(this);
 }
 
+void Interpreter::registerNative(const std::string& name, int arity, NotaNativeFunction::NativeFn fn) {
+    auto native_fn = vm.newObject<NotaNativeFunction>(arity, std::move(fn));
+    environment_->define(name, native_fn);
+}
+
 Interpreter::~Interpreter() {
     vm.setInterpreter(nullptr);
 }

@@ -228,10 +228,9 @@ std::shared_ptr<Expr> Parser::primary() {
             std::vector<std::shared_ptr<Stmt>> body;
 
             // Check for a block body
-            if (peek().type == TokenType::NEWLINE || peek().type == TokenType::DO) {
-                // Multi-line lambda. Skip newlines, then optionally match 'do'.
+            if (peek().type == TokenType::NEWLINE) {
+                // Multi-line lambda.
                 skipNewlines();
-                match({TokenType::DO}); // Optional 'do' keyword
 
                 body = block();
                 consume(TokenType::END, "Expect 'end' after lambda body.");

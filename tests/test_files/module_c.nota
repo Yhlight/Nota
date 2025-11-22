@@ -1,6 +1,6 @@
 
             class MyClass
                 fn get_val()
-                    return 456;
+                    return 456
                 end
             end

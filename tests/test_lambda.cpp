@@ -8,8 +8,8 @@
 TEST_CASE("Lambda Functions") {
     SUBCASE("Single-expression lambda") {
         std::string source = R"(
-            let add = (a, b) => a + b;
-            let result = add(3, 4);
+            let add = (a, b) => a + b
+            let result = add(3, 4)
         )";
 
         nota::VM vm;
@@ -29,10 +29,10 @@ TEST_CASE("Lambda Functions") {
 
     SUBCASE("Block-body lambda") {
         std::string source = R"(
-            let add = (a, b) => do
-                return a + b;
-            end;
-            let result = add(5, 6);
+            let add = (a, b) =>
+                return a + b
+            end
+            let result = add(5, 6)
         )";
 
         nota::VM vm;
@@ -52,9 +52,9 @@ TEST_CASE("Lambda Functions") {
 
     SUBCASE("Closure") {
         std::string source = R"(
-            let x = 10;
-            let my_lambda = () => x;
-            let result = my_lambda();
+            let x = 10
+            let my_lambda = () => x
+            let result = my_lambda()
         )";
 
         nota::VM vm;

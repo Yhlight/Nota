@@ -10,13 +10,13 @@ TEST_CASE("Modules") {
     SUBCASE("Import and access a function") {
         createTestFile("tests/test_files/module_a.nota", R"(
             fn add(a, b)
-                return a + b;
+                return a + b
             end
         )");
 
         std::string source = R"(
-            import "tests/test_files/module_a.nota";
-            let result = module_a::add(1, 2);
+            import "tests/test_files/module_a.nota"
+            let result = module_a::add(1, 2)
         )";
 
         nota::Lexer lexer(source);
@@ -36,12 +36,12 @@ TEST_CASE("Modules") {
 
     SUBCASE("Import with alias") {
         createTestFile("tests/test_files/module_b.nota", R"(
-            let my_var = 123;
+            let my_var = 123
         )");
 
         std::string source = R"(
-            import "tests/test_files/module_b.nota" as b;
-            let result = b::my_var;
+            import "tests/test_files/module_b.nota" as b
+            let result = b::my_var
         )";
 
         nota::Lexer lexer(source);
@@ -63,15 +63,15 @@ TEST_CASE("Modules") {
         createTestFile("tests/test_files/module_c.nota", R"(
             class MyClass
                 fn get_val()
-                    return 456;
+                    return 456
                 end
             end
         )");
 
         std::string source = R"(
-            import "tests/test_files/module_c.nota";
-            let instance = module_c::MyClass();
-            let result = instance.get_val();
+            import "tests/test_files/module_c.nota"
+            let instance = module_c::MyClass()
+            let result = instance.get_val()
         )";
 
         nota::Lexer lexer(source);

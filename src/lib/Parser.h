@@ -51,6 +51,7 @@ private:
     Token peek() const;
     Token previous() const;
     Token consume(TokenType type, const std::string& message);
+    void consumeNewlines();
     ParseError error(const Token& token, const std::string& message);
 
 

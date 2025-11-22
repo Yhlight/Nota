@@ -8,6 +8,11 @@ Parser::Parser(const std::vector<Token>& tokens) : tokens_(tokens) {}
 std::vector<std::shared_ptr<Stmt>> Parser::parse() {
     std::vector<std::shared_ptr<Stmt>> statements;
     while (!isAtEnd()) {
+        // Skip blank lines.
+        while (peek().type == TokenType::NEWLINE) {
+            advance();
+        }
+        if (isAtEnd()) break;
         statements.push_back(declaration());
     }
     return statements;
@@ -174,10 +179,12 @@ std::shared_ptr<Expr> Parser::primary() {
             consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
 
             std::vector<std::shared_ptr<Stmt>> body;
-            if (match({TokenType::DO})) {
+            if (match({TokenType::NEWLINE})) {
+                // Multi-line lambda
                 body = block();
                 consume(TokenType::END, "Expect 'end' after lambda body.");
             } else {
+                // Single-line lambda
                 std::shared_ptr<Expr> expr = expression();
                 body.push_back(std::make_shared<ReturnStmt>(Token{TokenType::RETURN, "return", {}, peek().line}, expr));
             }
@@ -217,6 +224,10 @@ std::shared_ptr<Stmt> Parser::classDeclaration() {
 
     std::vector<std::shared_ptr<FunctionStmt>> methods;
     while (peek().type != TokenType::END && !isAtEnd()) {
+        if (match({TokenType::NEWLINE})) {
+            // allow newlines between methods
+            continue;
+        }
         if (match({TokenType::FN})) {
             methods.push_back(std::dynamic_pointer_cast<FunctionStmt>(functionDeclaration()));
         } else {
@@ -234,13 +245,13 @@ std::shared_ptr<Stmt> Parser::importStatement() {
     if (match({TokenType::AS})) {
         alias = consume(TokenType::IDENTIFIER, "Expect alias name.");
     }
-    consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+    consumeNewlines();
     return std::make_shared<ImportStmt>(path, alias);
 }
 
 std::shared_ptr<Stmt> Parser::packageStatement() {
     Token name = consume(TokenType::IDENTIFIER, "Expect package name.");
-    consume(TokenType::SEMICOLON, "Expect ';' after package statement.");
+    consumeNewlines();
     return std::make_shared<PackageStmt>(name);
 }
 
@@ -268,7 +279,7 @@ std::shared_ptr<Stmt> Parser::varDeclaration() {
         initializer = expression();
     }
 
-    consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+    consumeNewlines();
     return std::make_shared<VarStmt>(name, initializer);
 }
 
@@ -317,10 +328,21 @@ std::shared_ptr<Stmt> Parser::forStatement() {
     std::shared_ptr<Stmt> initializer;
     if (match({TokenType::SEMICOLON})) {
         initializer = nullptr;
-    } else if (match({TokenType::LET, TokenType::MUT})) {
-        initializer = varDeclaration();
+    } else if (peek().type == TokenType::LET || peek().type == TokenType::MUT) {
+        // It's a variable declaration, but we handle the semicolon here.
+        advance(); // consume 'let' or 'mut'
+        Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+        std::shared_ptr<Expr> init_expr = nullptr;
+        if (match({TokenType::ASSIGN})) {
+            init_expr = expression();
+        }
+        initializer = std::make_shared<VarStmt>(name, init_expr);
+        consume(TokenType::SEMICOLON, "Expect ';' after for loop initializer.");
     } else {
-        initializer = expressionStatement();
+        // It's an expression statement, but we handle the semicolon here.
+        std::shared_ptr<Expr> expr = expression();
+        initializer = std::make_shared<ExpressionStmt>(expr);
+        consume(TokenType::SEMICOLON, "Expect ';' after for loop initializer.");
     }
 
     // Condition
@@ -363,18 +385,18 @@ std::shared_ptr<Stmt> Parser::doWhileStatement() {
     std::shared_ptr<Stmt> body = std::make_shared<Block>(block());
     consume(TokenType::WHILE, "Expect 'while' after do-while body.");
     std::shared_ptr<Expr> condition = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after do-while condition.");
+    consumeNewlines();
     return std::make_shared<DoWhileStmt>(body, condition);
 }
 
 std::shared_ptr<Stmt> Parser::returnStatement() {
     Token keyword = previous();
     std::shared_ptr<Expr> value = nullptr;
-    if (peek().type != TokenType::SEMICOLON) {
+    if (peek().type != TokenType::NEWLINE && peek().type != TokenType::END_OF_FILE) {
         value = expression();
     }
 
-    consume(TokenType::SEMICOLON, "Expect ';' after return value.");
+    consumeNewlines();
     return std::make_shared<ReturnStmt>(keyword, value);
 }
 
@@ -383,6 +405,11 @@ std::vector<std::shared_ptr<Stmt>> Parser::block() {
     std::vector<std::shared_ptr<Stmt>> statements;
 
     while (peek().type != TokenType::END && peek().type != TokenType::ELSE && peek().type != TokenType::WHILE && !isAtEnd()) {
+        // Skip blank lines.
+        while (peek().type == TokenType::NEWLINE) {
+            advance();
+        }
+        if (peek().type == TokenType::END || peek().type == TokenType::ELSE || peek().type == TokenType::WHILE || isAtEnd()) break;
         statements.push_back(declaration());
     }
 
@@ -392,7 +419,7 @@ std::vector<std::shared_ptr<Stmt>> Parser::block() {
 
 std::shared_ptr<Stmt> Parser::expressionStatement() {
     std::shared_ptr<Expr> expr = expression();
-    consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+    consumeNewlines();
     return std::make_shared<ExpressionStmt>(expr);
 }
 
@@ -427,6 +454,20 @@ Token Parser::previous() const {
 Token Parser::consume(TokenType type, const std::string& message) {
     if (peek().type == type) return advance();
     throw error(peek(), message);
+}
+
+void Parser::consumeNewlines() {
+    bool consumed = false;
+    while (peek().type == TokenType::NEWLINE) {
+        advance();
+        consumed = true;
+    }
+    if (!consumed) {
+        // It's not an error to have no newlines if we are at the end of the file.
+        if (!isAtEnd()) {
+            throw error(peek(), "Expect newline after statement.");
+        }
+    }
 }
 
 Parser::ParseError Parser::error(const Token& token, const std::string& message) {

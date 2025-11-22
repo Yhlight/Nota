@@ -6,7 +6,7 @@
 #include "VM.h"
 
 TEST_CASE("Interpreter executes a while loop") {
-    nota::Lexer lexer("mut a = 0; while a < 5 a = a + 1; end");
+    nota::Lexer lexer("mut a = 0\n while a < 5\n a = a + 1\n end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -21,16 +21,16 @@ TEST_CASE("Interpreter executes a while loop") {
 
 TEST_CASE("Interpreter handles correct scoping in a do-while loop") {
     std::string source = R"(
-        mut a = 0;
-        mut total = 0;
+        mut a = 0
+        mut total = 0
         do
             if a == 0
-                mut b = 1;
+                mut b = 1
             end
-            total = total + b;
-            b = b + 1;
-            a = a + 1;
-        while a < 2;
+            total = total + b
+            b = b + 1
+            a = a + 1
+        while a < 2
     )";
     nota::Lexer lexer(source);
     std::vector<nota::Token> tokens = lexer.scanTokens();
@@ -50,7 +50,7 @@ TEST_CASE("Interpreter handles correct scoping in a do-while loop") {
 }
 
 TEST_CASE("Interpreter executes a function call with return") {
-    nota::Lexer lexer("fn add(a, b) return a + b; end mut result = add(3, 4);");
+    nota::Lexer lexer("fn add(a, b)\n return a + b\n end\n mut result = add(3, 4)\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -64,7 +64,7 @@ TEST_CASE("Interpreter executes a function call with return") {
 }
 
 TEST_CASE("Interpreter executes a function call") {
-    nota::Lexer lexer("mut a = 0; fn test(x) a = x; end test(5);");
+    nota::Lexer lexer("mut a = 0\n fn test(x)\n a = x\n end\n test(5)\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -78,7 +78,7 @@ TEST_CASE("Interpreter executes a function call") {
 }
 
 TEST_CASE("Interpreter executes an if statement") {
-    nota::Lexer lexer("mut a = 0; if true a = 1; end");
+    nota::Lexer lexer("mut a = 0\n if true\n a = 1\n end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -92,7 +92,7 @@ TEST_CASE("Interpreter executes an if statement") {
 }
 
 TEST_CASE("Interpreter executes a for loop") {
-    nota::Lexer lexer("mut a = 0; for mut i = 0; i < 5; i++ a = a + i; end");
+    nota::Lexer lexer("mut a = 0\n for mut i = 0; i < 5; i++\n a = a + i\n end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -106,7 +106,7 @@ TEST_CASE("Interpreter executes a for loop") {
 }
 
 TEST_CASE("Interpreter executes a do-while loop") {
-    nota::Lexer lexer("mut a = 0; do a = a + 1; while a < 5;");
+    nota::Lexer lexer("mut a = 0\n do\n a = a + 1\n while a < 5\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();

@@ -87,6 +87,7 @@ void Lexer::scanToken() {
             // Ignore whitespace
             break;
         case '\n':
+            addToken(TokenType::NEWLINE);
             line_++;
             break;
 

@@ -22,7 +22,7 @@ void native_void_func() {
 TEST_CASE("FFI") {
     SUBCASE("Simple FFI call") {
         std::string source = R"(
-            let result = native_add(10, 20);
+            let result = native_add(10, 20)
         )";
 
         nota::VM vm;
@@ -44,7 +44,7 @@ TEST_CASE("FFI") {
 
     SUBCASE("String FFI call") {
         std::string source = R"(
-            let result = native_concat("hello", " world");
+            let result = native_concat("hello", " world")
         )";
 
         nota::VM vm;
@@ -67,7 +67,7 @@ TEST_CASE("FFI") {
 
     SUBCASE("Void FFI call") {
         std::string source = R"(
-            native_void_func();
+            native_void_func()
         )";
 
         nota::VM vm;
@@ -85,7 +85,7 @@ TEST_CASE("FFI") {
 
     SUBCASE("FFI type error") {
         std::string source = R"(
-            let result = native_add("a", "b");
+            let result = native_add("a", "b")
         )";
 
         nota::VM vm;

@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& os, const std::shared_ptr<T>& ptr) {
 
 
 TEST_CASE("Parser parses a numeric literal") {
-    nota::Lexer lexer("123;");
+    nota::Lexer lexer("123\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -30,7 +30,7 @@ TEST_CASE("Parser parses a numeric literal") {
 }
 
 TEST_CASE("Parser parses a unary expression") {
-    nota::Lexer lexer("-123;");
+    nota::Lexer lexer("-123\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -44,7 +44,7 @@ TEST_CASE("Parser parses a unary expression") {
 }
 
 TEST_CASE("Parser parses a binary expression") {
-    nota::Lexer lexer("1 + 2;");
+    nota::Lexer lexer("1 + 2\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -58,7 +58,7 @@ TEST_CASE("Parser parses a binary expression") {
 }
 
 TEST_CASE("Parser parses a grouping expression") {
-    nota::Lexer lexer("(1 + 2);");
+    nota::Lexer lexer("(1 + 2)\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -71,7 +71,7 @@ TEST_CASE("Parser parses a grouping expression") {
 }
 
 TEST_CASE("Parser parses a variable declaration") {
-    nota::Lexer lexer("let a = 10;");
+    nota::Lexer lexer("let a = 10\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -86,7 +86,7 @@ TEST_CASE("Parser parses a variable declaration") {
 }
 
 TEST_CASE("Parser parses an if statement") {
-    nota::Lexer lexer("if true 1; end");
+    nota::Lexer lexer("if true\n 1\n end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -105,7 +105,7 @@ TEST_CASE("Parser parses an if statement") {
 }
 
 TEST_CASE("Parser parses an if-else statement") {
-    nota::Lexer lexer("if true 1; else 2; end");
+    nota::Lexer lexer("if true\n 1\n else 2\n end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -123,7 +123,7 @@ TEST_CASE("Parser parses an if-else statement") {
 }
 
 TEST_CASE("Parser parses a while statement with a block") {
-    nota::Lexer lexer("while true let a = 1; end");
+    nota::Lexer lexer("while true\n let a = 1\n end");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     std::vector<std::shared_ptr<nota::Stmt>> stmts = parser.parse();
@@ -141,7 +141,7 @@ TEST_CASE("Parser parses a while statement with a block") {
 }
 
 TEST_CASE("Parser throws an error for an invalid expression") {
-    nota::Lexer lexer("1 +;");
+    nota::Lexer lexer("1 +\n");
     std::vector<nota::Token> tokens = lexer.scanTokens();
     nota::Parser parser(tokens);
     CHECK_THROWS_AS(parser.parse(), nota::Parser::ParseError);

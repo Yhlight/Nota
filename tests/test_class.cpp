@@ -13,7 +13,7 @@ TEST_CASE("Classes") {
             class MyClass
             end
 
-            mut instance = MyClass();
+            mut instance = MyClass()
         )";
 
         nota::Lexer lexer(source);
@@ -38,8 +38,8 @@ TEST_CASE("Classes") {
             class MyClass
             end
 
-            mut instance = MyClass();
-            instance.foo = 123;
+            mut instance = MyClass()
+            instance.foo = 123
         )";
 
         nota::Lexer lexer(source);
@@ -65,13 +65,13 @@ TEST_CASE("Classes") {
         std::string source = R"(
             class MyClass
                 fn getFoo()
-                    return this.foo;
+                    return this.foo
                 end
             end
 
-            mut instance = MyClass();
-            instance.foo = 123;
-            let result = instance.getFoo();
+            mut instance = MyClass()
+            instance.foo = 123
+            let result = instance.getFoo()
         )";
 
         nota::Lexer lexer(source);
@@ -93,12 +93,12 @@ TEST_CASE("Classes") {
         std::string source = R"(
             class MyClass
                 fn init(value)
-                    this.foo = value;
+                    this.foo = value
                 end
             end
 
-            mut instance = MyClass(456);
-            let result = instance.foo;
+            mut instance = MyClass(456)
+            let result = instance.foo
         )";
 
         nota::Lexer lexer(source);

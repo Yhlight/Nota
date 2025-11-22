@@ -74,6 +74,18 @@ TEST_CASE("Lexer handles invalid characters") {
     CHECK(lexer.hadError());
 }
 
+TEST_CASE("Lexer tokenizes newlines") {
+    std::string source = "let a = 1\nlet b = 2";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scanTokens();
+
+    // let, a, =, 1, \n, let, b, =, 2, EOF
+    REQUIRE(tokens.size() == 10);
+    CHECK(tokens[3].type == nota::TokenType::INTEGER);
+    CHECK(tokens[4].type == nota::TokenType::NEWLINE);
+    CHECK(tokens[5].type == nota::TokenType::LET);
+}
+
 TEST_CASE("Lexer tokenizes ! and !=") {
     std::string source = "! !=";
     nota::Lexer lexer(source);

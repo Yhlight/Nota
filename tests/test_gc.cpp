@@ -9,12 +9,12 @@ TEST_CASE("Garbage Collection") {
   std::string source = R"(
     class MyClass
       fn init(name)
-        this.name = name;
+        this.name = name
       end
     end
 
     for mut i = 0; i < 1000; i++
-      MyClass("instance");
+      MyClass("instance")
     end
   )";
 
@@ -45,24 +45,24 @@ TEST_CASE("Garbage Collection") {
 
 TEST_CASE("Circular Reference Garbage Collection") {
     std::string source = R"(
-        let my_none;
+        let my_none
         class A
             fn init()
-                this.b = my_none;
+                this.b = my_none
             end
         end
 
         class B
             fn init()
-                this.a = my_none;
+                this.a = my_none
             end
         end
 
         if true
-            mut a = A();
-            mut b = B();
-            a.b = b;
-            b.a = a;
+            mut a = A()
+            mut b = B()
+            a.b = b
+            b.a = a
         end
     )";
 

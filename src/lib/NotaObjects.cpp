@@ -129,6 +129,14 @@ NotaFunction* NotaClass::findMethod(const std::string& name) {
     return nullptr;
 }
 
+NotaFunction* NotaClass::findStaticMethod(const std::string& name) {
+    auto it = static_methods_.find(name);
+    if (it != static_methods_.end()) {
+        return it->second;
+    }
+    return nullptr;
+}
+
 
 std::string NotaClass::toString() { return name_.lexeme; }
 
@@ -136,6 +144,10 @@ void NotaClass::traceReferences(VM& vm) {
     for (auto const& [key, val] : methods_) {
         vm.markObject(val);
     }
+    for (auto const& [key, val] : static_methods_) {
+        vm.markObject(val);
+    }
+    // Properties are part of the AST and not traced here
 }
 
 size_t NotaClass::size() const {
@@ -143,6 +155,10 @@ size_t NotaClass::size() const {
     for (const auto& pair : methods_) {
         totalSize += pair.first.capacity();
     }
+    for (const auto& pair : static_methods_) {
+        totalSize += pair.first.capacity();
+    }
+    totalSize += properties_.capacity() * sizeof(std::shared_ptr<VarStmt>);
     return totalSize;
 }
 

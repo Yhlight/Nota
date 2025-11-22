@@ -38,9 +38,17 @@
 - [x] Implement `none` keyword.
 - [x] Implement bitwise operators.
 
-## Phase 4: Advanced Features
+## Phase 4: Nota.md Language Specification (Complete)
 
-## Phase 5: Standard Library and Tooling
+- [x] **Current Focus: Harden existing features to be production-ready.**
+  - [x] Strengthen Array Implementation (Typed Arrays, Robustness).
+  - [x] Enhance Class and Object Functionality (Typed Properties, Static Methods).
+  - [x] Improve Type System and Casting (Explicit Casting, Runtime Type Checking).
+  - [x] Refine Modules and Packages System (Package Statement Foundation).
+
+## Phase 5: Advanced Features
+
+## Phase 6: Standard Library and Tooling
 
 - [x] **Current Focus: Develop a basic standard library.**
   - [x] Implement `print()` for basic output.

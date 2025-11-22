@@ -69,6 +69,12 @@ public:
     Environment* getEnvironment() { return environment_; }
 
     /**
+     * @brief Get the current package name.
+     * @return The current package name.
+     */
+    std::string getPackageName() const { return packageName_; }
+
+    /**
      * @brief Mark all roots for the garbage collector.
      */
     void markRoots();
@@ -115,11 +121,13 @@ public:
     void visit(const std::shared_ptr<GetExpr>& expr) override;
     void visit(const std::shared_ptr<SetExpr>& expr) override;
     void visit(const std::shared_ptr<ThisExpr>& expr) override;
-    void visit(const std::shared_ptr<ModuleAccessExpr>& expr) override;
+    void visit(const std::shared_ptr<ScopeAccessExpr>& expr) override;
     void visit(const std::shared_ptr<LambdaExpr>& expr) override;
     void visit(const std::shared_ptr<ArrayExpr>& expr) override;
     void visit(const std::shared_ptr<SubscriptExpr>& expr) override;
     void visit(const std::shared_ptr<LogicalExpr>& expr) override;
+    void visit(const std::shared_ptr<TypeExpr>& expr) override;
+    void visit(const std::shared_ptr<CastExpr>& expr) override;
 
     VM& vm;
 
@@ -127,6 +135,7 @@ private:
     void execute(const std::shared_ptr<Stmt>& stmt);
     Value evaluate(const std::shared_ptr<Expr>& expr);
     bool isTruthy(const Value& value);
+    void checkType(const Value& value, const std::shared_ptr<TypeExpr>& type);
 
     Value lastValue_;
     Environment* environment_;
@@ -134,6 +143,7 @@ private:
     std::map<std::string, std::shared_ptr<Interpreter>> modules_;
     std::vector<std::shared_ptr<Stmt>> statements_;
     std::vector<Value> stack_;
+    std::string packageName_;
 };
 
 template<typename R, typename... Args>

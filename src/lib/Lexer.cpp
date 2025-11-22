@@ -9,6 +9,7 @@ namespace {
         {"let",    TokenType::LET},
         {"mut",    TokenType::MUT},
         {"fn",     TokenType::FN},
+        {"static", TokenType::STATIC},
         {"class",  TokenType::CLASS},
         {"this",   TokenType::THIS},
         {"if",     TokenType::IF},

@@ -14,6 +14,27 @@
 // A variant type for test results to avoid returning dangling Object pointers.
 using TestResult = std::variant<std::monostate, int, double, bool, std::string>;
 
+namespace doctest {
+template <>
+struct StringMaker<TestResult> {
+    static String convert(const TestResult& value) {
+        std::ostringstream oss;
+        std::visit([&](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, std::monostate>) {
+                oss << "monostate";
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                oss << '"' << arg << '"';
+            } else {
+                oss << arg;
+            }
+        }, value);
+        return oss.str().c_str();
+    }
+};
+} // namespace doctest
+
+
 // Helper function to run a piece of Nota code and return the result.
 inline TestResult run(const std::string& source_code) {
     nota::VM vm;
@@ -31,18 +52,13 @@ inline TestResult run(const std::string& source_code) {
         throw std::runtime_error("Parser error");
     }
 
-    // Implicitly return the value of the last expression statement.
-    if (!stmts.empty()) {
-        if (auto expr_stmt = std::dynamic_pointer_cast<nota::ExpressionStmt>(stmts.back())) {
-            auto return_stmt = std::make_shared<nota::ReturnStmt>(
-                nota::Token{nota::TokenType::RETURN, "return", {}, -1}, expr_stmt->expression);
-            stmts.back() = return_stmt;
-        }
-    }
-
     nota::Value result_value;
     try {
         interpreter.interpret(stmts);
+        // If the code doesn't explicitly return, get the value of 'result'
+        if (interpreter.getEnvironment()->isDefined("result")) {
+             result_value = interpreter.getEnvironment()->get({nota::TokenType::IDENTIFIER, "result", {}, -1});
+        }
     } catch (const nota::Interpreter::ReturnControl& r) {
         result_value = r.value;
     } catch (const nota::Interpreter::RuntimeError&) {

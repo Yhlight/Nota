@@ -256,7 +256,7 @@ std::shared_ptr<Expr> Parser::primary() {
         Token identifier = previous();
         if (match({TokenType::COLON_COLON})) {
             Token member = consume(TokenType::IDENTIFIER, "Expect member name after '::'.");
-            return std::make_shared<ModuleAccessExpr>(identifier, member);
+            return std::make_shared<ScopeAccessExpr>(identifier, member);
         }
         return std::make_shared<Variable>(identifier);
     }
@@ -273,6 +273,22 @@ std::shared_ptr<Expr> Parser::primary() {
     }
 
     if (match({TokenType::LPAREN})) {
+        // This could be a cast, a grouped expression, or a lambda.
+        // To distinguish a cast from a grouped expression, we check if what's inside the parentheses can be parsed as a type, and is followed by a RPAREN.
+        size_t saved_current = current_;
+        try {
+            std::shared_ptr<TypeExpr> type_expr = type();
+            if (peek().type == TokenType::RPAREN) {
+                consume(TokenType::RPAREN, "Expect ')' after type in cast expression.");
+                std::shared_ptr<Expr> expr = primary();
+                return std::make_shared<CastExpr>(type_expr, expr);
+            }
+        } catch (ParseError& e) {
+            // Fall through, it wasn't a type
+        }
+        current_ = saved_current;
+
+
         // This could be a grouped expression or a lambda.
         // To decide, we need to find the matching right parenthesis and see if it's followed by an arrow.
         int paren_count = 1;
@@ -325,7 +341,7 @@ std::shared_ptr<Stmt> Parser::declaration() {
         return classDeclaration();
     }
     if (match({TokenType::FN})) {
-        return functionDeclaration();
+        return functionDeclaration(false);
     }
     if (match({TokenType::IMPORT})) {
         return importStatement();
@@ -342,21 +358,31 @@ std::shared_ptr<Stmt> Parser::declaration() {
 std::shared_ptr<Stmt> Parser::classDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
 
+    std::vector<std::shared_ptr<VarStmt>> properties;
     std::vector<std::shared_ptr<FunctionStmt>> methods;
     while (peek().type != TokenType::END && !isAtEnd()) {
         if (match({TokenType::NEWLINE})) {
-            // allow newlines between methods
+            // allow newlines between members
             continue;
         }
+
+        bool is_static = match({TokenType::STATIC});
+
         if (match({TokenType::FN})) {
-            methods.push_back(std::dynamic_pointer_cast<FunctionStmt>(functionDeclaration()));
+            methods.push_back(std::dynamic_pointer_cast<FunctionStmt>(functionDeclaration(is_static)));
+        } else if (peek().type == TokenType::IDENTIFIER && tokens_[current_ + 1].type == TokenType::COLON) {
+            Token name = advance();
+            consume(TokenType::COLON, "Expect ':' after property name.");
+            std::shared_ptr<TypeExpr> type_expr = type();
+            consumeTerminators();
+            properties.push_back(std::make_shared<VarStmt>(name, nullptr, true, type_expr));
         } else {
             break;
         }
     }
 
     consume(TokenType::END, "Expect 'end' after class body.");
-    return std::make_shared<ClassStmt>(name, methods);
+    return std::make_shared<ClassStmt>(name, properties, methods);
 }
 
 std::shared_ptr<Stmt> Parser::importStatement() {
@@ -375,7 +401,7 @@ std::shared_ptr<Stmt> Parser::packageStatement() {
     return std::make_shared<PackageStmt>(name);
 }
 
-std::shared_ptr<Stmt> Parser::functionDeclaration() {
+std::shared_ptr<Stmt> Parser::functionDeclaration(bool is_static) {
     Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
     consume(TokenType::LPAREN, "Expect '(' after function name.");
     std::vector<Token> parameters;
@@ -388,13 +414,17 @@ std::shared_ptr<Stmt> Parser::functionDeclaration() {
 
     std::vector<std::shared_ptr<Stmt>> body = block();
     consume(TokenType::END, "Expect 'end' after function body.");
-    return std::make_shared<FunctionStmt>(name, parameters, body);
+    return std::make_shared<FunctionStmt>(name, parameters, body, is_static);
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration() {
     Token keyword = previous();
     bool is_mutable = keyword.type == TokenType::MUT;
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
+    std::shared_ptr<TypeExpr> type_expr = nullptr;
+    if (match({TokenType::COLON})) {
+        type_expr = type();
+    }
 
     std::shared_ptr<Expr> initializer = nullptr;
     if (match({TokenType::ASSIGN})) {
@@ -402,7 +432,25 @@ std::shared_ptr<Stmt> Parser::varDeclaration() {
     }
 
     consumeTerminators();
-    return std::make_shared<VarStmt>(name, initializer, is_mutable);
+    return std::make_shared<VarStmt>(name, initializer, is_mutable, type_expr);
+}
+
+std::shared_ptr<TypeExpr> Parser::type() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect type name.");
+
+    if (match({TokenType::LBRACKET})) {
+        if (match({TokenType::RBRACKET})) {
+            // Dynamic array: int[]
+            return std::make_shared<TypeExpr>(name, nullptr, true);
+        } else {
+            // Static array: int[10]
+            std::shared_ptr<Expr> size = expression();
+            consume(TokenType::RBRACKET, "Expect ']' after array size.");
+            return std::make_shared<TypeExpr>(name, size, true);
+        }
+    }
+
+    return std::make_shared<TypeExpr>(name);
 }
 
 std::shared_ptr<Stmt> Parser::statement() {

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <memory>
+#include "Interpreter.h"
 
 namespace nota {
 
@@ -11,6 +12,9 @@ ModuleLoader::ModuleLoader(Interpreter& interpreter)
     : interpreter_(interpreter) {}
 
 std::shared_ptr<Interpreter> ModuleLoader::load(const std::string& path, VM& vm) {
+    // TODO: Implement full module path resolution, including package name.
+    // std::string package_name = interpreter_.getPackageName();
+    // std::string full_path = resolve_path(package_name, path);
     std::ifstream file(path);
     if (!file) {
         throw std::runtime_error("Could not open file: " + path);

@@ -282,6 +282,8 @@ struct ClassStmt;
 struct ImportStmt;
 struct PackageStmt;
 struct ForEachStmt;
+struct MatchStmt;
+struct MatchCase;
 
 class StmtVisitor {
 public:
@@ -298,6 +300,7 @@ public:
     virtual void visit(const std::shared_ptr<ImportStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<PackageStmt>& stmt) = 0;
     virtual void visit(const std::shared_ptr<ForEachStmt>& stmt) = 0;
+    virtual void visit(const std::shared_ptr<MatchStmt>& stmt) = 0;
 };
 
 class Stmt {
@@ -458,6 +461,24 @@ struct ForEachStmt : Stmt, public std::enable_shared_from_this<ForEachStmt> {
     Token variable;
     std::shared_ptr<Expr> collection;
     std::shared_ptr<Stmt> body;
+};
+
+struct MatchCase {
+    std::vector<std::shared_ptr<Expr>> values;
+    std::shared_ptr<Stmt> body;
+    bool is_default;
+};
+
+struct MatchStmt : Stmt, public std::enable_shared_from_this<MatchStmt> {
+    MatchStmt(std::shared_ptr<Expr> expression, std::vector<MatchCase> cases)
+        : expression(expression), cases(cases) {}
+
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(shared_from_this());
+    }
+
+    std::shared_ptr<Expr> expression;
+    std::vector<MatchCase> cases;
 };
 
 

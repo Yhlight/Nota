@@ -751,6 +751,33 @@ void Interpreter::visit(const std::shared_ptr<ForEachStmt>& stmt) {
     throw RuntimeError(stmt->variable, "Can only iterate over arrays.");
 }
 
+void Interpreter::visit(const std::shared_ptr<MatchStmt>& stmt) {
+    Value value = evaluate(stmt->expression);
+    stack_.pop_back();
+
+    bool matched = false;
+    for (const auto& case_branch : stmt->cases) {
+        if (case_branch.is_default) {
+            execute(case_branch.body);
+            matched = true;
+            break;
+        }
+
+        for (const auto& case_value_expr : case_branch.values) {
+            Value case_value = evaluate(case_value_expr);
+            stack_.pop_back();
+            if (value == case_value) {
+                execute(case_branch.body);
+                matched = true;
+                break;
+            }
+        }
+        if (matched) {
+            break;
+        }
+    }
+}
+
 void Interpreter::checkType(Value& value, const std::shared_ptr<TypeExpr>& type, bool allow_implicit) {
     std::string type_name = type->name.lexeme;
 

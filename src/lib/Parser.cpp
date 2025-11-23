@@ -478,6 +478,9 @@ std::shared_ptr<Stmt> Parser::statement() {
     if (match({TokenType::IF})) {
         return ifStatement();
     }
+    if (match({TokenType::MATCH})) {
+        return matchStatement();
+    }
     if (match({TokenType::WHILE})) {
         return whileStatement();
     }
@@ -513,6 +516,34 @@ std::shared_ptr<Stmt> Parser::ifStatement() {
     consume(TokenType::END, "Expect 'end' after if statement.");
     return std::make_shared<IfStmt>(condition, thenBranch, elseBranch);
 }
+
+std::shared_ptr<Stmt> Parser::matchStatement() {
+    std::shared_ptr<Expr> expression = this->expression();
+    consumeTerminators();
+
+    std::vector<MatchCase> cases;
+    while (peek().type != TokenType::END && !isAtEnd()) {
+        std::vector<std::shared_ptr<Expr>> values;
+        bool is_default = false;
+
+        if (peek().type == TokenType::IDENTIFIER && peek().lexeme == "_") {
+            advance(); // consume '_'
+            is_default = true;
+        } else {
+            do {
+                values.push_back(this->expression());
+            } while (match({TokenType::COMMA}));
+        }
+
+        consume(TokenType::COLON, "Expect ':' after match case values.");
+        std::shared_ptr<Stmt> body = statement();
+        cases.push_back({values, body, is_default});
+    }
+
+    consume(TokenType::END, "Expect 'end' after match statement.");
+    return std::make_shared<MatchStmt>(expression, cases);
+}
+
 
 std::shared_ptr<Stmt> Parser::forStatement() {
     // Check if it's a for-each loop

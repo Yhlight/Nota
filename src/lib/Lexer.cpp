@@ -24,7 +24,8 @@ namespace {
         {"import", TokenType::IMPORT},
         {"as",     TokenType::AS},
         {"package",TokenType::PACKAGE},
-        {"none",   TokenType::NONE}
+        {"none",   TokenType::NONE},
+        {"match",  TokenType::MATCH}
     };
 }
 

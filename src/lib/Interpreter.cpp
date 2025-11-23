@@ -492,7 +492,7 @@ void Interpreter::visit(const std::shared_ptr<ScopeAccessExpr>& expr) {
 void Interpreter::visit(const std::shared_ptr<LambdaExpr>& expr) {
     // Create a synthetic FunctionStmt to represent the lambda
     Token name{TokenType::IDENTIFIER, "lambda", {}, -1};
-    auto functionStmt = std::make_shared<FunctionStmt>(name, expr->params, expr->body);
+    auto functionStmt = std::make_shared<FunctionStmt>(name, expr->params, expr->body, expr->return_type, false);
 
     auto function = vm.newObject<NotaFunction>(functionStmt, environment_);
     lastValue_ = function;

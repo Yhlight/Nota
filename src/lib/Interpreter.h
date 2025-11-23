@@ -131,11 +131,12 @@ public:
 
     VM& vm;
 
+    void checkType(Value& value, const std::shared_ptr<TypeExpr>& type, bool allow_implicit = false);
+
 private:
     void execute(const std::shared_ptr<Stmt>& stmt);
     Value evaluate(const std::shared_ptr<Expr>& expr);
     bool isTruthy(const Value& value);
-    void checkType(Value& value, const std::shared_ptr<TypeExpr>& type, bool allow_implicit = false);
 
     Value lastValue_;
     Environment* environment_;

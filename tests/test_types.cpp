@@ -94,3 +94,58 @@ TEST_CASE("Runtime type checking") {
         CHECK(std::get<double>(run("let x: float = true; let result = x")) == 1.0);
     }
 }
+
+TEST_CASE("Function parameter type checking") {
+    SUBCASE("Correct argument types") {
+        CHECK_NOTHROW(run(R"(
+            fn my_func(a: int, b: string)
+            end
+            my_func(1, "hello")
+        )"));
+    }
+
+    SUBCASE("Incorrect argument types") {
+        CHECK_THROWS_AS(run(R"(
+            fn my_func(a: int)
+            end
+            my_func("hello")
+        )"), nota::Interpreter::RuntimeError);
+    }
+
+    SUBCASE("Implicit conversion in arguments") {
+        CHECK_NOTHROW(run(R"(
+            fn my_func(a: float)
+            end
+            my_func(10)
+        )"));
+    }
+}
+
+TEST_CASE("Function return type checking") {
+    SUBCASE("Correct return type") {
+        CHECK(std::get<int>(run(R"(
+            fn my_func(): int
+                return 10
+            end
+            let result = my_func()
+        )")) == 10);
+    }
+
+    SUBCASE("Incorrect return type") {
+        CHECK_THROWS_AS(run(R"(
+            fn my_func(): int
+                return "hello"
+            end
+            my_func()
+        )"), nota::Interpreter::RuntimeError);
+    }
+
+    SUBCASE("Implicit conversion in return") {
+        CHECK(std::get<double>(run(R"(
+            fn my_func(): float
+                return 10
+            end
+            let result = my_func()
+        )")) == 10.0);
+    }
+}

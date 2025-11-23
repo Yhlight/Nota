@@ -18,15 +18,22 @@ Value NotaFunction::call(Interpreter &interpreter,
                          std::vector<Value> arguments) {
   auto environment = interpreter.vm.newObject<Environment>(closure_);
   for (int i = 0; i < declaration_->params.size(); ++i) {
+    if (declaration_->params[i].type) {
+        interpreter.checkType(arguments[i], declaration_->params[i].type, true);
+    }
     // Function parameters are mutable
-    environment->define(declaration_->params[i].lexeme, arguments[i], true, nullptr);
+    environment->define(declaration_->params[i].name.lexeme, arguments[i], true, nullptr);
   }
 
   try {
     interpreter.executeBlock(declaration_->body, environment);
   } catch (Interpreter::ReturnControl &returnValue) {
     if (isInitializer_) return closure_->get({TokenType::THIS, "this", {}, -1});
-    return returnValue.value;
+    Value value = returnValue.value;
+    if (declaration_->return_type) {
+        interpreter.checkType(value, declaration_->return_type, true);
+    }
+    return value;
   }
 
   if (isInitializer_) return closure_->get({TokenType::THIS, "this", {}, -1});

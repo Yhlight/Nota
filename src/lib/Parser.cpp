@@ -300,13 +300,24 @@ std::shared_ptr<Expr> Parser::primary() {
         }
         if (lookahead_pos < tokens_.size() && tokens_[lookahead_pos].type == TokenType::ARROW) {
              // It's a lambda
-            std::vector<Token> parameters;
+            std::vector<Parameter> parameters;
             if (peek().type != TokenType::RPAREN) {
                 do {
-                    parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+                    Token param_name = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                    std::shared_ptr<TypeExpr> param_type = nullptr;
+                    if (match({TokenType::COLON})) {
+                        param_type = type();
+                    }
+                    parameters.push_back({param_name, param_type});
                 } while (match({TokenType::COMMA}));
             }
             consume(TokenType::RPAREN, "Expect ')' after parameters.");
+
+            std::shared_ptr<TypeExpr> return_type = nullptr;
+            if (match({TokenType::COLON})) {
+                return_type = type();
+            }
+
             consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
 
             std::vector<std::shared_ptr<Stmt>> body;
@@ -324,7 +335,7 @@ std::shared_ptr<Expr> Parser::primary() {
                 body.push_back(std::make_shared<ReturnStmt>(Token{TokenType::RETURN, "return", {}, peek().line}, expr));
             }
 
-            return std::make_shared<LambdaExpr>(parameters, body);
+            return std::make_shared<LambdaExpr>(parameters, body, return_type);
         } else {
             // It's a grouped expression
             std::shared_ptr<Expr> expr = expression();
@@ -404,17 +415,27 @@ std::shared_ptr<Stmt> Parser::packageStatement() {
 std::shared_ptr<Stmt> Parser::functionDeclaration(bool is_static) {
     Token name = consume(TokenType::IDENTIFIER, "Expect function name.");
     consume(TokenType::LPAREN, "Expect '(' after function name.");
-    std::vector<Token> parameters;
+    std::vector<Parameter> parameters;
     if (peek().type != TokenType::RPAREN) {
         do {
-            parameters.push_back(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            Token param_name = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+            std::shared_ptr<TypeExpr> param_type = nullptr;
+            if (match({TokenType::COLON})) {
+                param_type = type();
+            }
+            parameters.push_back({param_name, param_type});
         } while (match({TokenType::COMMA}));
     }
     consume(TokenType::RPAREN, "Expect ')' after parameters.");
 
+    std::shared_ptr<TypeExpr> return_type = nullptr;
+    if (match({TokenType::COLON})) {
+        return_type = type();
+    }
+
     std::vector<std::shared_ptr<Stmt>> body = block();
     consume(TokenType::END, "Expect 'end' after function body.");
-    return std::make_shared<FunctionStmt>(name, parameters, body, is_static);
+    return std::make_shared<FunctionStmt>(name, parameters, body, return_type, is_static);
 }
 
 std::shared_ptr<Stmt> Parser::varDeclaration() {

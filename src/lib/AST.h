@@ -30,6 +30,7 @@ struct SubscriptExpr;
 struct LogicalExpr;
 struct TypeExpr;
 struct CastExpr;
+struct Parameter;
 
 struct Stmt;
 
@@ -207,10 +208,11 @@ struct ScopeAccessExpr : Expr {
 };
 
 struct LambdaExpr : Expr {
-    LambdaExpr(std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body) : params(params), body(body) {}
+    LambdaExpr(std::vector<Parameter> params, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<TypeExpr> return_type = nullptr) : params(params), body(body), return_type(return_type) {}
     void accept(ExprVisitor& visitor) override { visitor.visit(std::static_pointer_cast<LambdaExpr>(shared_from_this())); }
-    std::vector<Token> params;
+    std::vector<Parameter> params;
     std::vector<std::shared_ptr<Stmt>> body;
+    std::shared_ptr<TypeExpr> return_type;
 };
 
 struct ArrayExpr : Expr {
@@ -377,17 +379,23 @@ struct DoWhileStmt : Stmt, public std::enable_shared_from_this<DoWhileStmt> {
     std::shared_ptr<Expr> condition;
 };
 
+struct Parameter {
+    Token name;
+    std::shared_ptr<TypeExpr> type;
+};
+
 struct FunctionStmt : Stmt, public std::enable_shared_from_this<FunctionStmt> {
-    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body, bool is_static = false)
-        : name(name), params(params), body(body), is_static(is_static) {}
+    FunctionStmt(Token name, std::vector<Parameter> params, std::vector<std::shared_ptr<Stmt>> body, std::shared_ptr<TypeExpr> return_type = nullptr, bool is_static = false)
+        : name(name), params(params), body(body), return_type(return_type), is_static(is_static) {}
 
     void accept(StmtVisitor& visitor) override {
         visitor.visit(shared_from_this());
     }
 
     Token name;
-    std::vector<Token> params;
+    std::vector<Parameter> params;
     std::vector<std::shared_ptr<Stmt>> body;
+    std::shared_ptr<TypeExpr> return_type;
     bool is_static;
 };
 

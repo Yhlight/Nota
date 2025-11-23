@@ -5,8 +5,11 @@
 
 namespace nota {
 
-void Environment::define(const std::string& name, const Value& value, bool is_mutable) {
+void Environment::define(const std::string& name, const Value& value, bool is_mutable, std::shared_ptr<VarStmt> stmt) {
     values_[name] = {value, is_mutable};
+    if (stmt) {
+        statements_[name] = stmt;
+    }
 }
 
 Value Environment::get(const Token& name) {
@@ -64,6 +67,19 @@ bool Environment::isDefined(const std::string& name) {
     }
 
     return false;
+}
+
+std::shared_ptr<VarStmt> Environment::findVariable(const Token& name) {
+    auto it = statements_.find(name.lexeme);
+    if (it != statements_.end()) {
+        return it->second;
+    }
+
+    if (enclosing_ != nullptr) {
+        return enclosing_->findVariable(name);
+    }
+
+    return nullptr;
 }
 
 } // namespace nota

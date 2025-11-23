@@ -41,4 +41,18 @@ TEST_CASE("Casting") {
         CHECK_NOTHROW(run("let result = (int[])[1, 2]"));
         CHECK_THROWS_AS(run("let result = (int[])1"), nota::Interpreter::RuntimeError);
     }
+
+    SUBCASE("Object to_string") {
+        std::string source = R"(
+            class MyClass
+                fn to_string()
+                    return "Custom String"
+                end
+            end
+
+            let instance = MyClass()
+            let result = (string)instance
+        )";
+        CHECK(std::get<std::string>(run(source)) == "Custom String");
+    }
 }

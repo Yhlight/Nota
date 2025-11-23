@@ -13,11 +13,17 @@ ModuleLoader::ModuleLoader(Interpreter& interpreter)
 
 std::shared_ptr<Interpreter> ModuleLoader::load(const std::string& path, VM& vm) {
     // TODO: Implement full module path resolution, including package name.
-    // std::string package_name = interpreter_.getPackageName();
-    // std::string full_path = resolve_path(package_name, path);
-    std::ifstream file(path);
+    std::string full_path = path;
+    if (full_path.rfind(".nota") == std::string::npos) {
+        full_path += ".nota";
+    }
+
+    // TODO: Implement package-based resolution
+    // For now, assume path is relative to current working directory
+
+    std::ifstream file(full_path);
     if (!file) {
-        throw std::runtime_error("Could not open file: " + path);
+        throw std::runtime_error("Could not open file: " + full_path);
     }
 
     std::stringstream buffer;

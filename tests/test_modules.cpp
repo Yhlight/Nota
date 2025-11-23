@@ -105,4 +105,19 @@ TEST_CASE("Modules") {
 
         CHECK(interpreter.getPackageName() == "my_package");
     }
+
+    SUBCASE("Relative path import") {
+        createTestFile("tests/test_files/relative_module.nota", R"(
+            let val = 123
+        )");
+
+        std::string source = R"(
+            import "tests/test_files/relative_module"
+            let result = relative_module::val
+        )";
+
+        auto result = run(source);
+        REQUIRE(std::holds_alternative<int>(result));
+        CHECK(std::get<int>(result) == 123);
+    }
 }

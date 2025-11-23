@@ -19,7 +19,7 @@ Value NotaFunction::call(Interpreter &interpreter,
   auto environment = interpreter.vm.newObject<Environment>(closure_);
   for (int i = 0; i < declaration_->params.size(); ++i) {
     // Function parameters are mutable
-    environment->define(declaration_->params[i].lexeme, arguments[i], true);
+    environment->define(declaration_->params[i].lexeme, arguments[i], true, nullptr);
   }
 
   try {
@@ -38,7 +38,7 @@ NotaFunction*
 NotaFunction::bind(Interpreter& interpreter, NotaInstance* instance) {
   auto environment = interpreter.vm.newObject<Environment>(closure_);
   // 'this' is immutable
-  environment->define("this", instance, false);
+  environment->define("this", instance, false, nullptr);
   return interpreter.vm.newObject<NotaFunction>(declaration_, environment, isInitializer_);
 }
 

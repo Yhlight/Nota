@@ -108,6 +108,25 @@ TEST_CASE("Static arrays") {
     }
 }
 
+TEST_CASE("Array element type checking") {
+    SUBCASE("Correct element types") {
+        CHECK_NOTHROW(run("let a: int[] = [1, 2, 3]"));
+        CHECK_NOTHROW(run("let a: float[] = [1.0, 2, 3.5]")); // Implicit conversion
+    }
+
+    SUBCASE("Incorrect element types") {
+        CHECK_THROWS_AS(run("let a: int[] = [1, \"two\", 3]"), nota::Interpreter::RuntimeError);
+    }
+
+    SUBCASE("Assignment with correct element type") {
+        CHECK_NOTHROW(run("let a: int[] = [1]; a[0] = 2"));
+    }
+
+    SUBCASE("Assignment with incorrect element type") {
+        CHECK_THROWS_AS(run("let a: int[] = [1]; a[0] = \"hello\""), nota::Interpreter::RuntimeError);
+    }
+}
+
 TEST_CASE("Empty array") {
     std::string source = "let a = []";
     nota::VM vm;

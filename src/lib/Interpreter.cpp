@@ -33,7 +33,7 @@ Interpreter::Interpreter(VM& vm) : vm(vm), environment_(nullptr), moduleLoader_(
 void Interpreter::registerNative(const std::string& name, int arity, NotaNativeFunction::NativeFn fn) {
     auto native_fn = vm.newObject<NotaNativeFunction>(arity, std::move(fn));
     // Native functions are immutable
-    environment_->define(name, native_fn, false);
+    environment_->define(name, native_fn, false, nullptr);
 }
 
 Interpreter::~Interpreter() {
@@ -95,7 +95,7 @@ void Interpreter::visit(const std::shared_ptr<VarStmt>& stmt) {
         checkType(value, stmt->type, true); // Allow implicit conversion
     }
 
-    environment_->define(stmt->name.lexeme, value, stmt->is_mutable);
+    environment_->define(stmt->name.lexeme, value, stmt->is_mutable, stmt);
 }
 
 void Interpreter::executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements, Environment* environment) {
@@ -167,7 +167,7 @@ void Interpreter::visit(const std::shared_ptr<CallExpr>& expr) {
 
 void Interpreter::visit(const std::shared_ptr<FunctionStmt>& stmt) {
     auto function = vm.newObject<NotaFunction>(stmt, environment_);
-    environment_->define(stmt->name.lexeme, function, false);
+    environment_->define(stmt->name.lexeme, function, false, nullptr);
 }
 
 void Interpreter::visit(const std::shared_ptr<ReturnStmt>& stmt) {
@@ -193,7 +193,7 @@ void Interpreter::visit(const std::shared_ptr<ClassStmt>& stmt) {
     }
 
     auto klass = vm.newObject<NotaClass>(stmt->name, stmt->properties, methods, static_methods);
-    environment_->define(stmt->name.lexeme, klass, false);
+    environment_->define(stmt->name.lexeme, klass, false, nullptr);
 }
 
 void Interpreter::visit(const std::shared_ptr<ImportStmt>& stmt) {
@@ -420,6 +420,14 @@ void Interpreter::visit(const std::shared_ptr<SetExpr>& expr) {
         stack_.pop_back();
         if (auto obj = std::get_if<Object*>(&object)) {
             if ((*obj)->type == ObjectType::ARRAY) {
+                if(auto var = std::dynamic_pointer_cast<Variable>(expr->object)){
+                    if(auto var_stmt = environment_->findVariable(var->name)){
+                        if(var_stmt->type && var_stmt->type->is_array){
+                            auto element_type = std::make_shared<TypeExpr>(var_stmt->type->name);
+                            checkType(value, element_type, true);
+                        }
+                    }
+                }
                 auto array = static_cast<NotaArray*>(*obj);
                 if (std::holds_alternative<int>(index_val)) {
                     int index = std::get<int>(index_val);
@@ -700,8 +708,18 @@ void Interpreter::visit(const std::shared_ptr<CastExpr>& expr) {
             lastValue_ = vm.newObject<NotaString>(std::to_string(std::get<double>(value)));
         } else if (std::holds_alternative<bool>(value)) {
             lastValue_ = vm.newObject<NotaString>(std::get<bool>(value) ? "true" : "false");
-        } else if (std::holds_alternative<Object*>(value) && std::get<Object*>(value)->type == ObjectType::STRING) {
-            lastValue_ = value; // No conversion needed
+        } else if (auto* obj = std::get_if<Object*>(&value)) {
+            if ((*obj)->type == ObjectType::STRING) {
+                lastValue_ = value; // No conversion needed
+            } else if (auto* instance = dynamic_cast<NotaInstance*>(*obj)) {
+                if (auto* method = instance->getClass()->findMethod("to_string")) {
+                    lastValue_ = method->bind(*this, instance)->call(*this, {});
+                } else {
+                    lastValue_ = vm.newObject<NotaString>(instance->toString());
+                }
+            } else {
+                throw RuntimeError(expr->type->name, "Invalid cast to string.");
+            }
         } else {
              throw RuntimeError(expr->type->name, "Invalid cast to string.");
         }
@@ -723,7 +741,7 @@ void Interpreter::visit(const std::shared_ptr<ForEachStmt>& stmt) {
             auto array = static_cast<NotaArray*>(*obj);
             for (const auto& element : array->elements) {
                 Environment* loopEnvironment = vm.newObject<Environment>(environment_);
-                loopEnvironment->define(stmt->variable.lexeme, element, false);
+                loopEnvironment->define(stmt->variable.lexeme, element, false, nullptr);
                 executeBlock({stmt->body}, loopEnvironment);
             }
             return;
@@ -763,6 +781,11 @@ void Interpreter::checkType(Value& value, const std::shared_ptr<TypeExpr>& type,
     if (type->is_array) {
         if (auto* obj = std::get_if<Object*>(&value)) {
             if ((*obj)->type == ObjectType::ARRAY) {
+                auto* array = static_cast<NotaArray*>(*obj);
+                auto element_type = std::make_shared<TypeExpr>(type->name);
+                for (auto& element : array->elements) {
+                    checkType(element, element_type, allow_implicit);
+                }
                 type_matches = true;
             }
         }

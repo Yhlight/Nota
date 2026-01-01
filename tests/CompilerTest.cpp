@@ -85,3 +85,128 @@ TEST(CompilerSnapshotTest, BasicApp) {
     // 4. 比较实际输出和预期快照
     EXPECT_EQ(actualOutput, expectedOutput);
 }
+
+// --- 快照测试 for Custom Components ---
+TEST(CompilerSnapshotTest, CustomComponent) {
+    std::string sourceCode = readFile("../../tests/custom_component.nota");
+
+    Lexer lexer(sourceCode);
+    Parser parser(lexer);
+    auto ast = parser.ParseProgram();
+    ASSERT_TRUE(parser.Errors().empty());
+
+    Generator generator;
+    std::string actualOutput = generator.Generate(*ast);
+
+    std::string expectedOutput = R"(<!DOCTYPE html>
+<html>
+<head>
+  <style>
+.nota-0 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  width: 800px;
+  height: 600px;
+}
+
+.nota-1 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 100px;
+  height: 100px;
+  background-color: blue;
+}
+
+.nota-2 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: lightblue;
+}
+
+.nota-3 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 100px;
+  height: 100px;
+  background-color: red;
+}
+
+.nota-4 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: lightblue;
+}
+
+.nota-5 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 100px;
+  height: 100px;
+  background-color: blue;
+}
+
+.nota-6 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: lightblue;
+}
+
+.nota-7 {
+  box-sizing: border-box;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  display: block;
+  width: 50px;
+  height: 10px;
+  background-color: yellow;
+}
+
+  </style>
+</head>
+<body class="nota-app nota-0">
+<div class="nota-1">
+<div class="nota-rect nota-2">
+</div>
+</div>
+<div class="nota-3">
+<div class="nota-rect nota-4">
+</div>
+</div>
+<div class="nota-5">
+<div class="nota-rect nota-6">
+</div>
+<div class="nota-rect nota-7">
+</div>
+</div>
+</body>
+</html>)";
+
+    EXPECT_EQ(actualOutput, expectedOutput);
+}

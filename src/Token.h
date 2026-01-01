@@ -32,6 +32,7 @@ enum class TokenType {
 
     // 关键字 (未来可能扩展)
     // 暂时将所有组件名和属性名视为 IDENTIFIER
+    KEYWORD_ITEM, // Item
 };
 
 // Token 结构体，用于存储词法分析的结果

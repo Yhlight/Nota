@@ -5,13 +5,22 @@
 // --- Public Method ---
 
 std::string Generator::Generate(const ProgramNode& program) {
-    // 清空上一次的输出
+    // 清空状态
     htmlOutput.str("");
     cssOutput.str("");
+    componentRegistry.clear();
 
-    // 从根节点开始遍历
-    for (const auto& component : program.components) {
-        visit(component);
+    // 1. 预处理阶段：扫描并注册所有组件定义
+    preprocessDefinitions(program);
+
+    // 2. 生成阶段：只访问顶级的组件实例
+    for (const auto& node : program.children) {
+        if (auto component = std::dynamic_pointer_cast<ComponentNode>(node)) {
+            if (component->type == "App") {
+                appComponentType = component->type;
+            }
+            visit(component);
+        }
     }
 
     // 组合最终的 HTML
@@ -24,6 +33,9 @@ std::string Generator::Generate(const ProgramNode& program) {
     finalHtml << "  </style>\n";
     finalHtml << "</head>\n";
     finalHtml << htmlOutput.str(); // body tag is already in here
+    if (appComponentType == "App") {
+        finalHtml << "</body>\n";
+    }
     finalHtml << "</html>";
 
     return finalHtml.str();
@@ -35,12 +47,47 @@ void Generator::visit(const std::shared_ptr<ASTNode>& node) {
     // 根据节点类型分发
     if (auto component = std::dynamic_pointer_cast<ComponentNode>(node)) {
         visitComponent(*component);
-    } else if (auto property = std::dynamic_pointer_cast<PropertyNode>(node)) {
-        visitProperty(*property);
     }
+    // Property nodes are now handled inside visitComponent
 }
 
 void Generator::visitComponent(const ComponentNode& component) {
+    // 检查是否是自定义组件的实例
+    if (componentRegistry.count(component.type)) {
+        // 这是一个自定义组件的实例
+        auto original = componentRegistry.at(component.type);
+        auto instance = deepCopyComponent(original);
+
+        // 覆写属性和追加子节点
+        for (const auto& child : component.children) {
+            if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+                // 查找并覆写属性
+                bool overridden = false;
+                for (auto& existingChild : instance->children) {
+                    if (auto existingProp = std::dynamic_pointer_cast<PropertyNode>(existingChild)) {
+                        if (existingProp->name == prop->name) {
+                            existingProp->value = prop->value;
+                            overridden = true;
+                            break;
+                        }
+                    }
+                }
+                if (!overridden) { // 如果不存在，则添加新属性
+                    instance->children.push_back(child);
+                }
+            } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
+                // 追加子组件
+                instance->children.push_back(child);
+            }
+        }
+
+        // 用合并后的实例继续处理
+        visitComponent(*instance);
+        return;
+    }
+
+
+    // --- 以下是处理原生组件或已合并的自定义组件实例的逻辑 ---
     // 1. 生成唯一的 CSS 类名
     std::string className = generateCssClass(component);
     std::string oldClassName = currentClassName;
@@ -64,7 +111,7 @@ void Generator::visitComponent(const ComponentNode& component) {
     } else if (component.type == "Col") {
         cssOutput << "  display: flex;\n";
         cssOutput << "  flex-direction: column;\n";
-    } else if (component.type == "Rect" || component.type == "Text") {
+    } else if (component.type == "Rect" || component.type == "Text" || component.type == "Item") {
         cssOutput << "  display: block;\n";
     }
 
@@ -86,14 +133,15 @@ void Generator::visitComponent(const ComponentNode& component) {
         }
     }
 
-    // 7. 闭合 HTML 标签
-    if (component.type == "App") {
-         htmlOutput << "</body>\n";
-    } else if (component.type == "Row" || component.type == "Col" || component.type == "Rect") {
-         htmlOutput << "</div>\n";
-    } else if (component.type == "Text") {
-        htmlOutput << "</span>\n";
+    // 7. 闭合 HTML 标签 (原生组件)
+    if (componentRegistry.find(component.type) == componentRegistry.end()) { // It's a primitive
+        if (component.type == "Row" || component.type == "Col" || component.type == "Rect" || component.type == "Item") {
+            htmlOutput << "</div>\n";
+        } else if (component.type == "Text") {
+            htmlOutput << "</span>\n";
+        }
     }
+
 
     // 恢复上一个 class name
     currentClassName = oldClassName;
@@ -117,7 +165,7 @@ std::string Generator::generateComponentTag(const ComponentNode& component) {
     else if (component.type == "Col")   tag = "<div class=\"nota-col " + currentClassName + "\">";
     else if (component.type == "Rect")  tag = "<div class=\"nota-rect " + currentClassName + "\">";
     else if (component.type == "Text")  tag = "<span class=\"nota-text " + currentClassName + "\">";
-    else                                tag = "<div class=\"" + currentClassName + "\">"; // 自定义组件默认为 div
+    else                                tag = "<div class=\"" + currentClassName + "\">"; // 自定义组件和其他默认为 div
     return tag;
 }
 
@@ -150,4 +198,31 @@ std::string Generator::getCssValue(const PropertyValue& value) {
         }
         return "";
     }, value);
+}
+
+void Generator::preprocessDefinitions(const ProgramNode& program) {
+    for (const auto& node : program.children) {
+        if (auto def = std::dynamic_pointer_cast<ComponentDefinitionNode>(node)) {
+            componentRegistry[def->name] = def->body;
+        }
+    }
+}
+
+std::shared_ptr<ComponentNode> Generator::deepCopyComponent(const std::shared_ptr<ComponentNode>& original) {
+    if (!original) return nullptr;
+
+    auto copy = std::make_shared<ComponentNode>();
+    copy->type = original->type;
+
+    for (const auto& child : original->children) {
+        if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+            auto propCopy = std::make_shared<PropertyNode>();
+            propCopy->name = prop->name;
+            propCopy->value = prop->value;
+            copy->children.push_back(propCopy);
+        } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
+            copy->children.push_back(deepCopyComponent(comp));
+        }
+    }
+    return copy;
 }

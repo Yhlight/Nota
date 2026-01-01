@@ -9,6 +9,7 @@
 // --- 前置声明 ---
 struct ComponentNode;
 struct PropertyNode;
+struct ComponentDefinitionNode;
 
 // --- AST 节点基类 (未来可用于扩展) ---
 struct ASTNode {
@@ -33,10 +34,18 @@ struct ComponentNode : public ASTNode {
     std::vector<std::shared_ptr<ASTNode>> children; // 子节点，可以是组件或属性
 };
 
+// --- 组件定义节点 ---
+// 例如: Item Box { Rect { ... } }
+struct ComponentDefinitionNode : public ASTNode {
+    std::string name; // "Box"
+    std::shared_ptr<ComponentNode> body;
+};
+
 // --- 程序根节点 ---
 // 代表一个完整的 .nota 文件
 struct ProgramNode : public ASTNode {
-    std::vector<std::shared_ptr<ComponentNode>> components;
+    // 根节点可以包含组件定义和顶级的组件实例
+    std::vector<std::shared_ptr<ASTNode>> children;
 };
 
 

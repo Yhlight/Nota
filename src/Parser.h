@@ -24,6 +24,9 @@ private:
     // 解析单个顶级组件
     std::shared_ptr<ComponentNode> parseComponent();
 
+    // 解析一个组件定义
+    std::shared_ptr<ComponentDefinitionNode> parseComponentDefinition();
+
     // 解析组件或属性列表（在 {} 内部）
     void parseComponentBody(ComponentNode& component);
 

@@ -112,7 +112,11 @@ Token Lexer::NextToken() {
         default:
             if (isalpha(ch) || ch == '_') {
                 tok.literal = readIdentifier();
-                tok.type = TokenType::IDENTIFIER; // Nota 中所有关键字都当做标识符处理
+                if (tok.literal == "Item") {
+                    tok.type = TokenType::KEYWORD_ITEM;
+                } else {
+                    tok.type = TokenType::IDENTIFIER; // Nota 中所有关键字都当做标识符处理
+                }
                 return tok; // readIdentifier 已经移动了指针, 所以直接返回
             } else if (isdigit(ch)) {
                 tok.literal = readNumber();

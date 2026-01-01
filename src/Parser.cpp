@@ -36,11 +36,18 @@ bool Parser::expectPeek(TokenType t) {
 std::shared_ptr<ProgramNode> Parser::ParseProgram() {
     auto program = std::make_shared<ProgramNode>();
     while (currentToken.type != TokenType::END_OF_FILE) {
-        auto component = parseComponent();
-        if (component) {
-            program->components.push_back(component);
+        std::shared_ptr<ASTNode> node = nullptr;
+        // 如果是 Item 关键字，需要判断是定义还是使用
+        if (currentToken.type == TokenType::KEYWORD_ITEM && peekToken.type == TokenType::IDENTIFIER) {
+            node = parseComponentDefinition();
+        } else {
+            node = parseComponent();
         }
-        nextToken(); //
+
+        if (node) {
+            program->children.push_back(node);
+        }
+        nextToken();
     }
     return program;
 }
@@ -73,7 +80,8 @@ void Parser::parseComponentBody(ComponentNode& component) {
 
 
 std::shared_ptr<ComponentNode> Parser::parseComponent() {
-    if (currentToken.type != TokenType::IDENTIFIER) {
+    // 组件可以是普通标识符 (App, Row) 或者是 Item 关键字（用作通用容器）
+    if (currentToken.type != TokenType::IDENTIFIER && currentToken.type != TokenType::KEYWORD_ITEM) {
         return nullptr;
     }
 
@@ -127,4 +135,33 @@ std::shared_ptr<PropertyNode> Parser::parseProperty() {
     nextToken();
 
     return prop;
+}
+
+std::shared_ptr<ComponentDefinitionNode> Parser::parseComponentDefinition() {
+    // currentToken 应该是 KEYWORD_ITEM
+    if (!expectPeek(TokenType::IDENTIFIER)) { // 期望下一个是组件名
+        return nullptr;
+    }
+
+    auto defNode = std::make_shared<ComponentDefinitionNode>();
+    defNode->name = currentToken.literal;
+
+    if (!expectPeek(TokenType::LBRACE)) {
+        return nullptr;
+    }
+
+    // 组件定义的 body 本质上也是一个 ComponentNode
+    // 它的类型就是 Item
+    auto bodyComponent = std::make_shared<ComponentNode>();
+    bodyComponent->type = "Item";
+
+    parseComponentBody(*bodyComponent);
+    defNode->body = bodyComponent;
+
+    // 循环结束后，currentToken 应该是 '}'
+    if (currentToken.type != TokenType::RBRACE) {
+        return nullptr;
+    }
+
+    return defNode;
 }

@@ -1,0 +1,36 @@
+// Test file for custom components
+
+Item Box {
+    width: 100;
+    height: 100;
+    color: "blue";
+
+    // A nested child
+    Rect {
+        width: 20;
+        height: 20;
+        color: "lightblue";
+    }
+}
+
+App {
+    width: 800;
+    height: 600;
+
+    // First instance of Box, using defaults
+    Box {}
+
+    // Second instance, overriding color
+    Box {
+        color: "red";
+    }
+
+    // Third instance, adding a child component
+    Box {
+        Rect {
+            width: 50;
+            height: 10;
+            color: "yellow";
+        }
+    }
+}

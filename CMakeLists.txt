@@ -25,7 +25,10 @@ enable_testing()
 # --- End of CTest Integration ---
 
 
-add_executable(nota src/main.cpp)
+add_executable(nota
+    src/main.cpp
+    src/Lexer.cpp
+)
 
 target_include_directories(nota PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

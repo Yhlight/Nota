@@ -1,0 +1,33 @@
+#ifndef NOTA_COMPILER_GENERATOR_H
+#define NOTA_COMPILER_GENERATOR_H
+
+#include "AST.h"
+#include <string>
+#include <sstream>
+
+class Generator {
+public:
+    // 接受 AST 根节点进行代码生成
+    std::string Generate(const ProgramNode& program);
+
+private:
+    // 递归遍历 AST 节点的函数
+    void visit(const std::shared_ptr<ASTNode>& node);
+    void visitComponent(const ComponentNode& component);
+    void visitProperty(const PropertyNode& property);
+
+    // 辅助函数，用于生成 CSS 和 HTML
+    std::string generateComponentTag(const ComponentNode& component);
+    std::string generateCssClass(const ComponentNode& component);
+    std::string getCssPropertyName(const std::string& notaName);
+    std::string getCssValue(const PropertyValue& value);
+
+    // 使用 stringstream 来构建输出
+    std::stringstream htmlOutput;
+    std::stringstream cssOutput;
+
+    // 当前正在处理的组件的 CSS 类名
+    std::string currentClassName;
+};
+
+#endif //NOTA_COMPILER_GENERATOR_H

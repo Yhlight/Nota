@@ -25,6 +25,10 @@ private:
     std::unique_ptr<ComponentNode> parse_component();
     PropertyNode parse_property();
     ASTValue parse_value();
+    std::unique_ptr<Expression> parse_expression();
+    std::unique_ptr<Expression> parse_primary();
+    AssignmentNode parse_assignment(std::unique_ptr<Expression> target);
+
 
     void synchronize();
     void error(const std::string& message);

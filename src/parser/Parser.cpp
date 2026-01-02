@@ -67,7 +67,16 @@ void Parser::parse_component_body(Node& node) {
         if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
             if (lexer_.peek_next_significant_char() == ':') {
                 node->properties.push_back(parse_property());
-            } else {
+            } else if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
+                if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
+                    auto target = parse_expression();
+                    node->assignments.push_back(parse_assignment(std::move(target)));
+                } else {
+                    error("Assignments are not allowed in Item definitions.");
+                    synchronize();
+                }
+            }
+            else {
                 node->children.push_back(parse_component());
             }
         } else {
@@ -125,18 +134,55 @@ ASTValue Parser::parse_value() {
     if (match(TokenType::NUMBER)) {
         return LiteralNode{std::stod(std::string(previous_.text)), previous_};
     }
-    if (match(TokenType::IDENTIFIER)) {
-        std::string value_text = std::string(previous_.text);
-        if (check(TokenType::IDENTIFIER)) {
-            advance();
-            value_text += " " + std::string(previous_.text);
-        }
-        return LiteralNode{value_text, previous_};
+    if (check(TokenType::IDENTIFIER)) {
+        return parse_expression();
     }
 
     error("Expected a value (string, number, or identifier).");
     return LiteralNode{std::string(""), previous_};
 }
+
+std::unique_ptr<Expression> Parser::parse_expression() {
+    auto expr = parse_primary();
+
+    while (match(TokenType::DOT) || match(TokenType::LEFT_BRACKET)) {
+        if (previous_.type == TokenType::DOT) {
+            Token member = current_;
+            consume(TokenType::IDENTIFIER, "Expected property name after '.'.");
+            auto new_expr = std::make_unique<Expression>();
+            new_expr->variant = MemberAccessNode{std::move(expr), member};
+            expr = std::move(new_expr);
+        } else {
+            auto index = parse_expression();
+            consume(TokenType::RIGHT_BRACKET, "Expected ']' after index.");
+            auto new_expr = std::make_unique<Expression>();
+            new_expr->variant = IndexAccessNode{std::move(expr), std::move(index)};
+            expr = std::move(new_expr);
+        }
+    }
+
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::parse_primary() {
+    auto expr = std::make_unique<Expression>();
+    if (match(TokenType::IDENTIFIER)) {
+        expr->variant = LiteralNode{std::string(previous_.text), previous_};
+    } else {
+        error("Expected an identifier.");
+    }
+    return expr;
+}
+
+AssignmentNode Parser::parse_assignment(std::unique_ptr<Expression> target) {
+    consume(TokenType::EQUAL, "Expected '=' after target.");
+    AssignmentNode assignment;
+    assignment.target = std::move(target);
+    assignment.value = parse_value();
+    match(TokenType::SEMICOLON);
+    return assignment;
+}
+
 
 void Parser::synchronize() {
     advance();

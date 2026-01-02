@@ -19,6 +19,7 @@ file(GLOB_RECURSE NOTA_CORE_SOURCES
     "src/parser/*.cpp"
     "src/analyzer/*.cpp"
     "src/codegen/*.cpp"
+    "src/codegen/ExpressionEvaluator.cpp"
 )
 add_library(NotaCore STATIC ${NOTA_CORE_SOURCES})
 target_include_directories(NotaCore PUBLIC src)

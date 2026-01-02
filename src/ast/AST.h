@@ -13,6 +13,32 @@ struct LiteralNode {
     Token token;
 };
 
+// --- Expression Nodes ---
+struct MemberAccessNode {
+    std::unique_ptr<Expression> object;
+    Token member;
+};
+
+struct IndexAccessNode {
+    std::unique_ptr<Expression> object;
+    std::unique_ptr<Expression> index;
+};
+
+struct AssignmentNode {
+    std::unique_ptr<Expression> target;
+    ASTValue value;
+};
+
+using ExpressionVariant = std::variant<
+    MemberAccessNode,
+    IndexAccessNode,
+    LiteralNode
+>;
+
+struct Expression {
+    ExpressionVariant variant;
+};
+
 // --- Property Node ---
 struct PropertyNode {
     Token name;
@@ -24,6 +50,7 @@ struct ComponentNode {
     Token type;
     std::vector<PropertyNode> properties;
     std::vector<std::unique_ptr<ComponentNode>> children;
+    std::vector<AssignmentNode> assignments;
 };
 
 // --- Item Definition Node ---

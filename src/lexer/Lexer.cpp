@@ -75,6 +75,10 @@ Token Lexer::next_token() {
         case '}': return make_token(TokenType::RIGHT_BRACE);
         case ':': return make_token(TokenType::COLON);
         case ';': return make_token(TokenType::SEMICOLON);
+        case '.': return make_token(TokenType::DOT);
+        case '[': return make_token(TokenType::LEFT_BRACKET);
+        case ']': return make_token(TokenType::RIGHT_BRACKET);
+        case '=': return make_token(TokenType::EQUAL);
         case '"': return string();
         case '%': return make_token(TokenType::PERCENT);
         case '*': return make_token(TokenType::STAR);

@@ -2,7 +2,9 @@
 #include "ast/AST.h"
 #include <iostream>
 
-SemanticAnalyzer::SemanticAnalyzer() = default;
+SemanticAnalyzer::SemanticAnalyzer() {
+    built_in_types_ = {"App", "Row", "Col", "Rect", "Text"};
+}
 
 bool SemanticAnalyzer::analyze(const RootNode& ast) {
     auto global_scope = std::make_shared<SymbolTable>();
@@ -39,9 +41,8 @@ void SemanticAnalyzer::visit(const ItemNode& node, std::shared_ptr<SymbolTable> 
 
 void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTable> table) {
     std::string type_name(node.type.text);
-    if (table->lookup(type_name) == nullptr) {
-        // It's not a defined Item, so it must be a built-in component.
-        // For now, we assume all non-Item components are valid.
+    if (built_in_types_.find(type_name) == built_in_types_.end() && table->lookup(type_name) == nullptr) {
+        errors_.push_back("Unknown component type '" + type_name + "'.");
     }
 
     auto local_scope = std::make_shared<SymbolTable>(table);
@@ -53,6 +54,10 @@ void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTa
         if (child) {
             visit(*child, local_scope);
         }
+    }
+
+    for (const auto& assignment : node.assignments) {
+        visit(assignment, local_scope);
     }
 }
 
@@ -71,5 +76,23 @@ void SemanticAnalyzer::visit(const PropertyNode& node, std::shared_ptr<SymbolTab
                 }
             }
         }
+    }
+}
+
+void SemanticAnalyzer::visit(const AssignmentNode& node, std::shared_ptr<SymbolTable> table) {
+    visit(*node.target, table);
+    if (auto* expr = std::get_if<std::unique_ptr<Expression>>(&node.value)) {
+        visit(**expr, table);
+    }
+}
+
+void SemanticAnalyzer::visit(const Expression& node, std::shared_ptr<SymbolTable> table) {
+    if (auto* member_access = std::get_if<MemberAccessNode>(&node.variant)) {
+        visit(*member_access->object, table);
+    } else if (auto* index_access = std::get_if<IndexAccessNode>(&node.variant)) {
+        visit(*index_access->object, table);
+        visit(*index_access->index, table);
+    } else if (auto* literal = std::get_if<LiteralNode>(&node.variant)) {
+        // Nothing to do for literals.
     }
 }

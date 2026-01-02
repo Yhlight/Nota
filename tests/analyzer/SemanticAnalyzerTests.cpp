@@ -75,3 +75,20 @@ TEST(SemanticAnalyzerTests, SpacingInRect) {
     EXPECT_EQ(analyzer.errors()[0].line, 3);
     EXPECT_EQ(analyzer.errors()[0].column, 13);
 }
+
+TEST(SemanticAnalyzerTests, InvalidTypeForWidth) {
+    std::string source = R"(
+        App {
+            width: "hello";
+        }
+    )";
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    SemanticAnalyzer analyzer;
+    EXPECT_FALSE(analyzer.analyze(ast));
+    ASSERT_EQ(analyzer.errors().size(), 1);
+    EXPECT_EQ(analyzer.errors()[0].message, "Invalid type for property 'width'.");
+}

@@ -1,6 +1,7 @@
 #include "SemanticAnalyzer.h"
 #include "ast/AST.h"
 #include <iostream>
+#include <regex>
 
 SemanticAnalyzer::SemanticAnalyzer() {
     built_in_types_ = {"App", "Row", "Col", "Rect", "Text"};
@@ -9,6 +10,14 @@ SemanticAnalyzer::SemanticAnalyzer() {
     valid_properties_["Col"] = {"width", "height", "color", "spacing"};
     valid_properties_["Rect"] = {"width", "height", "color", "radius", "border"};
     valid_properties_["Text"] = {"text", "color"};
+
+    property_types_["width"] = {ValueType::NUMBER, ValueType::PERCENTAGE};
+    property_types_["height"] = {ValueType::NUMBER, ValueType::PERCENTAGE};
+    property_types_["color"] = {ValueType::COLOR, ValueType::STRING};
+    property_types_["spacing"] = {ValueType::NUMBER};
+    property_types_["radius"] = {ValueType::NUMBER};
+    property_types_["border"] = {ValueType::STRING};
+    property_types_["text"] = {ValueType::STRING};
 }
 
 bool SemanticAnalyzer::analyze(const RootNode& ast) {
@@ -79,12 +88,12 @@ void SemanticAnalyzer::visit(const PropertyNode& node, std::shared_ptr<SymbolTab
         errors_.push_back({"Property '" + name + "' is not a valid property of '" + component_type + "'.", node.name.line, node.name.column});
     }
 
-    if (name == "width" || name == "height") {
-        if (auto* literal = std::get_if<LiteralNode>(&node.value)) {
-            if (auto* str_val = std::get_if<std::string>(&literal->value)) {
-                if (str_val->find('%') == std::string::npos && !std::isdigit((*str_val)[0])) {
-                     errors_.push_back({"Invalid value for property '" + name + "'. Expected number or percentage.", literal->token.line, literal->token.column});
-                }
+    if (auto* literal = std::get_if<LiteralNode>(&node.value)) {
+        ValueType type = get_type(*literal);
+        if (property_types_.count(name)) {
+            const auto& allowed_types = property_types_.at(name);
+            if (std::find(allowed_types.begin(), allowed_types.end(), type) == allowed_types.end()) {
+                errors_.push_back({"Invalid type for property '" + name + "'.", literal->token.line, literal->token.column});
             }
         }
     }
@@ -104,6 +113,23 @@ void SemanticAnalyzer::visit(const Expression& node, std::shared_ptr<SymbolTable
         visit(*index_access->object, table);
         visit(*index_access->index, table);
     } else if (auto* literal = std::get_if<LiteralNode>(&node.variant)) {
-        // Nothing to do for literals.
+        get_type(*literal);
     }
+}
+
+ValueType SemanticAnalyzer::get_type(const LiteralNode& node) {
+    if (std::holds_alternative<double>(node.value)) {
+        return ValueType::NUMBER;
+    }
+    if (std::holds_alternative<std::string>(node.value)) {
+        const std::string& val = std::get<std::string>(node.value);
+        if (val.find('%') != std::string::npos) {
+            return ValueType::PERCENTAGE;
+        }
+        if (val.front() == '#') {
+            return ValueType::COLOR;
+        }
+        return ValueType::STRING;
+    }
+    return ValueType::UNKNOWN;
 }

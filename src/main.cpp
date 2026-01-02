@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <fstream>
 
 #include "Lexer.hpp"
 #include "Parser.hpp"
@@ -60,13 +61,23 @@ int main() {
     CodeGenerator generator;
     generator.generate(*root);
 
-    std::cout << "<!-- Generated HTML -->" << std::endl;
-    std::cout << generator.getHTML() << std::endl;
-    std::cout << std::endl;
-    std::cout << "/* Generated CSS */" << std::endl;
-    std::cout << "<style>" << std::endl;
-    std::cout << generator.getCSS() << std::endl;
-    std::cout << "</style>" << std::endl;
+    std::ofstream outputFile("output.html");
+    if (!outputFile) {
+        std::cerr << "Error opening output file." << std::endl;
+        return 1;
+    }
+
+    outputFile << "<!DOCTYPE html>" << std::endl;
+    outputFile << "<html>" << std::endl;
+    outputFile << "<head>" << std::endl;
+    outputFile << "<style>" << std::endl;
+    outputFile << generator.getCSS() << std::endl;
+    outputFile << "</style>" << std::endl;
+    outputFile << "</head>" << std::endl;
+    outputFile << generator.getHTML() << std::endl;
+    outputFile << "</html>" << std::endl;
+
+    std::cout << "Successfully generated output.html" << std::endl;
 
     return 0;
 }

@@ -1,4 +1,16 @@
 #include "CodeGenerator.hpp"
+#include <set>
+
+bool hasPositionedChildren(const Component& component) {
+    for (const auto& child : component.children) {
+        for (const auto& prop : child->properties) {
+            if (prop->name.lexeme == "x" || prop->name.lexeme == "y" || prop->name.lexeme == "position") {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 void CodeGenerator::generate(const Component& root) {
     root.accept(*this);
@@ -37,6 +49,21 @@ void CodeGenerator::visit(const Component& expr) {
 
     // Generate CSS for this component
     css << "." << className << " {" << std::endl;
+    if (hasPositionedChildren(expr)) {
+        css << "    position: relative;" << std::endl;
+    }
+
+    bool isPositioned = false;
+    for (const auto& prop : expr.properties) {
+        if (prop->name.lexeme == "x" || prop->name.lexeme == "y" || prop->name.lexeme == "position") {
+            isPositioned = true;
+            break;
+        }
+    }
+    if (isPositioned) {
+        css << "    position: absolute;" << std::endl;
+    }
+
     for (const auto& prop : expr.properties) {
         prop->accept(*this);
     }
@@ -59,13 +86,16 @@ void CodeGenerator::visit(const Property& expr) {
     // Map Nota property names to CSS property names
     std::unordered_map<std::string, std::string> propertyMap = {
         {"width", "width"}, {"height", "height"}, {"color", "background-color"},
-        {"spacing", "gap"}, {"padding", "padding"}, {"radius", "border-radius"}
+        {"spacing", "gap"}, {"padding", "padding"}, {"radius", "border-radius"},
+        {"x", "left"}, {"y", "top"}, {"index", "z-index"}
     };
 
     if (propertyMap.count(expr.name.lexeme)) {
+        currentProperty = expr.name.lexeme;
         css << "    " << propertyMap[expr.name.lexeme] << ": ";
         expr.value->accept(*this);
         css << ";" << std::endl;
+        currentProperty = "";
     }
 }
 
@@ -78,7 +108,7 @@ void CodeGenerator::visit(const Literal& expr) {
     }
 
     // Add "px" for numeric literals without a unit
-    if (expr.value.type == TokenType::NUMBER && expr.value.lexeme.find('%') == std::string::npos) {
+    if (expr.value.type == TokenType::NUMBER && currentProperty != "index" && expr.value.lexeme.find('%') == std::string::npos) {
         css << "px";
     }
 }

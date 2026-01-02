@@ -28,5 +28,5 @@ TEST(SemanticAnalyzerTest, RejectsInvalidSpacingProperty) {
     analyzer.analyze(*root);
 
     ASSERT_EQ(analyzer.getErrors().size(), 1);
-    EXPECT_EQ(analyzer.getErrors()[0], "Property 'spacing' can only be used in Row or Col components.");
+    EXPECT_EQ(analyzer.getErrors()[0], "Undefined property 'spacing' for component 'App'.");
 }

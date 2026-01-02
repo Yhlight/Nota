@@ -20,6 +20,7 @@ private:
     std::stringstream html;
     std::stringstream css;
     int classCounter = 0;
+    std::string currentProperty;
 };
 
 #endif // NOTA_CODE_GENERATOR_HPP

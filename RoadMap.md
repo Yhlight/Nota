@@ -33,11 +33,11 @@ This document outlines the development plan for the Nota compiler, aiming for a 
 - **Key Tasks:**
     - [x] **Symbol Table:**
         - [x] Implement a symbol table to track identifiers, components, and their properties.
-    - [ ] **Type Checking:**
-        - [ ] Implement type checking for property assignments (e.g., `width` should be a number or percentage).
+    - [x] **Type Checking:**
+        - [x] Implement type checking for property assignments (e.g., `width` should be a number or percentage).
     - [x] **Semantic Validation:**
         - [x] Validate component-specific properties (e.g., `spacing` is only valid for `Row` and `Col`).
-        - [ ] Check for undefined components or properties.
+        - [x] Check for undefined components or properties.
         - [ ] Implement rules for property overriding and child access.
 
 ## Phase 4: Code Generation (HTML/CSS)
@@ -50,9 +50,9 @@ This document outlines the development plan for the Nota compiler, aiming for a 
     - [x] **CSS Generator:**
         - [x] Implement a CSS generator that creates stylesheets based on the component properties defined in the Nota source.
         - [x] Handle property mappings (e.g., `width`, `height`, `color`, `spacing` -> `gap`).
-        - [ ] Implement logic for relative positioning (`x`, `y`, `position`) and z-indexing (`index`).
-    - [ ] **File Output:**
-        - [ ] Combine the generated HTML and CSS into a single `.html` file or separate files.
+        - [x] Implement logic for relative positioning (`x`, `y`, `position`) and z-indexing (`index`).
+    - [x] **File Output:**
+        - [x] Combine the generated HTML and CSS into a single `.html` file or separate files.
 
 ## Phase 5: Advanced Features & Refinement
 

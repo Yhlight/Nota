@@ -57,10 +57,11 @@ std::unique_ptr<ComponentNode> Parser::parse_component() {
 
     while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::END_OF_FILE)) {
         if (check(TokenType::IDENTIFIER)) {
-            if (lexer_.peek_next_significant_char() == '{') {
-                component->children.push_back(parse_component());
-            } else {
+            // Use a lookahead that skips whitespace to differentiate properties from child components.
+            if (lexer_.peek_next_significant_char() == ':') {
                 component->properties.push_back(parse_property());
+            } else {
+                component->children.push_back(parse_component());
             }
         } else {
             error("Unexpected token in component body.");
@@ -92,10 +93,21 @@ ASTValue Parser::parse_value() {
         return LiteralNode{std::string(previous_.text), previous_};
     }
     if (match(TokenType::NUMBER)) {
+        // The value is stored as a double in the AST.
         return LiteralNode{std::stod(std::string(previous_.text)), previous_};
     }
+    // Handle identifiers for properties like 'position'.
+    if (match(TokenType::IDENTIFIER)) {
+        std::string value_text = std::string(previous_.text);
+        // Check for a second identifier (e.g., 'left top').
+        if (check(TokenType::IDENTIFIER)) {
+            advance();
+            value_text += " " + std::string(previous_.text);
+        }
+        return LiteralNode{value_text, previous_};
+    }
 
-    error("Expected a value (string or number).");
+    error("Expected a value (string, number, or identifier).");
     return LiteralNode{std::string(""), previous_}; // Return a dummy value
 }
 

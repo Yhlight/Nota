@@ -27,7 +27,7 @@
 
 ## Phase 2: 代码生成与核心功能 (预计完成时间: YYYY-MM-DD)
 
-- [ ] **语义分析**
+- [x] **语义分析**
   - [ ] 实现符号表，用于跟踪组件和属性的定义。
   - [ ] 验证属性的合法性（例如，`spacing` 仅在 `Row` 和 `Col` 中有效）。
   - [ ] 类型检查，确保属性值的类型正确（如 `width` 应为数字或百分比）。
@@ -52,13 +52,13 @@
   - [ ] 支持在实例化组件时覆写其默认属性。
   - [ ] 实现对 `this.children[index].property` 形式的子组件属性访问和修改。
 
-- [ ] **相对定位与布局**
-  - [ ] 实现对 `x`, `y` 属性的支持，生成 `position: absolute` 和 `left`, `top` 样式。
-  - [ ] 实现 `position` 属性，支持 `left top`, `center` 等定位方式。
-  - [ ] 确保父组件自动应用 `position: relative` 样式。
+- [x] **相对定位与布局**
+  - [x] 实现对 `x`, `y` 属性的支持，生成 `position: absolute` 和 `left`, `top` 样式。
+  - [x] 实现 `position` 属性，支持 `left top`, `center` 等定位方式。
+  - [x] 确保父组件自动应用 `position: relative` 样式。
 
-- [ ] **层级控制 (`index`)**
-  - [ ] 实现 `index` 属性，并将其转换为CSS的 `z-index` 属性，用于控制元素的堆叠顺序。
+- [x] **层级控制 (`index`)**
+  - [x] 实现 `index` 属性，并将其转换为CSS的 `z-index` 属性，用于控制元素的堆叠顺序。
 
 ## Phase 4: 生产环境准备 (预计完成时间: YYYY-MM-DD)
 

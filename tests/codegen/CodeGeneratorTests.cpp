@@ -2,6 +2,8 @@
 #include "codegen/CodeGenerator.h"
 #include "parser/Parser.h"
 #include "lexer/Lexer.h"
+#include <string>
+#include <algorithm>
 
 // Helper function to remove all whitespace from a string
 std::string remove_whitespace(std::string str) {
@@ -74,8 +76,40 @@ TEST(CodeGeneratorTest, GenerateSimpleComponent) {
         </html>
     )";
 
-    // Add a newline to the expected output to match the generator's new behavior
     expected_html += "\n";
-
     EXPECT_EQ(remove_whitespace(html_output), remove_whitespace(expected_html));
+}
+
+TEST(CodeGeneratorTest, GeneratePositioningProperties) {
+    std::string source = R"(
+        App {
+            width: 800
+            height: 600
+
+            Rect {
+                x: 100
+                y: 50
+                index: 2
+                width: 50
+                height: 50
+                color: "red"
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+
+    ASSERT_TRUE(parser.errors().empty());
+
+    CodeGenerator generator;
+    std::string html_output = generator.generate(ast);
+
+    // Use string::find for more robust checking, ignoring exact whitespace.
+    EXPECT_TRUE(html_output.find("position: relative;") != std::string::npos);
+    EXPECT_TRUE(html_output.find("position: absolute;") != std::string::npos);
+    EXPECT_TRUE(html_output.find("left: 100px;") != std::string::npos);
+    EXPECT_TRUE(html_output.find("top: 50px;") != std::string::npos);
+    EXPECT_TRUE(html_output.find("z-index: 2;") != std::string::npos);
 }

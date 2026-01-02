@@ -2,6 +2,7 @@
 
 #include "ast/AST.h"
 #include "analyzer/SymbolTable.h"
+#include "core/Error.h"
 #include <vector>
 #include <string>
 #include <memory>
@@ -14,7 +15,7 @@ public:
 
     bool analyze(const RootNode& ast);
 
-    const std::vector<std::string>& errors() const { return errors_; }
+    const std::vector<CompilerError>& errors() const { return errors_; }
 
 private:
     void visit(const ItemNode& node, std::shared_ptr<SymbolTable> table);
@@ -23,7 +24,7 @@ private:
     void visit(const AssignmentNode& node, std::shared_ptr<SymbolTable> table);
     void visit(const Expression& node, std::shared_ptr<SymbolTable> table);
 
-    std::vector<std::string> errors_;
+    std::vector<CompilerError> errors_;
     std::unordered_set<std::string> built_in_types_;
     std::unordered_map<std::string, std::unordered_set<std::string>> valid_properties_;
 };

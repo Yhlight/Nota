@@ -2,6 +2,7 @@
 
 #include "ast/AST.h"
 #include "lexer/Lexer.h"
+#include "core/Error.h"
 #include <vector>
 #include <string>
 
@@ -10,7 +11,7 @@ public:
     Parser(Lexer& lexer);
 
     RootNode parse();
-    const std::vector<std::string>& errors() const;
+    const std::vector<CompilerError>& errors() const;
 
 private:
     void advance();
@@ -37,5 +38,5 @@ private:
     Token current_;
     Token previous_;
     bool had_error_ = false;
-    std::vector<std::string> errors_;
+    std::vector<CompilerError> errors_;
 };

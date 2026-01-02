@@ -35,7 +35,7 @@ TEST(SemanticAnalyzerTests, RedefinedProperty) {
     SemanticAnalyzer analyzer;
     EXPECT_FALSE(analyzer.analyze(ast));
     ASSERT_EQ(analyzer.errors().size(), 1);
-    EXPECT_EQ(analyzer.errors()[0], "Property 'width' redefined.");
+    EXPECT_EQ(analyzer.errors()[0].message, "Property 'width' redefined.");
 }
 
 TEST(SemanticAnalyzerTests, InvalidProperty) {
@@ -52,7 +52,9 @@ TEST(SemanticAnalyzerTests, InvalidProperty) {
     SemanticAnalyzer analyzer;
     EXPECT_FALSE(analyzer.analyze(ast));
     ASSERT_EQ(analyzer.errors().size(), 1);
-    EXPECT_EQ(analyzer.errors()[0], "Property 'invalid_prop' is not a valid property of 'App'.");
+    EXPECT_EQ(analyzer.errors()[0].message, "Property 'invalid_prop' is not a valid property of 'App'.");
+    EXPECT_EQ(analyzer.errors()[0].line, 3);
+    EXPECT_EQ(analyzer.errors()[0].column, 13);
 }
 
 TEST(SemanticAnalyzerTests, SpacingInRect) {
@@ -69,5 +71,7 @@ TEST(SemanticAnalyzerTests, SpacingInRect) {
     SemanticAnalyzer analyzer;
     EXPECT_FALSE(analyzer.analyze(ast));
     ASSERT_EQ(analyzer.errors().size(), 1);
-    EXPECT_EQ(analyzer.errors()[0], "Property 'spacing' is not a valid property of 'Rect'.");
+    EXPECT_EQ(analyzer.errors()[0].message, "Property 'spacing' is not a valid property of 'Rect'.");
+    EXPECT_EQ(analyzer.errors()[0].line, 3);
+    EXPECT_EQ(analyzer.errors()[0].column, 13);
 }

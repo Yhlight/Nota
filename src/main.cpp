@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     if (!parser.errors().empty()) {
         std::cerr << "Parser errors:\n";
         for (const auto& error : parser.errors()) {
-            std::cerr << error << std::endl;
+            std::cerr << "Error at line " << error.line << ", column " << error.column << ": " << error.message << std::endl;
         }
         return 1;
     }
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     if (!analyzer.analyze(ast)) {
         std::cerr << "Semantic errors:\n";
         for (const auto& error : analyzer.errors()) {
-            std::cerr << error << std::endl;
+            std::cerr << "Error at line " << error.line << ", column " << error.column << ": " << error.message << std::endl;
         }
         return 1;
     }

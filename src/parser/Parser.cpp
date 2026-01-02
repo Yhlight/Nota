@@ -26,7 +26,7 @@ RootNode Parser::parse() {
     return root;
 }
 
-const std::vector<std::string>& Parser::errors() const {
+const std::vector<CompilerError>& Parser::errors() const {
     return errors_;
 }
 
@@ -206,8 +206,5 @@ void Parser::synchronize() {
 void Parser::error(const std::string& message) {
     if (had_error_) return;
     had_error_ = true;
-    std::string error_message = "Error at line " + std::to_string(previous_.line) +
-                               ", column " + std::to_string(previous_.column) +
-                               ": " + message;
-    errors_.push_back(error_message);
+    errors_.push_back({message, previous_.line, previous_.column});
 }

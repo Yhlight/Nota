@@ -29,7 +29,7 @@ void SemanticAnalyzer::visit(const ItemNode& node, std::shared_ptr<SymbolTable> 
     std::string name(node.name.text);
     auto symbol = std::make_shared<Symbol>(name, SymbolType::COMPONENT, &node);
     if (!table->insert(name, symbol)) {
-        errors_.push_back("Item '" + name + "' is already defined.");
+        errors_.push_back({"Item '" + name + "' is already defined.", node.name.line, node.name.column});
     }
 
     auto local_scope = std::make_shared<SymbolTable>(table);
@@ -47,7 +47,7 @@ void SemanticAnalyzer::visit(const ItemNode& node, std::shared_ptr<SymbolTable> 
 void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTable> table, const std::string& parent_type) {
     std::string type_name(node.type.text);
     if (built_in_types_.find(type_name) == built_in_types_.end() && table->lookup(type_name) == nullptr) {
-        errors_.push_back("Unknown component type '" + type_name + "'.");
+        errors_.push_back({"Unknown component type '" + type_name + "'.", node.type.line, node.type.column});
     }
 
     auto local_scope = std::make_shared<SymbolTable>(table);
@@ -70,20 +70,20 @@ void SemanticAnalyzer::visit(const PropertyNode& node, std::shared_ptr<SymbolTab
     std::string name(node.name.text);
     auto symbol = std::make_shared<Symbol>(name, SymbolType::PROPERTY, &node);
     if (!table->insert(name, symbol)) {
-        errors_.push_back("Property '" + name + "' redefined.");
+        errors_.push_back({"Property '" + name + "' redefined.", node.name.line, node.name.column});
     }
 
     if (name == "id") return;
 
     if (valid_properties_.count(component_type) && valid_properties_.at(component_type).find(name) == valid_properties_.at(component_type).end()) {
-        errors_.push_back("Property '" + name + "' is not a valid property of '" + component_type + "'.");
+        errors_.push_back({"Property '" + name + "' is not a valid property of '" + component_type + "'.", node.name.line, node.name.column});
     }
 
     if (name == "width" || name == "height") {
         if (auto* literal = std::get_if<LiteralNode>(&node.value)) {
             if (auto* str_val = std::get_if<std::string>(&literal->value)) {
                 if (str_val->find('%') == std::string::npos && !std::isdigit((*str_val)[0])) {
-                     errors_.push_back("Invalid value for property '" + name + "'. Expected number or percentage.");
+                     errors_.push_back({"Invalid value for property '" + name + "'. Expected number or percentage.", literal->token.line, literal->token.column});
                 }
             }
         }

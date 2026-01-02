@@ -8,10 +8,11 @@ public:
     Lexer(std::string_view source);
 
     Token next_token();
+    char peek() const;
+    char peek_next_significant_char() const;
 
 private:
     char advance();
-    char peek() const;
     char peek_next() const;
     bool is_at_end() const;
 

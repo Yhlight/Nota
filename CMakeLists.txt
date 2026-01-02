@@ -16,6 +16,7 @@ FetchContent_MakeAvailable(googletest)
 file(GLOB_RECURSE NOTA_CORE_SOURCES
     "src/core/*.cpp"
     "src/lexer/*.cpp"
+    "src/parser/*.cpp"
 )
 add_library(NotaCore STATIC ${NOTA_CORE_SOURCES})
 target_include_directories(NotaCore PUBLIC src)

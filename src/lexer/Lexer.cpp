@@ -99,6 +99,23 @@ char Lexer::peek_next() const {
     return current_[1];
 }
 
+char Lexer::peek_next_significant_char() const {
+    const char* temp_current = current_;
+    while (*temp_current != '\0') {
+        switch (*temp_current) {
+            case ' ':
+            case '\r':
+            case '\t':
+            case '\n':
+                temp_current++;
+                break;
+            default:
+                return *temp_current;
+        }
+    }
+    return '\0';
+}
+
 bool Lexer::is_at_end() const {
     return *current_ == '\0';
 }

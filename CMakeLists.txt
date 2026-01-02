@@ -10,6 +10,7 @@ add_library(NotaCore STATIC
     src/Parser.cpp
     src/SemanticAnalyzer.cpp
     src/SymbolTable.cpp
+    src/CodeGenerator.cpp
 )
 
 add_executable(Nota src/main.cpp)
@@ -29,6 +30,7 @@ add_executable(NotaTests
     tests/LexerTests.cpp
     tests/ParserTests.cpp
     tests/SemanticAnalyzerTests.cpp
+    tests/CodeGeneratorTests.cpp
 )
 target_link_libraries(NotaTests PRIVATE GTest::gtest_main NotaCore)
 

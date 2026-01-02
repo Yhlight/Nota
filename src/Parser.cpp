@@ -82,7 +82,5 @@ bool Parser::match(const std::vector<TokenType>& types) {
 
 Token Parser::consume(TokenType type, const std::string& message) {
     if (check(type)) return advance();
-    // A more robust implementation would throw an exception
-    // or enter a panic mode to synchronize.
-    return Token{TokenType::END_OF_FILE, "", -1};
+    throw std::runtime_error(message);
 }

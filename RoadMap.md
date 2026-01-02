@@ -44,12 +44,12 @@ This document outlines the development plan for the Nota compiler, aiming for a 
 
 - **Objective:** Traverse the validated AST to generate the final HTML and CSS output.
 - **Key Tasks:**
-    - [ ] **HTML Generator:**
-        - [ ] Implement a code generator that walks the AST to produce the corresponding HTML structure.
-        - [ ] Map Nota components (`App`, `Row`, `Col`, `Rect`, `Text`) to their HTML equivalents (`body`, `div`, `span`).
-    - [ ] **CSS Generator:**
-        - [ ] Implement a CSS generator that creates stylesheets based on the component properties defined in the Nota source.
-        - [ ] Handle property mappings (e.g., `width`, `height`, `color`, `spacing` -> `gap`).
+    - [x] **HTML Generator:**
+        - [x] Implement a code generator that walks the AST to produce the corresponding HTML structure.
+        - [x] Map Nota components (`App`, `Row`, `Col`, `Rect`, `Text`) to their HTML equivalents (`body`, `div`, `span`).
+    - [x] **CSS Generator:**
+        - [x] Implement a CSS generator that creates stylesheets based on the component properties defined in the Nota source.
+        - [x] Handle property mappings (e.g., `width`, `height`, `color`, `spacing` -> `gap`).
         - [ ] Implement logic for relative positioning (`x`, `y`, `position`) and z-indexing (`index`).
     - [ ] **File Output:**
         - [ ] Combine the generated HTML and CSS into a single `.html` file or separate files.

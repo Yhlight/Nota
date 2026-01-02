@@ -8,25 +8,24 @@ TEST(LexerTest, TokenizesBasicComponent) {
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 
-    ASSERT_EQ(tokens.size(), 8);
+    ASSERT_EQ(tokens.size(), 7);
     EXPECT_EQ(tokens[0].type, TokenType::APP);
     EXPECT_EQ(tokens[1].type, TokenType::LEFT_BRACE);
     EXPECT_EQ(tokens[2].type, TokenType::IDENTIFIER);
     EXPECT_EQ(tokens[2].lexeme, "width");
     EXPECT_EQ(tokens[3].type, TokenType::COLON);
     EXPECT_EQ(tokens[4].type, TokenType::NUMBER);
-    EXPECT_EQ(tokens[4].lexeme, "100");
-    EXPECT_EQ(tokens[5].type, TokenType::PERCENT);
-    EXPECT_EQ(tokens[6].type, TokenType::RIGHT_BRACE);
-    EXPECT_EQ(tokens[7].type, TokenType::END_OF_FILE);
+    EXPECT_EQ(tokens[4].lexeme, "100%");
+    EXPECT_EQ(tokens[5].type, TokenType::RIGHT_BRACE);
+    EXPECT_EQ(tokens[6].type, TokenType::END_OF_FILE);
 }
 
 TEST(LexerTest, HandlesAllSingleCharTokens) {
-    std::string source = "{}[]:.*=%#";
+    std::string source = "{}[]:.*=#";
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 
-    ASSERT_EQ(tokens.size(), 11);
+    ASSERT_EQ(tokens.size(), 10);
     EXPECT_EQ(tokens[0].type, TokenType::LEFT_BRACE);
     EXPECT_EQ(tokens[1].type, TokenType::RIGHT_BRACE);
     EXPECT_EQ(tokens[2].type, TokenType::LEFT_BRACKET);
@@ -35,9 +34,8 @@ TEST(LexerTest, HandlesAllSingleCharTokens) {
     EXPECT_EQ(tokens[5].type, TokenType::DOT);
     EXPECT_EQ(tokens[6].type, TokenType::STAR);
     EXPECT_EQ(tokens[7].type, TokenType::EQUAL);
-    EXPECT_EQ(tokens[8].type, TokenType::PERCENT);
-    EXPECT_EQ(tokens[9].type, TokenType::HASH);
-    EXPECT_EQ(tokens[10].type, TokenType::END_OF_FILE);
+    EXPECT_EQ(tokens[8].type, TokenType::HASH);
+    EXPECT_EQ(tokens[9].type, TokenType::END_OF_FILE);
 }
 
 TEST(LexerTest, TokenizesLiterals) {

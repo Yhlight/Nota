@@ -8,7 +8,7 @@ enum class TokenType {
     // Single-character tokens
     LEFT_BRACE, RIGHT_BRACE,
     LEFT_BRACKET, RIGHT_BRACKET,
-    COLON, DOT, SEMICOLON, SLASH, STAR, EQUAL, PERCENT, HASH,
+    COLON, DOT, SEMICOLON, SLASH, STAR, EQUAL, HASH,
 
     // Literals
     IDENTIFIER, STRING, NUMBER,

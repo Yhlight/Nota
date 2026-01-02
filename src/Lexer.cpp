@@ -38,8 +38,16 @@ void Lexer::scanToken() {
         case ';': addToken(TokenType::SEMICOLON); break;
         case '*': addToken(TokenType::STAR); break;
         case '=': addToken(TokenType::EQUAL); break;
-        case '%': addToken(TokenType::PERCENT); break;
-        case '#': addToken(TokenType::HASH); break;
+        case '#':
+            if (isalnum(peek())) {
+                while (isalnum(peek())) {
+                    advance();
+                }
+                addToken(TokenType::STRING);
+            } else {
+                addToken(TokenType::HASH);
+            }
+            break;
         case '/':
             if (match('/')) {
                 // A comment goes until the end of the line.
@@ -95,6 +103,10 @@ void Lexer::number() {
     if (peek() == '.' && isdigit(peekNext())) {
         advance();
         while (isdigit(peek())) advance();
+    }
+
+    if (peek() == '%') {
+        advance();
     }
 
     addToken(TokenType::NUMBER);

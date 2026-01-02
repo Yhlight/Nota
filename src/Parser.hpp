@@ -5,6 +5,7 @@
 #include "Token.hpp"
 #include <vector>
 #include <memory>
+#include <stdexcept>
 
 class Parser {
 public:

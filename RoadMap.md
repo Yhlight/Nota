@@ -6,23 +6,23 @@
 
 我们将开发过程分为以下几个主要阶段：
 
-### Phase 1: 项目基础架构与核心模块 (Project Foundation & Core Modules)
+### Phase 1: 项目基础架构与核心模块 (Project Foundation & Core Modules) - ✅ Done
 
 - **目标**: 搭建稳固的项目结构，定义核心数据模型。
 - **任务**:
     1.  **项目设置**:
-        - [ ] 初始化 C++ 项目 (使用 CMake)。
-        - [ ] 建立清晰的目录结构 (`src`, `include`, `tests`, `scripts`)。
+        - [x] 初始化 C++ 项目 (使用 CMake)。
+        - [x] 建立清晰的目录结构 (`src`, `include`, `tests`, `scripts`)。
     2.  **核心数据结构定义**:
         - [ ] 定义词法单元 (Token) 结构。
         - [ ] 设计抽象语法树 (AST) 节点，用于表示组件、属性和层级关系。
     3.  **错误处理模块**:
         - [ ] 设计一个集中的错误报告系统，用于在编译的各个阶段收集和显示错误信息。
     4.  **构建与测试集成**:
-        - [ ] 配置构建系统 (CMake)。
-        - [ ] 集成一个单元测试框架 (如 GoogleTest)。
+        - [x] 配置构建系统 (CMake)。
+        - [x] 集成一个单元测试框架 (如 GoogleTest)。
 
-### Phase 2: 词法分析器 (Lexer)
+### Phase 2: 词法分析器 (Lexer) - 🚧 In Progress
 
 - **目标**: 将 Nota 源代码文本转换为词法单元 (Token) 序列。
 - **任务**:

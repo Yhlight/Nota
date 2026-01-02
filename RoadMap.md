@@ -9,11 +9,11 @@ This document outlines the development plan for the Nota compiler, aiming for a 
     - [x] **Project Setup:**
         - [x] Set up a C++ project using CMake.
         - [x] Integrate a testing framework (e.g., Google Test).
-        - [ ] Define core data structures and utility functions (e.g., error reporting).
-    - [ ] **Lexer Implementation:**
-        - [ ] Define all tokens based on `Nota.md` (e.g., identifiers, keywords, symbols, literals).
-        - [ ] Implement the lexer to transform Nota source code into a stream of tokens.
-        - [ ] Add comprehensive unit tests for the lexer, covering all token types and edge cases.
+        - [x] Define core data structures and utility functions (e.g., error reporting).
+    - [x] **Lexer Implementation:**
+        - [x] Define all tokens based on `Nota.md` (e.g., identifiers, keywords, symbols, literals).
+        - [x] Implement the lexer to transform Nota source code into a stream of tokens.
+        - [x] Add comprehensive unit tests for the lexer, covering all token types and edge cases.
 
 ## Phase 2: Parser & Abstract Syntax Tree (AST)
 

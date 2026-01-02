@@ -4,7 +4,13 @@ project(Nota LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_library(NotaCore STATIC
+    src/Token.cpp
+    src/Lexer.cpp
+)
+
 add_executable(Nota src/main.cpp)
+target_link_libraries(Nota PRIVATE NotaCore)
 
 # Testing
 enable_testing()
@@ -16,8 +22,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-add_executable(NotaTests tests/test_main.cpp)
-target_link_libraries(NotaTests PRIVATE GTest::gtest_main)
+add_executable(NotaTests tests/LexerTests.cpp)
+target_link_libraries(NotaTests PRIVATE GTest::gtest_main NotaCore)
 
 include(GoogleTest)
 gtest_discover_tests(NotaTests)

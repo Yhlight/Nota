@@ -31,12 +31,12 @@ This document outlines the development plan for the Nota compiler, aiming for a 
 
 - **Objective:** Perform semantic checks on the AST to ensure the code is logically correct.
 - **Key Tasks:**
-    - [ ] **Symbol Table:**
-        - [ ] Implement a symbol table to track identifiers, components, and their properties.
+    - [x] **Symbol Table:**
+        - [x] Implement a symbol table to track identifiers, components, and their properties.
     - [ ] **Type Checking:**
         - [ ] Implement type checking for property assignments (e.g., `width` should be a number or percentage).
-    - [ ] **Semantic Validation:**
-        - [ ] Validate component-specific properties (e.g., `spacing` is only valid for `Row` and `Col`).
+    - [x] **Semantic Validation:**
+        - [x] Validate component-specific properties (e.g., `spacing` is only valid for `Row` and `Col`).
         - [ ] Check for undefined components or properties.
         - [ ] Implement rules for property overriding and child access.
 

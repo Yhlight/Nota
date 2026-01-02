@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(NotaCore STATIC
     src/Token.cpp
     src/Lexer.cpp
+    src/Parser.cpp
 )
 
 add_executable(Nota src/main.cpp)
@@ -22,7 +23,10 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-add_executable(NotaTests tests/LexerTests.cpp)
+add_executable(NotaTests
+    tests/LexerTests.cpp
+    tests/ParserTests.cpp
+)
 target_link_libraries(NotaTests PRIVATE GTest::gtest_main NotaCore)
 
 include(GoogleTest)

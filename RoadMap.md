@@ -19,13 +19,13 @@ This document outlines the development plan for the Nota compiler, aiming for a 
 
 - **Objective:** Implement a parser to build an Abstract Syntax Tree (AST) from the token stream.
 - **Key Tasks:**
-    - [ ] **AST Design:**
-        - [ ] Define the structure of the AST nodes to represent the Nota language constructs (e.g., components, properties, nested structures).
-    - [ ] **Parser Implementation:**
-        - [ ] Implement a parser (e.g., recursive descent or Pratt parser) to consume the token stream and produce an AST.
-        - [ ] Implement robust error handling and recovery mechanisms within the parser.
-    - [ ] **Parser Testing:**
-        - [ ] Write extensive unit tests for the parser, verifying the correctness of the generated AST for various Nota code snippets.
+    - [x] **AST Design:**
+        - [x] Define the structure of the AST nodes to represent the Nota language constructs (e.g., components, properties, nested structures).
+    - [x] **Parser Implementation:**
+        - [x] Implement a parser (e.g., recursive descent or Pratt parser) to consume the token stream and produce an AST.
+        - [x] Implement robust error handling and recovery mechanisms within the parser.
+    - [x] **Parser Testing:**
+        - [x] Write extensive unit tests for the parser, verifying the correctness of the generated AST for various Nota code snippets.
 
 ## Phase 3: Semantic Analysis
 

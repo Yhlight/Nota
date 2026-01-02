@@ -22,11 +22,15 @@ struct MemberAccessNode {
 struct IndexAccessNode {
     std::unique_ptr<Expression> object;
     std::unique_ptr<Expression> index;
+    int line;
+    int column;
 };
 
 struct AssignmentNode {
     std::unique_ptr<Expression> target;
     ASTValue value;
+    int line;
+    int column;
 };
 
 using ExpressionVariant = std::variant<
@@ -37,6 +41,8 @@ using ExpressionVariant = std::variant<
 
 struct Expression {
     ExpressionVariant variant;
+    int line;
+    int column;
 };
 
 // --- Property Node ---

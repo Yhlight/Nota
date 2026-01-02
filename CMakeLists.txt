@@ -18,6 +18,7 @@ file(GLOB_RECURSE NOTA_CORE_SOURCES
     "src/lexer/*.cpp"
     "src/parser/*.cpp"
     "src/analyzer/*.cpp"
+    "src/ast/*.cpp"
     "src/codegen/*.cpp"
     "src/codegen/ExpressionEvaluator.cpp"
 )

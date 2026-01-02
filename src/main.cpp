@@ -46,6 +46,13 @@ int main(int argc, char* argv[]) {
     CodeGenerator generator;
     std::string html_output = generator.generate(ast);
 
+    if (!generator.errors().empty()) {
+        for (const auto& error : generator.errors()) {
+            std::cerr << "Generation Error: " << error.message << " (line " << error.line << ", column " << error.column << ")\n";
+        }
+        return 1;
+    }
+
     std::string output_filename = (argc == 3) ? argv[2] : "output.html";
     std::ofstream output_file(output_filename);
     if (!output_file) {

@@ -2,7 +2,9 @@
 
 #include "ast/AST.h"
 #include "analyzer/SymbolTable.h"
+#include "core/Error.h"
 #include <unordered_map>
+#include <vector>
 
 class ExpressionEvaluator {
 public:
@@ -12,6 +14,7 @@ public:
     ASTValue evaluate_value(const ASTValue& value, SymbolTable& table);
     ASTValue evaluate_expression(const Expression& expression, SymbolTable& table, ComponentNode* current_component);
 
+    const std::vector<CompilerError>& errors() const { return errors_; }
 
 private:
     ComponentNode* evaluate_member_access(const MemberAccessNode& node, SymbolTable& table, ComponentNode* current_component);
@@ -19,4 +22,5 @@ private:
 
     std::unordered_map<const ComponentNode*, ComponentNode*>& component_map_;
     ComponentNode* root_component_;
+    std::vector<CompilerError> errors_;
 };

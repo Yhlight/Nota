@@ -155,3 +155,65 @@ TEST(CodeGeneratorTest, GeneratePositioningProperties) {
     EXPECT_TRUE(html_output.find("top: 50px;") != std::string::npos);
     EXPECT_TRUE(html_output.find("z-index: 2;") != std::string::npos);
 }
+
+TEST(CodeGeneratorTest, MergeDuplicateCssRules) {
+    std::string source = R"(
+        App {
+            width: 800
+            height: 600
+
+            Rect {
+                width: 50
+                height: 50
+                color: "blue"
+            }
+
+            Rect {
+                width: 50
+                height: 50
+                color: "blue"
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+
+    ASSERT_TRUE(parser.errors().empty());
+
+    CodeGenerator generator;
+    std::string html_output = generator.generate(ast);
+
+    // 1. Check that only one CSS rule for a Rect component is generated.
+    std::string rect_class_prefix = ".Rect-";
+    size_t first_pos = html_output.find(rect_class_prefix);
+    ASSERT_NE(first_pos, std::string::npos);
+    size_t second_pos = html_output.find(rect_class_prefix, first_pos + 1);
+    EXPECT_EQ(second_pos, std::string::npos);
+
+    // 2. Check that the generated rule contains the correct properties.
+    std::string style_content;
+    size_t style_start = html_output.find("<style>");
+    size_t style_end = html_output.find("</style>");
+    if (style_start != std::string::npos && style_end != std::string::npos) {
+        style_content = html_output.substr(style_start, style_end - style_start);
+    }
+    EXPECT_TRUE(style_content.find("width: 50px;") != std::string::npos);
+    EXPECT_TRUE(style_content.find("height: 50px;") != std::string::npos);
+    EXPECT_TRUE(style_content.find("background-color: blue;") != std::string::npos);
+
+    // 3. Extract class name and check that both divs use it.
+    std::regex class_regex(R"(\.(Rect-\d+)\s*\{)");
+    std::smatch match;
+    ASSERT_TRUE(std::regex_search(html_output, match, class_regex));
+    std::string class_name = match[1].str();
+
+    std::string expected_divs = "<divclass=\"" + class_name + "\"></div><divclass=\"" + class_name + "\"></div>";
+
+    // Remove whitespace to make the comparison robust
+    std::string body_content = html_output.substr(html_output.find("<body"));
+    body_content.erase(std::remove_if(body_content.begin(), body_content.end(), ::isspace), body_content.end());
+
+    EXPECT_TRUE(body_content.find(expected_divs) != std::string::npos);
+}

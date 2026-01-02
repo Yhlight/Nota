@@ -1,74 +1,13 @@
 #include "CodeGenerator.h"
 #include "codegen/ExpressionEvaluator.h"
+#include "ast/ASTUtils.h"
 #include <iostream>
 #include <cmath>
 #include <algorithm>
 #include <functional>
 #include <variant>
 #include <unordered_map>
-
-// Forward declarations
-std::unique_ptr<ComponentNode> deep_copy(const ComponentNode& node);
-std::unique_ptr<Expression> deep_copy_expression(const Expression& expr);
-ASTValue deep_copy_ast_value(const ASTValue& value);
-
-// Implementation of deep_copy_expression
-std::unique_ptr<Expression> deep_copy_expression(const Expression& expr) {
-    auto new_expr = std::make_unique<Expression>();
-    new_expr->variant = std::visit(
-        [&](auto&& arg) -> ExpressionVariant {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, LiteralNode>) {
-                return arg; // LiteralNode is copyable
-            } else if constexpr (std::is_same_v<T, MemberAccessNode>) {
-                return MemberAccessNode{deep_copy_expression(*arg.object), arg.member};
-            } else if constexpr (std::is_same_v<T, IndexAccessNode>) {
-                return IndexAccessNode{deep_copy_expression(*arg.object), deep_copy_expression(*arg.index)};
-            }
-        },
-        expr.variant
-    );
-    return new_expr;
-}
-
-// Implementation of deep_copy_ast_value
-ASTValue deep_copy_ast_value(const ASTValue& value) {
-    return std::visit(
-        [&](auto&& arg) -> ASTValue {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, LiteralNode>) {
-                return arg; // LiteralNode is copyable
-            } else if constexpr (std::is_same_v<T, std::unique_ptr<ComponentNode>>) {
-                return deep_copy(*arg);
-            } else if constexpr (std::is_same_v<T, std::unique_ptr<Expression>>) {
-                return deep_copy_expression(*arg);
-            }
-        },
-        value
-    );
-}
-
-// Implementation of deep_copy for ComponentNode
-std::unique_ptr<ComponentNode> deep_copy(const ComponentNode& node) {
-    auto new_node = std::make_unique<ComponentNode>();
-    new_node->type = node.type;
-    for (const auto& prop : node.properties) {
-        PropertyNode new_prop;
-        new_prop.name = prop.name;
-        new_prop.value = deep_copy_ast_value(prop.value);
-        new_node->properties.push_back(std::move(new_prop));
-    }
-    for (const auto& child : node.children) {
-        new_node->children.push_back(deep_copy(*child));
-    }
-    for (const auto& assignment : node.assignments) {
-        AssignmentNode new_assignment;
-        new_assignment.target = deep_copy_expression(*assignment.target);
-        new_assignment.value = deep_copy_ast_value(assignment.value);
-        new_node->assignments.push_back(std::move(new_assignment));
-    }
-    return new_node;
-}
+#include <map>
 
 // Helper to format double values for CSS
 std::string format_double(double val, const std::string& property_name) {
@@ -119,8 +58,8 @@ std::string CodeGenerator::generate(const RootNode& root) {
     apply_assignments(root);
 
     // Third pass: generate code
-    get_unique_class_name(*root_instance);
-    generate_css_for_component(*root_instance, class_map_.at(root_instance.get()), nullptr, nullptr);
+    std::string root_class = get_or_create_class_for_component(*root_instance, nullptr, nullptr);
+    class_map_[root_instance.get()] = root_class;
 
     for (const auto& child : root_instance->children) {
         generate_component(*child, root_instance.get(), html_stream_);
@@ -136,7 +75,7 @@ std::string CodeGenerator::generate(const RootNode& root) {
     output << css_stream_.str();
     output << "</style>\n";
     output << "</head>\n";
-    output << "<body class=\"" << class_map_.at(root_instance.get()) << "\">\n";
+    output << "<body class=\"" << root_class << "\">\n";
     output << html_stream_.str();
     output << "</body>\n";
     output << "</html>\n";
@@ -150,44 +89,42 @@ void CodeGenerator::apply_assignments(const RootNode& root) {
     ExpressionEvaluator evaluator(component_map_, component_map_.at(root.root_component.get()));
     SymbolTable table;
 
-    std::function<void(const ComponentNode&)> traverse = [&](const ComponentNode& original) {
-        ComponentNode* instance = component_map_.at(&original);
+    std::function<void(const ComponentNode&, ComponentNode*)> traverse =
+        [&](const ComponentNode& original, ComponentNode* instance) {
         for (const auto& assignment : original.assignments) {
-            ComponentNode* target_component = nullptr;
             Expression* target_expr = assignment.target.get();
-            while(target_expr) {
-                if (auto* member_access = std::get_if<MemberAccessNode>(&target_expr->variant)) {
-                    target_component = evaluator.evaluate_target(*member_access->object, table, instance);
-                    if (target_component) {
-                         std::string prop_name = std::string(member_access->member.text);
-                        bool found = false;
-                        for (auto& prop : target_component->properties) {
-                            if (prop.name.text == prop_name) {
-                                prop.value = evaluator.evaluate_value(assignment.value, table);
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            PropertyNode new_prop;
-                            new_prop.name = member_access->member;
-                            new_prop.value = evaluator.evaluate_value(assignment.value, table);
-                            target_component->properties.push_back(std::move(new_prop));
+            if (auto* member_access = std::get_if<MemberAccessNode>(&target_expr->variant)) {
+                ComponentNode* target_component = evaluator.evaluate_target(*member_access->object, table, instance);
+                if (target_component) {
+                    std::string prop_name = std::string(member_access->member.text);
+                    bool found = false;
+                    for (auto& prop : target_component->properties) {
+                        if (prop.name.text == prop_name) {
+                            prop.value = evaluator.evaluate_value(assignment.value, table);
+                            found = true;
+                            break;
                         }
                     }
-                    break;
-                } else if (auto* index_access = std::get_if<IndexAccessNode>(&target_expr->variant)) {
-                    target_expr = index_access->object.get();
-                } else {
-                    break;
+                    if (!found) {
+                        // Report error, do not add new properties implicitly
+                        errors_.push_back({ "Property '" + prop_name + "' not found on component '" + std::string(target_component->type.text) + "'.", member_access->member.line, member_access->member.column });
+                    }
                 }
+            } else {
+                // This case should be handled by the parser, but as a fallback:
+                errors_.push_back({ "Invalid assignment expression.", assignment.line, assignment.column });
             }
         }
-        for (const auto& child : original.children) {
-            traverse(*child);
+
+        for (size_t i = 0; i < original.children.size(); ++i) {
+            traverse(*original.children[i], instance->children[i].get());
         }
     };
-    traverse(*root.root_component);
+
+    traverse(*root.root_component, component_map_.at(root.root_component.get()));
+
+    // Collect errors from the evaluator
+    errors_.insert(errors_.end(), evaluator.errors().begin(), evaluator.errors().end());
 }
 
 void CodeGenerator::generate_component(const ComponentNode& component, const ComponentNode* parent, std::stringstream& html_builder, const std::vector<const PropertyNode*>* overridden_properties) {
@@ -196,8 +133,7 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         const ItemNode* item_def = item_definitions_.at(type_name);
         generate_item_component(*item_def, component, parent, html_builder);
     } else {
-        std::string class_name = get_unique_class_name(component);
-        generate_css_for_component(component, class_name, parent, overridden_properties);
+        std::string class_name = get_or_create_class_for_component(component, parent, overridden_properties);
 
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
@@ -245,16 +181,31 @@ void CodeGenerator::generate_item_component(const ItemNode& item_def, const Comp
     }
 }
 
-void CodeGenerator::generate_css_for_component(const ComponentNode& component, const std::string& class_name, const ComponentNode* parent, const std::vector<const PropertyNode*>* overridden_properties) {
-    css_stream_ << "." << class_name << " {\n";
+std::string CodeGenerator::get_or_create_class_for_component(const ComponentNode& component, const ComponentNode* parent, const std::vector<const PropertyNode*>* overridden_properties) {
+    std::string style_key = generate_css_properties_string(component, parent, overridden_properties);
 
-    if (component.type.text == "Row") css_stream_ << "    display: flex;\n    flex-direction: row;\n";
-    else if (component.type.text == "Col") css_stream_ << "    display: flex;\n    flex-direction: column;\n";
+    if (style_to_class_map_.count(style_key)) {
+        return style_to_class_map_.at(style_key);
+    }
 
-    if (has_positional_properties(component)) css_stream_ << "    position: absolute;\n";
-    if (has_child_with_positional_properties(component)) css_stream_ << "    position: relative;\n";
+    std::string new_class_name = std::string(component.type.text) + "-" + std::to_string(class_counter_++);
+    style_to_class_map_[style_key] = new_class_name;
 
-    std::unordered_map<std::string, const PropertyNode*> property_map;
+    css_stream_ << "." << new_class_name << " {\n" << style_key << "}\n";
+
+    return new_class_name;
+}
+
+std::string CodeGenerator::generate_css_properties_string(const ComponentNode& component, const ComponentNode* parent, const std::vector<const PropertyNode*>* overridden_properties) {
+    std::stringstream props_stream;
+
+    if (component.type.text == "Row") props_stream << "    display: flex;\n    flex-direction: row;\n";
+    else if (component.type.text == "Col") props_stream << "    display: flex;\n    flex-direction: column;\n";
+
+    if (has_positional_properties(component)) props_stream << "    position: absolute;\n";
+    if (has_child_with_positional_properties(component)) props_stream << "    position: relative;\n";
+
+    std::map<std::string, const PropertyNode*> property_map; // Use map for sorting
     for (const auto& prop : component.properties) {
         property_map[std::string(prop.name.text)] = &prop;
     }
@@ -278,11 +229,12 @@ void CodeGenerator::generate_css_for_component(const ComponentNode& component, c
 
         std::string css_val = to_css_value(prop->value, css_prop);
         if (!css_prop.empty() && !css_val.empty()) {
-            css_stream_ << "    " << css_prop << ": " << css_val << ";\n";
+            props_stream << "    " << css_prop << ": " << css_val << ";\n";
         }
     }
-    css_stream_ << "}\n";
+    return props_stream.str();
 }
+
 
 std::string CodeGenerator::to_css_property(const std::string& nota_property) {
     if (nota_property == "spacing") return "gap";
@@ -306,16 +258,4 @@ std::string CodeGenerator::to_css_value(const ASTValue& value, const std::string
         }
     }
     return "";
-}
-
-std::string CodeGenerator::get_unique_class_name(const ComponentNode& component) {
-    if (class_map_.count(&component)) {
-        return class_map_.at(&component);
-    }
-    std::string name = std::string(component.type.text) + "-" + std::to_string(class_counter_++);
-    class_map_[&component] = name;
-    for(const auto& child : component.children) {
-        get_unique_class_name(*child);
-    }
-    return name;
 }

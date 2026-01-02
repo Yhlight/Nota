@@ -146,17 +146,23 @@ std::unique_ptr<Expression> Parser::parse_expression() {
     auto expr = parse_primary();
 
     while (match(TokenType::DOT) || match(TokenType::LEFT_BRACKET)) {
-        if (previous_.type == TokenType::DOT) {
+        Token op = previous_;
+        if (op.type == TokenType::DOT) {
             Token member = current_;
             consume(TokenType::IDENTIFIER, "Expected property name after '.'.");
             auto new_expr = std::make_unique<Expression>();
             new_expr->variant = MemberAccessNode{std::move(expr), member};
+            new_expr->line = op.line;
+            new_expr->column = op.column;
             expr = std::move(new_expr);
         } else {
             auto index = parse_expression();
             consume(TokenType::RIGHT_BRACKET, "Expected ']' after index.");
             auto new_expr = std::make_unique<Expression>();
-            new_expr->variant = IndexAccessNode{std::move(expr), std::move(index)};
+            IndexAccessNode access_node{std::move(expr), std::move(index), op.line, op.column};
+            new_expr->variant = std::move(access_node);
+            new_expr->line = op.line;
+            new_expr->column = op.column;
             expr = std::move(new_expr);
         }
     }
@@ -168,12 +174,18 @@ std::unique_ptr<Expression> Parser::parse_primary() {
     auto expr = std::make_unique<Expression>();
     if (match(TokenType::IDENTIFIER)) {
         expr->variant = LiteralNode{std::string(previous_.text), previous_};
+        expr->line = previous_.line;
+        expr->column = previous_.column;
     } else if (match(TokenType::NUMBER)) {
         expr->variant = LiteralNode{std::stod(std::string(previous_.text)), previous_};
+        expr->line = previous_.line;
+        expr->column = previous_.column;
     }
     else {
         error("Expected an identifier or number for an expression.");
         expr->variant = LiteralNode{std::string(""), previous_};
+        expr->line = previous_.line;
+        expr->column = previous_.column;
     }
     return expr;
 }
@@ -183,6 +195,8 @@ AssignmentNode Parser::parse_assignment(std::unique_ptr<Expression> target) {
     AssignmentNode assignment;
     assignment.target = std::move(target);
     assignment.value = parse_value();
+    assignment.line = previous_.line;
+    assignment.column = previous_.column;
     match(TokenType::SEMICOLON);
     return assignment;
 }

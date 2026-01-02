@@ -6,9 +6,9 @@ This document outlines the development plan for the Nota compiler, aiming for a 
 
 - **Objective:** Establish the foundational components of the compiler and implement the lexical analyzer.
 - **Key Tasks:**
-    - [ ] **Project Setup:**
-        - [ ] Set up a C++ project using CMake.
-        - [ ] Integrate a testing framework (e.g., Google Test).
+    - [x] **Project Setup:**
+        - [x] Set up a C++ project using CMake.
+        - [x] Integrate a testing framework (e.g., Google Test).
         - [ ] Define core data structures and utility functions (e.g., error reporting).
     - [ ] **Lexer Implementation:**
         - [ ] Define all tokens based on `Nota.md` (e.g., identifiers, keywords, symbols, literals).

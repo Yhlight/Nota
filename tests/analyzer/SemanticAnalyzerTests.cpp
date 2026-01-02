@@ -37,3 +37,37 @@ TEST(SemanticAnalyzerTests, RedefinedProperty) {
     ASSERT_EQ(analyzer.errors().size(), 1);
     EXPECT_EQ(analyzer.errors()[0], "Property 'width' redefined.");
 }
+
+TEST(SemanticAnalyzerTests, InvalidProperty) {
+    std::string source = R"(
+        App {
+            invalid_prop: 100;
+        }
+    )";
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    SemanticAnalyzer analyzer;
+    EXPECT_FALSE(analyzer.analyze(ast));
+    ASSERT_EQ(analyzer.errors().size(), 1);
+    EXPECT_EQ(analyzer.errors()[0], "Property 'invalid_prop' is not a valid property of 'App'.");
+}
+
+TEST(SemanticAnalyzerTests, SpacingInRect) {
+    std::string source = R"(
+        Rect {
+            spacing: 10;
+        }
+    )";
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    SemanticAnalyzer analyzer;
+    EXPECT_FALSE(analyzer.analyze(ast));
+    ASSERT_EQ(analyzer.errors().size(), 1);
+    EXPECT_EQ(analyzer.errors()[0], "Property 'spacing' is not a valid property of 'Rect'.");
+}

@@ -1,8 +1,8 @@
 #include "ExpressionEvaluator.h"
 #include <variant>
 
-ExpressionEvaluator::ExpressionEvaluator(std::unordered_map<const ComponentNode*, ComponentNode*>& component_map)
-    : component_map_(component_map) {}
+ExpressionEvaluator::ExpressionEvaluator(std::unordered_map<const ComponentNode*, ComponentNode*>& component_map, ComponentNode* root)
+    : component_map_(component_map), root_component_(root) {}
 
 ComponentNode* ExpressionEvaluator::evaluate_target(const Expression& expression, SymbolTable& table, ComponentNode* current_component) {
     if (auto* member_access = std::get_if<MemberAccessNode>(&expression.variant)) {
@@ -17,7 +17,7 @@ ComponentNode* ExpressionEvaluator::evaluate_target(const Expression& expression
                 return current_component;
             }
             if (*name == "root") {
-                return get_root_component();
+                return root_component_;
             }
         }
     }
@@ -29,12 +29,28 @@ ASTValue ExpressionEvaluator::evaluate_value(const ASTValue& value, SymbolTable&
         return *literal;
     }
     if (auto* expr_ptr = std::get_if<std::unique_ptr<Expression>>(&value)) {
-        const Expression& expr = **expr_ptr;
-        if (auto* literal = std::get_if<LiteralNode>(&expr.variant)) {
-            return *literal;
-        }
+        return evaluate_expression(**expr_ptr, table, root_component_);
     }
     // Return a default-constructed LiteralNode if evaluation fails.
+    return LiteralNode{};
+}
+
+ASTValue ExpressionEvaluator::evaluate_expression(const Expression& expression, SymbolTable& table, ComponentNode* current_component) {
+    if (auto* member_access = std::get_if<MemberAccessNode>(&expression.variant)) {
+        ComponentNode* object = evaluate_target(*member_access->object, table, current_component);
+        if (object) {
+            for (const auto& prop : object->properties) {
+                if (prop.name.text == member_access->member.text) {
+                    if (auto* literal = std::get_if<LiteralNode>(&prop.value)) {
+                        return *literal;
+                    }
+                }
+            }
+        }
+    }
+    if (auto* literal = std::get_if<LiteralNode>(&expression.variant)) {
+        return *literal;
+    }
     return LiteralNode{};
 }
 
@@ -60,17 +76,6 @@ ComponentNode* ExpressionEvaluator::evaluate_index_access(const IndexAccessNode&
                     return object->children[index].get();
                 }
             }
-        }
-    }
-    return nullptr;
-}
-
-ComponentNode* ExpressionEvaluator::get_root_component() {
-    for (auto const& [original, instance] : component_map_) {
-        // This is a bit of a hack, assuming the root is always the first one without a parent in the map.
-        // A better approach would be to pass the root explicitly.
-        if (original->type.text == "App") { // A simple heuristic to find the root.
-            return instance;
         }
     }
     return nullptr;

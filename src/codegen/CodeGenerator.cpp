@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <functional>
 #include <variant>
+#include <unordered_map>
 
 // Forward declarations
 std::unique_ptr<ComponentNode> deep_copy(const ComponentNode& node);
@@ -146,30 +147,39 @@ std::string CodeGenerator::generate(const RootNode& root) {
 void CodeGenerator::apply_assignments(const RootNode& root) {
     if (!root.root_component) return;
 
-    ExpressionEvaluator evaluator(component_map_);
+    ExpressionEvaluator evaluator(component_map_, component_map_.at(root.root_component.get()));
     SymbolTable table;
 
     std::function<void(const ComponentNode&)> traverse = [&](const ComponentNode& original) {
         ComponentNode* instance = component_map_.at(&original);
         for (const auto& assignment : original.assignments) {
-            ComponentNode* target = evaluator.evaluate_target(*assignment.target, table, instance);
-            if (target) {
-                if (auto* member_access = std::get_if<MemberAccessNode>(&assignment.target->variant)) {
-                    std::string prop_name = std::string(member_access->member.text);
-                    bool found = false;
-                    for (auto& prop : target->properties) {
-                        if (prop.name.text == prop_name) {
-                            prop.value = evaluator.evaluate_value(assignment.value, table);
-                            found = true;
-                            break;
+            ComponentNode* target_component = nullptr;
+            Expression* target_expr = assignment.target.get();
+            while(target_expr) {
+                if (auto* member_access = std::get_if<MemberAccessNode>(&target_expr->variant)) {
+                    target_component = evaluator.evaluate_target(*member_access->object, table, instance);
+                    if (target_component) {
+                         std::string prop_name = std::string(member_access->member.text);
+                        bool found = false;
+                        for (auto& prop : target_component->properties) {
+                            if (prop.name.text == prop_name) {
+                                prop.value = evaluator.evaluate_value(assignment.value, table);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            PropertyNode new_prop;
+                            new_prop.name = member_access->member;
+                            new_prop.value = evaluator.evaluate_value(assignment.value, table);
+                            target_component->properties.push_back(std::move(new_prop));
                         }
                     }
-                    if (!found) {
-                        PropertyNode new_prop;
-                        new_prop.name = member_access->member;
-                        new_prop.value = evaluator.evaluate_value(assignment.value, table);
-                        target->properties.push_back(std::move(new_prop));
-                    }
+                    break;
+                } else if (auto* index_access = std::get_if<IndexAccessNode>(&target_expr->variant)) {
+                    target_expr = index_access->object.get();
+                } else {
+                    break;
                 }
             }
         }
@@ -217,22 +227,17 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
 }
 
 void CodeGenerator::generate_item_component(const ItemNode& item_def, const ComponentNode& instance, const ComponentNode* parent, std::stringstream& html_builder) {
-    std::vector<const PropertyNode*> merged_properties;
+    std::unordered_map<std::string, const PropertyNode*> property_map;
     for (const auto& prop : item_def.properties) {
-        merged_properties.push_back(&prop);
+        property_map[std::string(prop.name.text)] = &prop;
     }
     for (const auto& prop : instance.properties) {
-        bool overridden = false;
-        for (auto& merged_prop : merged_properties) {
-            if (merged_prop->name.text == prop.name.text) {
-                merged_prop = &prop;
-                overridden = true;
-                break;
-            }
-        }
-        if (!overridden) {
-            merged_properties.push_back(&prop);
-        }
+        property_map[std::string(prop.name.text)] = &prop;
+    }
+
+    std::vector<const PropertyNode*> merged_properties;
+    for (const auto& pair : property_map) {
+        merged_properties.push_back(pair.second);
     }
 
     for (const auto& child : item_def.children) {
@@ -249,28 +254,19 @@ void CodeGenerator::generate_css_for_component(const ComponentNode& component, c
     if (has_positional_properties(component)) css_stream_ << "    position: absolute;\n";
     if (has_child_with_positional_properties(component)) css_stream_ << "    position: relative;\n";
 
-    std::vector<const PropertyNode*> properties_to_generate;
+    std::unordered_map<std::string, const PropertyNode*> property_map;
     for (const auto& prop : component.properties) {
-        properties_to_generate.push_back(&prop);
+        property_map[std::string(prop.name.text)] = &prop;
     }
 
     if (overridden_properties) {
         for (const auto* prop : *overridden_properties) {
-            bool overridden = false;
-            for (auto*& existing_prop : properties_to_generate) {
-                if (existing_prop->name.text == prop->name.text) {
-                    existing_prop = prop;
-                    overridden = true;
-                    break;
-                }
-            }
-            if (!overridden) {
-                properties_to_generate.push_back(prop);
-            }
+            property_map[std::string(prop->name.text)] = prop;
         }
     }
 
-    for (const auto* prop : properties_to_generate) {
+    for (const auto& pair : property_map) {
+        const auto* prop = pair.second;
         if (prop->name.text == "text") continue;
 
         std::string css_prop;

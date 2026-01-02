@@ -6,6 +6,7 @@
 #include <string>
 #include <memory>
 #include <unordered_set>
+#include <unordered_map>
 
 class SemanticAnalyzer {
 public:
@@ -17,11 +18,12 @@ public:
 
 private:
     void visit(const ItemNode& node, std::shared_ptr<SymbolTable> table);
-    void visit(const ComponentNode& node, std::shared_ptr<SymbolTable> table);
-    void visit(const PropertyNode& node, std::shared_ptr<SymbolTable> table);
+    void visit(const ComponentNode& node, std::shared_ptr<SymbolTable> table, const std::string& parent_type);
+    void visit(const PropertyNode& node, std::shared_ptr<SymbolTable> table, const std::string& component_type);
     void visit(const AssignmentNode& node, std::shared_ptr<SymbolTable> table);
     void visit(const Expression& node, std::shared_ptr<SymbolTable> table);
 
     std::vector<std::string> errors_;
     std::unordered_set<std::string> built_in_types_;
+    std::unordered_map<std::string, std::unordered_set<std::string>> valid_properties_;
 };

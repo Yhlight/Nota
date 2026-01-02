@@ -168,8 +168,12 @@ std::unique_ptr<Expression> Parser::parse_primary() {
     auto expr = std::make_unique<Expression>();
     if (match(TokenType::IDENTIFIER)) {
         expr->variant = LiteralNode{std::string(previous_.text), previous_};
-    } else {
-        error("Expected an identifier.");
+    } else if (match(TokenType::NUMBER)) {
+        expr->variant = LiteralNode{std::stod(std::string(previous_.text)), previous_};
+    }
+    else {
+        error("Expected an identifier or number for an expression.");
+        expr->variant = LiteralNode{std::string(""), previous_};
     }
     return expr;
 }

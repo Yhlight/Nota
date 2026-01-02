@@ -4,6 +4,7 @@
 #include "ast/ASTFwd.h"
 #include <string>
 #include <vector>
+#include <memory>
 
 // --- Value Nodes ---
 using LiteralValue = std::variant<std::string, double>;
@@ -25,7 +26,15 @@ struct ComponentNode {
     std::vector<std::unique_ptr<ComponentNode>> children;
 };
 
+// --- Item Definition Node ---
+struct ItemNode {
+    Token name;
+    std::vector<PropertyNode> properties;
+    std::vector<std::unique_ptr<ComponentNode>> children;
+};
+
 // --- Root of the AST ---
 struct RootNode {
+    std::vector<std::unique_ptr<ItemNode>> item_definitions;
     std::unique_ptr<ComponentNode> root_component;
 };

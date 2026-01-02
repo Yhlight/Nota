@@ -3,6 +3,7 @@
 #include <sstream>
 #include "lexer/Lexer.h"
 #include "parser/Parser.h"
+#include "analyzer/SemanticAnalyzer.h"
 #include "codegen/CodeGenerator.h"
 
 int main(int argc, char* argv[]) {
@@ -28,6 +29,15 @@ int main(int argc, char* argv[]) {
     if (!parser.errors().empty()) {
         std::cerr << "Parser errors:\n";
         for (const auto& error : parser.errors()) {
+            std::cerr << error << std::endl;
+        }
+        return 1;
+    }
+
+    SemanticAnalyzer analyzer;
+    if (!analyzer.analyze(ast)) {
+        std::cerr << "Semantic errors:\n";
+        for (const auto& error : analyzer.errors()) {
             std::cerr << error << std::endl;
         }
         return 1;

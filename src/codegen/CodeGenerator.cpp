@@ -31,13 +31,17 @@ std::string CodeGenerator::generate(const RootNode& root) {
         return "";
     }
 
-    const auto& app_component = *root.root_component;
-    get_unique_class_name(app_component); // Pre-generate all class names.
+    for (const auto& item_def : root.item_definitions) {
+        item_definitions_[std::string(item_def->name.text)] = item_def.get();
+    }
 
-    generate_css_for_component(app_component, class_map_.at(&app_component), nullptr);
+    const auto& app_component = *root.root_component;
+    get_unique_class_name(app_component);
+
+    generate_css_for_component(app_component, class_map_.at(&app_component), nullptr, nullptr);
 
     for (const auto& child : app_component.children) {
-        visit(*child, &app_component, html_stream_);
+        generate_component(*child, &app_component, html_stream_);
     }
 
     std::stringstream output;
@@ -58,38 +62,67 @@ std::string CodeGenerator::generate(const RootNode& root) {
     return output.str();
 }
 
-void CodeGenerator::visit(const ComponentNode& component, const ComponentNode* parent, std::stringstream& html_builder) {
-    std::string class_name = class_map_.at(&component);
+void CodeGenerator::generate_component(const ComponentNode& component, const ComponentNode* parent, std::stringstream& html_builder, const std::vector<const PropertyNode*>* overridden_properties) {
+    std::string type_name(component.type.text);
+    if (item_definitions_.count(type_name)) {
+        const ItemNode* item_def = item_definitions_.at(type_name);
+        generate_item_component(*item_def, component, parent, html_builder);
+    } else {
+        std::string class_name = get_unique_class_name(component);
+        generate_css_for_component(component, class_name, parent, overridden_properties);
 
-    generate_css_for_component(component, class_name, parent);
+        std::string tag = "div";
+        if (component.type.text == "Text") tag = "span";
 
-    std::string tag = "div";
-    if (component.type.text == "Text") tag = "span";
+        html_builder << "<" << tag << " class=\"" << class_name << "\">";
 
-    html_builder << "<" << tag << " class=\"" << class_name << "\">";
-
-    for (const auto& prop : component.properties) {
-        if (prop.name.text == "text") {
-             if (std::holds_alternative<LiteralNode>(prop.value)) {
-                const auto& literal = std::get<LiteralNode>(prop.value);
-                if (std::holds_alternative<std::string>(literal.value)) {
-                    std::string text_val = std::get<std::string>(literal.value);
-                    if (text_val.front() == '"' && text_val.back() == '"') {
-                        html_builder << text_val.substr(1, text_val.length() - 2);
+        for (const auto& prop : component.properties) {
+            if (prop.name.text == "text") {
+                if (std::holds_alternative<LiteralNode>(prop.value)) {
+                    const auto& literal = std::get<LiteralNode>(prop.value);
+                    if (std::holds_alternative<std::string>(literal.value)) {
+                        std::string text_val = std::get<std::string>(literal.value);
+                        if (text_val.front() == '"' && text_val.back() == '"') {
+                            html_builder << text_val.substr(1, text_val.length() - 2);
+                        }
                     }
                 }
             }
         }
-    }
 
-    for (const auto& child : component.children) {
-        visit(*child, &component, html_builder);
-    }
+        for (const auto& child : component.children) {
+            generate_component(*child, &component, html_builder);
+        }
 
-    html_builder << "</" << tag << ">";
+        html_builder << "</" << tag << ">";
+    }
 }
 
-void CodeGenerator::generate_css_for_component(const ComponentNode& component, const std::string& class_name, const ComponentNode* parent) {
+void CodeGenerator::generate_item_component(const ItemNode& item_def, const ComponentNode& instance, const ComponentNode* parent, std::stringstream& html_builder) {
+    std::vector<const PropertyNode*> merged_properties;
+    for (const auto& prop : item_def.properties) {
+        merged_properties.push_back(&prop);
+    }
+    for (const auto& prop : instance.properties) {
+        bool overridden = false;
+        for (auto& merged_prop : merged_properties) {
+            if (merged_prop->name.text == prop.name.text) {
+                merged_prop = &prop;
+                overridden = true;
+                break;
+            }
+        }
+        if (!overridden) {
+            merged_properties.push_back(&prop);
+        }
+    }
+
+    for (const auto& child : item_def.children) {
+        generate_component(*child, parent, html_builder, &merged_properties);
+    }
+}
+
+void CodeGenerator::generate_css_for_component(const ComponentNode& component, const std::string& class_name, const ComponentNode* parent, const std::vector<const PropertyNode*>* overridden_properties) {
     css_stream_ << "." << class_name << " {\n";
 
     if (component.type.text == "Row") css_stream_ << "    display: flex;\n    flex-direction: row;\n";
@@ -98,17 +131,38 @@ void CodeGenerator::generate_css_for_component(const ComponentNode& component, c
     if (has_positional_properties(component)) css_stream_ << "    position: absolute;\n";
     if (has_child_with_positional_properties(component)) css_stream_ << "    position: relative;\n";
 
+    std::vector<const PropertyNode*> properties_to_generate;
     for (const auto& prop : component.properties) {
-        if (prop.name.text == "text") continue;
+        properties_to_generate.push_back(&prop);
+    }
+
+    if (overridden_properties) {
+        for (const auto* prop : *overridden_properties) {
+            bool overridden = false;
+            for (auto*& existing_prop : properties_to_generate) {
+                if (existing_prop->name.text == prop->name.text) {
+                    existing_prop = prop;
+                    overridden = true;
+                    break;
+                }
+            }
+            if (!overridden) {
+                properties_to_generate.push_back(prop);
+            }
+        }
+    }
+
+    for (const auto* prop : properties_to_generate) {
+        if (prop->name.text == "text") continue;
 
         std::string css_prop;
-        if (prop.name.text == "color" && component.type.text != "Text") {
+        if (prop->name.text == "color" && component.type.text != "Text") {
             css_prop = "background-color";
         } else {
-            css_prop = to_css_property(std::string(prop.name.text));
+            css_prop = to_css_property(std::string(prop->name.text));
         }
 
-        std::string css_val = to_css_value(prop.value, css_prop);
+        std::string css_val = to_css_value(prop->value, css_prop);
         if (!css_prop.empty() && !css_val.empty()) {
             css_stream_ << "    " << css_prop << ": " << css_val << ";\n";
         }

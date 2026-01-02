@@ -6,7 +6,23 @@ Parser::Parser(Lexer& lexer) : lexer_(lexer) {}
 RootNode Parser::parse() {
     advance(); // Load the first token
     RootNode root;
-    root.root_component = parse_component();
+
+    while (!check(TokenType::END_OF_FILE)) {
+        if (check(TokenType::ITEM)) {
+            root.item_definitions.push_back(parse_item_definition());
+        } else if (check(TokenType::IDENTIFIER)) {
+            if (root.root_component) {
+                error("Multiple root components are not allowed.");
+                synchronize();
+            } else {
+                root.root_component = parse_component();
+            }
+        } else {
+            error("Expected a component or Item definition.");
+            synchronize();
+        }
+    }
+
     return root;
 }
 
@@ -43,25 +59,16 @@ bool Parser::check(TokenType type) const {
     return current_.type == type;
 }
 
-std::unique_ptr<ComponentNode> Parser::parse_component() {
-    if (!check(TokenType::IDENTIFIER)) {
-        error("Expected a component type identifier.");
-        return nullptr;
-    }
-
-    auto component = std::make_unique<ComponentNode>();
-    component->type = current_;
-    advance();
-
+template <typename Node>
+void Parser::parse_component_body(Node& node) {
     consume(TokenType::LEFT_BRACE, "Expected '{' after component type.");
 
     while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::END_OF_FILE)) {
-        if (check(TokenType::IDENTIFIER)) {
-            // Use a lookahead that skips whitespace to differentiate properties from child components.
+        if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
             if (lexer_.peek_next_significant_char() == ':') {
-                component->properties.push_back(parse_property());
+                node->properties.push_back(parse_property());
             } else {
-                component->children.push_back(parse_component());
+                node->children.push_back(parse_component());
             }
         } else {
             error("Unexpected token in component body.");
@@ -70,6 +77,30 @@ std::unique_ptr<ComponentNode> Parser::parse_component() {
     }
 
     consume(TokenType::RIGHT_BRACE, "Expected '}' after component body.");
+}
+
+std::unique_ptr<ItemNode> Parser::parse_item_definition() {
+    consume(TokenType::ITEM, "Expected 'Item' keyword.");
+
+    auto item = std::make_unique<ItemNode>();
+    item->name = current_;
+    consume(TokenType::IDENTIFIER, "Expected an identifier for the Item name.");
+
+    parse_component_body(item);
+    return item;
+}
+
+std::unique_ptr<ComponentNode> Parser::parse_component() {
+    if (!check(TokenType::IDENTIFIER) && !check(TokenType::ITEM)) {
+        error("Expected a component type identifier or 'Item'.");
+        return nullptr;
+    }
+
+    auto component = std::make_unique<ComponentNode>();
+    component->type = current_;
+    advance();
+
+    parse_component_body(component);
     return component;
 }
 
@@ -82,7 +113,6 @@ PropertyNode Parser::parse_property() {
 
     prop.value = parse_value();
 
-    // Optionally consume a semicolon
     match(TokenType::SEMICOLON);
 
     return prop;
@@ -93,13 +123,10 @@ ASTValue Parser::parse_value() {
         return LiteralNode{std::string(previous_.text), previous_};
     }
     if (match(TokenType::NUMBER)) {
-        // The value is stored as a double in the AST.
         return LiteralNode{std::stod(std::string(previous_.text)), previous_};
     }
-    // Handle identifiers for properties like 'position'.
     if (match(TokenType::IDENTIFIER)) {
         std::string value_text = std::string(previous_.text);
-        // Check for a second identifier (e.g., 'left top').
         if (check(TokenType::IDENTIFIER)) {
             advance();
             value_text += " " + std::string(previous_.text);
@@ -108,7 +135,7 @@ ASTValue Parser::parse_value() {
     }
 
     error("Expected a value (string, number, or identifier).");
-    return LiteralNode{std::string(""), previous_}; // Return a dummy value
+    return LiteralNode{std::string(""), previous_};
 }
 
 void Parser::synchronize() {

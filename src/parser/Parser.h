@@ -18,6 +18,10 @@ private:
     void consume(TokenType type, const std::string& message);
     bool check(TokenType type) const;
 
+    template <typename Node>
+    void parse_component_body(Node& node);
+
+    std::unique_ptr<ItemNode> parse_item_definition();
     std::unique_ptr<ComponentNode> parse_component();
     PropertyNode parse_property();
     ASTValue parse_value();

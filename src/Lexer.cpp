@@ -31,6 +31,8 @@ void Lexer::ScanToken() {
     char c = Advance();
     switch (c) {
         // Single-character tokens
+        case '(': tokens_.push_back(MakeToken(TokenType::LEFT_PAREN)); break;
+        case ')': tokens_.push_back(MakeToken(TokenType::RIGHT_PAREN)); break;
         case '{': tokens_.push_back(MakeToken(TokenType::LEFT_BRACE)); break;
         case '}': tokens_.push_back(MakeToken(TokenType::RIGHT_BRACE)); break;
         case '[': tokens_.push_back(MakeToken(TokenType::LEFT_BRACKET)); break;

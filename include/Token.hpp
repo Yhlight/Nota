@@ -9,6 +9,8 @@ namespace Nota {
 
 enum class TokenType {
     // Single-character tokens.
+    LEFT_PAREN,   // (
+    RIGHT_PAREN,  // )
     LEFT_BRACE,   // {
     RIGHT_BRACE,  // }
     LEFT_BRACKET, // [
@@ -46,6 +48,8 @@ enum class TokenType {
 // Helper function to convert TokenType to string for debugging
 inline std::string TokenTypeToString(TokenType type) {
     switch (type) {
+        case TokenType::LEFT_PAREN:   return "LEFT_PAREN";
+        case TokenType::RIGHT_PAREN:  return "RIGHT_PAREN";
         case TokenType::LEFT_BRACE:   return "LEFT_BRACE";
         case TokenType::RIGHT_BRACE:  return "RIGHT_BRACE";
         case TokenType::LEFT_BRACKET: return "LEFT_BRACKET";

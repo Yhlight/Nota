@@ -1,8 +1,12 @@
 # 添加一个新的可执行文件目标，用于运行测试
 add_executable(NotaTests)
 
-# 查找所有测试源文件
-file(GLOB TEST_SOURCES "*.cpp")
+# 明确地列出所有测试源文件
+set(TEST_SOURCES
+    LexerTests.cpp
+    ParserTests.cpp
+    SemanticAnalyzerTests.cpp
+)
 
 # 将测试源文件添加到可执行文件中
 target_sources(NotaTests PRIVATE ${TEST_SOURCES})

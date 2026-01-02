@@ -73,14 +73,24 @@ std::unique_ptr<Expr> Parser::ParseFactor() {
 
 // Grammar Rule: Primary -> NUMBER | STRING | COLOR_HEX | PERCENTAGE | IDENTIFIER | "(" Expression ")"
 std::unique_ptr<Expr> Parser::ParsePrimary() {
-    if (Match({TokenType::NUMBER, TokenType::STRING, TokenType::COLOR_HEX, TokenType::PERCENTAGE, TokenType::IDENTIFIER})) {
+    if (Match({TokenType::STRING, TokenType::COLOR_HEX, TokenType::PERCENTAGE, TokenType::IDENTIFIER})) {
         Token token = Previous();
         return std::make_unique<LiteralExpr>(token.lexeme, token.type);
     }
 
-    if (Match({TokenType::LEFT_BRACE})) {
+    if (Match({TokenType::NUMBER})) {
+        Token token = Previous();
+        try {
+            double value = std::stod(token.lexeme);
+            return std::make_unique<LiteralExpr>(std::to_string(value), token.type);
+        } catch (const std::invalid_argument& e) {
+            throw Error(token, "Invalid number format.");
+        }
+    }
+
+    if (Match({TokenType::LEFT_PAREN})) {
         auto expr = ParseExpression();
-        Consume(TokenType::RIGHT_BRACE, "Expect '}' after expression.");
+        Consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
         return std::make_unique<GroupingExpr>(std::move(expr));
     }
 

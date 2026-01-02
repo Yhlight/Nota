@@ -1,401 +1,244 @@
-/*
-    作者： yinghuolight
-    日期：2025/12/31
-    版本：Nota-MVP
-*/
+# Nota 语言规范
+
+## 1. 简介
+
+**Nota** 是一门为现代 Web 开发设计的声明式前端 UI 语言，其语法与 QML 高度相似。它旨在通过提供一种直观、高效的方式来构建用户界面，简化前端开发流程。
+
+Nota 编译器基于 C++20 构建，可将 `.nota` 文件编译为高性能、优化的 HTML 和 CSS 代码。
+
+### 核心特性
+
+- **声明式语法**：清晰地描述 UI 的结构和状态。
+- **组件化**：通过可复用的自定义组件 (`Item`) 构建复杂界面。
+- **强大的布局系统**：支持基于 Flexbox 的 `Row` 和 `Col` 布局，以及通过 `x`, `y`, `index` 实现的精确定位。
+- **静态类型**：在编译时进行类型检查和属性验证，减少运行时错误。
+
+## 2. 语法基础
+
+### 2.1. 注释
+
+Nota 支持单行和多行注释。
+
+```nota
+// 这是一个单行注释
 
 /*
-    作者： yinghuolight
-    日期：2026/1/1
-    版本：Nota-原型，Item，属性覆写，子控件访问，组件模型
-    ，相对位置，xy，position，层级
+  这是一个
+  多行注释
 */
+```
 
-## Nota
-Nota是一门与QML语法高度相似的前端界面语言
+### 2.2. 基本结构
 
-Nota使用.nota作为文件扩展名  
+一个 Nota 文件通常包含一个根组件（如 `App`）以及一系列可选的自定义组件 (`Item`) 定义。
 
-nota基于C++20开发，是一门编译型编程语言，最终产物是HTML + CSS代码  
+```nota
+// 定义一个可复用的自定义组件
+Item CustomButton {
+    width: 100;
+    height: 40;
+    color: "blue";
+    radius: 8;
+}
 
-Nota舍弃了HTML的语法，这可能对于前端开发者来说很不友好  
-
-## 注释
-nota支持单行注释和多行注释  
-使用//和/*...*/  
-
-## 示例代码
-```Nota
+// 根组件
 App {
-    width: 100%;
-    height: 100%;
-    color: #f0f0f0;
+    width: "100%";
+    height: "100%";
 
-    Row {
-        id: header;
-        width: 100%;
-        height: 60;
-        color: #333;
-        spacing: 20;
-
-        Rect { width: 40; height: 40; radius: 20; color: white; }
-        Text { text: "Nota Dashboard"; color: white; }
-    }
-
-    Col {
-        width: 80%;
-        padding: 40;
-        spacing: 15;
-
-        Rect { 
-            width: 100%; 
-            height: 200; 
-            color: white; 
-            radius: 8;
-        }
-
-        Row {
-            spacing: 10;
-            Rect { width: 50; height: 50; color: blue; }
-            Rect { width: 50; height: 50; color: red; }
-        }
+    // 实例化自定义组件
+    CustomButton {
+        color: "green"; // 覆写属性
     }
 }
 ```
 
-## 基本组件
-对于所有的Nota组件，默认具有下述属性  
-```css
-box-sizing: border-box;
-overflow: hidden;
-margin: 0;
-padding: 0;
-```
+### 2.3. 属性赋值
 
-### App
+属性通过 `属性名: 值;` 的形式进行赋值。分号 (`;`) 是可选的。
 
-```Nota
-App
-{
-
+```nota
+Rect {
+    width: 200;
+    height: 100;
+    color: "#ff0000"; // 红色
 }
 ```
 
-=>
+## 3. 组件
 
-```html
-<body class="nota-app"></body>
-```
+### 3.1. 内置组件
 
-### Row
+#### `App`
+`App` 是所有 Nota 应用的根组件，它会被编译为 HTML 的 `<body>` 标签。通常用于设置全局样式。
 
-```Nota
-Row
-{
+- **可用属性**: `width`, `height`, `color`
 
-}
-```
+#### `Row`
+`Row` 是一个使用 Flexbox `row` 方向进行布局的容器。
 
-=>
+- **可用属性**: `width`, `height`, `color`, `spacing` (映射为 `gap`)
 
-```html
-<style>
-.nota-row
-{
-    display: flex;
-    flex-direction: row;
-}
-</style>
+#### `Col`
+`Col` 是一个使用 Flexbox `column` 方向进行布局的容器。
 
-<div class="nota-row"></div>
-```
+- **可用属性**: `width`, `height`, `color`, `spacing` (映射为 `gap`)
 
-### Col
+#### `Rect`
+`Rect` 是一个通用的矩形块级元素，可用于构建各种视觉元素。
 
-```Nota
-Col
-{
+- **可用属性**: `width`, `height`, `color`, `radius`, `border`
 
-}
-```
+#### `Text`
+`Text` 用于显示文本内容。它会被编译为 HTML 的 `<span>` 标签。
 
-=>
+- **可用属性**: `text`, `color`
 
-```html
-<style>
-.nota-col
-{
-    display: flex;
-    flex-direction: column;
-}
-</style>
+### 3.2. 自定义组件 (`Item`)
 
-<div class="nota-col"></div>
-```
+`Item` 关键字用于定义可复用的自定义组件。这有助于保持代码的模块化和可维护性。
 
-### Rect
+#### 定义 `Item`
 
-```Nota
-Col
-{
+```nota
+Item Card {
+    width: 200;
+    height: 150;
+    color: "white";
+    radius: 12;
 
-}
-```
-
-=>
-
-```html
-<style>
-.nota-rect
-{
-    display: block;
-}
-</style>
-
-<div class="nota-rect"></div>
-```
-
-### Text
-
-表示一个可控的文本组件  
-
-```Nota
-Text
-{
-
-}
-```
-
-=>
-
-```html
-<style>
-.nota-text
-{
-    display: block;
-}
-</style>
-
-<span class="nota-text"></span>
-```
-
-### 原型
-
-Nota的组件至少会包含五个属性，为type，property，children，this，parent。
-
-其中type为组件的类型，property为组件所包含的属性，而children则是组件所具有的子组件。
-
-this是当前组件的指代，通常用于访问当前组件的属性。
-
-parent顾名思义，父亲。
-
-其中Item是所有组件的基本组件。
-
-Item有两种语义，一种是Item组件，一种是定义一个自定义组件。
-
-```Nota
-Item Vec
-{
-    Item
-    {
-
+    Text {
+        text: "这是一个卡片";
     }
 }
 ```
 
-### Item
+#### 实例化 `Item`
 
-Item表示一个自定义组件。
-
-```Nota
-Item Box
-{
-    Rect
-    {
-        color: red;
-        width: 50px;
-        height: 50px;
-        text: "盒子";
-    }
-}
-
-App
-{
-    Box
-    {
-        Rect  // 在Box的基础上追加一个Rect
-        {
-
-        }
+```nota
+App {
+    // 实例化 Card 组件
+    Card {
+        // ...
     }
 }
 ```
 
 #### 属性覆写
 
-```nota
-Item Box
-{
-    color: red;
-    width: 50px;
-    height: 50px;
-    text: "盒子";
-
-    Rect
-    {
-        color: red;
-        width: 50px;
-        height: 50px;
-        text: "盒子";
-    }
-}
-
-App
-{
-    Box
-    {
-        color: black;  // 覆写Box的颜色
-        // 更标准的写法是
-        this.color = black;
-
-        Rect  // 追加一个Rect，而不是覆写第一个Rect
-        {
-            color: black;
-        }
-    }
-}
-```
-
-#### 子控件访问
+在实例化自定义组件时，可以覆写其默认属性。
 
 ```nota
-Item Box
-{
-    Rect
-    {
-        color: red;
-        width: 50px;
-        height: 50px;
-        text: "盒子";
-    }
-
-    Rect
-    {
-
-    }
-}
-
-App
-{
-    Box
-    {
-        this.chilren[0].color = "black";  // 覆写
+App {
+    Card {
+        color: "lightblue"; // 将背景色从 "white" 改为 "lightblue"
     }
 }
 ```
 
-### 组件模型
+## 4. 动态属性与子组件访问
 
-对于Nota来说，所有的组件都采用“盒子模型”。
+Nota 支持在运行时通过表达式修改组件属性。
 
-组件会被抽象为  
+#### `this` 关键字
 
-边框  
-内边距  
-内容  
-
-Nota不使用外边距  
-
-取而代之的是父组件  
-
-### 相对位置
-#### x, y
-
-与QML类似，Nota的组件采用父组件的相对位置来定位子组件的位置。
-
-```Nota
-Rect
-{
-    witdh: 100px;
-    height: 100px;
-
-    Rect
-    {
-        width: 10px;
-        height: 10px;
-        x: parent.width / 2;
-        y: parent.height / 2;
-        // 此时左上角点应该与父亲的中心点重合
-    }
-}
-```
-
-预期的父组件的CSS中必然拥有position: relative;  
-
-#### position
-
-除了x，y外，还有position用于控制子组件的位置  
-
-nota有一个专门的位置图  
-
-简单来说，就是自左上角点，将一个组件均分为不等比的9宫格(长边型需要特殊计算)  
-
-使用position: left top;时，子组件左边与上边与父组件左边与下边重合  
-
-可用的参数有left，right，top，buttom，center  
-
-position可以与x，y共同作用  
-
-但是注意！一旦使用了postion，那么x，y的位置是相对于postion定位的那个点的相对位移。
+`this` 关键字指代当前组件实例。
 
 ```nota
-Item
-{
-    Item
-    {
-        position: left top;
-        x: 50;
-        y: 50;
-        // 相对left top 50 50
-    }
+Rect {
+    width: 100;
+    height: 100;
+
+    // 无效的示例：Nota 不支持在属性值中直接引用其他属性
+    // border: (this.width / 10) + " solid black";
+
+    // 正确的用法是在赋值表达式中使用
 }
 ```
 
-### 层级
+#### 子组件访问
 
-你可以使用index控制子组件与父组件之间的堆叠关系  
-
-index默认为1  
+通过 `this.children[index]` 可以访问子组件，并修改其属性。
 
 ```nota
-Item
-{
-    Item
-    {
-        index: 2;  // 在父亲上
-    }
+Item MyComponent {
+    Rect { color: "red"; }   // index 0
+    Rect { color: "blue"; }  // index 1
+}
 
-    Item
-    {
-        index: -1;  // 在父亲下
+App {
+    MyComponent {
+        // 将第一个子组件 (Rect) 的颜色改为 "green"
+        this.children[0].color = "green";
+    }
+}
+```
+**注意**: `children` 拼写为 `children` 而不是 `chilren`。
+
+## 5. 布局与定位
+
+### 5.1. 盒子模型
+
+Nota 采用标准的 CSS 盒子模型，所有组件默认设置 `box-sizing: border-box;`。
+
+### 5.2. 相对定位 (`x`, `y`)
+
+通过 `x` 和 `y` 属性可以相对于父组件进行定位。当一个子组件设置了 `x` 或 `y` 时，父组件会自动应用 `position: relative;`，而该子组件则会应用 `position: absolute;`。
+
+```nota
+Rect {
+    width: 200;
+    height: 200;
+
+    Rect {
+        width: 50;
+        height: 50;
+        x: 20; // 距离父组件左侧 20px
+        y: 30; // 距离父组件顶部 30px
     }
 }
 ```
 
-预期的父组件的CSS中必然拥有position: relative;  
+### 5.3. 层级 (`index`)
 
-### 属性
+`index` 属性用于控制组件的堆叠顺序，它会被编译为 CSS 的 `z-index`。
 
-Nota现在支持下述属性  
-width, height  =>  支持数字(px，不带单位的数字都是px)或百分比  
-spacing  =>  仅支持数字，仅在Row和Col中有效，映射为gap  
-padding  =>  内边距，支持数字(px)或百分比  
-text  =>  容器的文本，Text也可以使用  
-class，id  
-x, y  
-index
+```nota
+Rect {
+    width: 100;
+    height: 100;
 
-视觉效果  
-color  =>  背景颜色  
-border: 边框线（如 1 solid black）
-radius: 圆角
+    Rect {
+        width: 50;
+        height: 50;
+        color: "red";
+        index: 2; // 在蓝色矩形之上
+    }
+
+    Rect {
+        width: 50;
+        height: 50;
+        color: "blue";
+        x: 25;
+        y: 25;
+        index: 1;
+    }
+}
+```
+
+## 6. 属性参考
+
+| 属性名     | 值类型                     | 适用组件             | 描述                                     | CSS 映射          |
+| :--------- | :------------------------- | :------------------- | :--------------------------------------- | :---------------- |
+| `width`    | `Number`, `Percentage`     | 所有组件             | 设置组件宽度。                           | `width`           |
+| `height`   | `Number`, `Percentage`     | 所有组件             | 设置组件高度。                           | `height`          |
+| `color`    | `String` (颜色值)          | 所有组件             | 设置文本颜色 (`Text`) 或背景色 (其他)。    | `color` / `background-color` |
+| `spacing`  | `Number`                   | `Row`, `Col`         | 设置子组件之间的间距。                   | `gap`             |
+| `padding`  | `Number`, `Percentage`     | 所有组件             | 设置内边距。                             | `padding`         |
+| `text`     | `String`                   | `Text`               | 设置文本内容。                           | (内部文本)        |
+| `radius`   | `Number`                   | `Rect`               | 设置圆角半径。                           | `border-radius`   |
+| `border`   | `String` (如 "1 solid black") | `Rect`               | 设置边框。                               | `border`          |
+| `x`        | `Number`                   | 所有组件             | 设置相对于父组件的水平位置。             | `left`            |
+| `y`        | `Number`                   | 所有组件             | 设置相对于父组件的垂直位置。             | `top`             |
+| `index`    | `Number`                   | 所有组件             | 设置堆叠顺序。                           | `z-index`         |
+| `id`       | `String`                   | 所有组件             | 为组件设置一个唯一的 DOM ID。            | `id`              |

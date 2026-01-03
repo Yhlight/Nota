@@ -14,6 +14,8 @@ std::unique_ptr<Expression> deep_copy_expression(const Expression& expr) {
                 return MemberAccessNode{deep_copy_expression(*arg.object), arg.member};
             } else if constexpr (std::is_same_v<T, IndexAccessNode>) {
                 return IndexAccessNode{deep_copy_expression(*arg.object), deep_copy_expression(*arg.index)};
+            } else if constexpr (std::is_same_v<T, BinaryOperationNode>) {
+                return BinaryOperationNode{deep_copy_expression(*arg.left), arg.op, deep_copy_expression(*arg.right)};
             }
         },
         expr.variant

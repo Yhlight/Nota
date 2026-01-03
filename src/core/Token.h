@@ -7,6 +7,7 @@ enum class TokenType {
     LEFT_BRACE, RIGHT_BRACE,
     COLON, SEMICOLON,
     DOT, LEFT_BRACKET, RIGHT_BRACKET,
+    LEFT_PAREN, RIGHT_PAREN,
     EQUAL,
 
     // Literals
@@ -20,6 +21,9 @@ enum class TokenType {
 
     // Comments
     SLASH, STAR,
+
+    // Operators
+    PLUS, MINUS,
 
     // Other
     UNEXPECTED,

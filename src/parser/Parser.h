@@ -29,6 +29,10 @@ private:
     PropertyNode parse_property();
     ASTValue parse_value();
     std::unique_ptr<Expression> parse_expression();
+    std::unique_ptr<Expression> parse_term();
+    std::unique_ptr<Expression> parse_factor();
+    std::unique_ptr<Expression> parse_unary();
+    std::unique_ptr<Expression> parse_call();
     std::unique_ptr<Expression> parse_primary();
     AssignmentNode parse_assignment(std::unique_ptr<Expression> target);
 

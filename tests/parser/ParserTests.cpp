@@ -27,10 +27,12 @@ TEST(ParserTest, ParseComponentWithProperties) {
 
     // Property 1: width
     EXPECT_EQ(root.root_component->properties[0].name.text, "width");
-    ASSERT_TRUE(std::holds_alternative<LiteralNode>(root.root_component->properties[0].value));
-    auto& width_value = std::get<LiteralNode>(root.root_component->properties[0].value);
-    ASSERT_TRUE(std::holds_alternative<double>(width_value.value));
-    EXPECT_EQ(std::get<double>(width_value.value), 100);
+    ASSERT_TRUE(std::holds_alternative<std::unique_ptr<Expression>>(root.root_component->properties[0].value));
+    auto& width_expr = std::get<std::unique_ptr<Expression>>(root.root_component->properties[0].value);
+    ASSERT_TRUE(std::holds_alternative<LiteralNode>(width_expr->variant));
+    auto& width_literal = std::get<LiteralNode>(width_expr->variant);
+    ASSERT_TRUE(std::holds_alternative<double>(width_literal.value));
+    EXPECT_EQ(std::get<double>(width_literal.value), 100);
 
     // Property 2: height
     EXPECT_EQ(root.root_component->properties[1].name.text, "height");

@@ -66,3 +66,52 @@ TEST(ExpressionEvaluationTests, ComplexAssignment) {
     EXPECT_NE(output.find("width: 100px;"), std::string::npos);
     EXPECT_EQ(output.find("width: 50px;"), std::string::npos);
 }
+
+TEST(ExpressionEvaluationTests, ArithmeticExpressionInProperty) {
+    std::string source = R"(
+        App {
+            Rect {
+                width: 100 + 50;
+                height: 20 * 3;
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    SemanticAnalyzer analyzer;
+    ASSERT_TRUE(analyzer.analyze(ast));
+
+    CodeGenerator generator;
+    std::string output = generator.generate(ast);
+
+    EXPECT_NE(output.find("width: 150px;"), std::string::npos);
+    EXPECT_NE(output.find("height: 60px;"), std::string::npos);
+}
+
+TEST(ExpressionEvaluationTests, ParentPropertyAccessInExpression) {
+    std::string source = R"(
+        App {
+            width: 200;
+            Rect {
+                width: parent.width / 2;
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    SemanticAnalyzer analyzer;
+    ASSERT_TRUE(analyzer.analyze(ast));
+
+    CodeGenerator generator;
+    std::string output = generator.generate(ast);
+
+    EXPECT_NE(output.find("width: 100px;"), std::string::npos);
+}

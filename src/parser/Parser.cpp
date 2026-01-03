@@ -132,18 +132,62 @@ ASTValue Parser::parse_value() {
     if (match(TokenType::STRING)) {
         return LiteralNode{std::string(previous_.text), previous_};
     }
-    if (match(TokenType::NUMBER)) {
-        return LiteralNode{std::stod(std::string(previous_.text)), previous_};
-    }
-    if (check(TokenType::IDENTIFIER)) {
-        return parse_expression();
-    }
 
-    error("Expected a value (string, number, or identifier).");
-    return LiteralNode{std::string(""), previous_};
+    // Any non-string value is treated as a potential expression.
+    return parse_expression();
 }
 
 std::unique_ptr<Expression> Parser::parse_expression() {
+    return parse_term();
+}
+
+std::unique_ptr<Expression> Parser::parse_term() {
+    auto expr = parse_factor();
+    while (match(TokenType::PLUS) || match(TokenType::MINUS)) {
+        Token op = previous_;
+        auto right = parse_factor();
+        auto new_expr = std::make_unique<Expression>();
+        new_expr->variant = BinaryOperationNode{std::move(expr), op, std::move(right)};
+        new_expr->line = op.line;
+        new_expr->column = op.column;
+        expr = std::move(new_expr);
+    }
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::parse_factor() {
+    auto expr = parse_unary();
+    while (match(TokenType::STAR) || match(TokenType::SLASH)) {
+        Token op = previous_;
+        auto right = parse_unary();
+        auto new_expr = std::make_unique<Expression>();
+        new_expr->variant = BinaryOperationNode{std::move(expr), op, std::move(right)};
+        new_expr->line = op.line;
+        new_expr->column = op.column;
+        expr = std::move(new_expr);
+    }
+    return expr;
+}
+
+std::unique_ptr<Expression> Parser::parse_unary() {
+    if (match(TokenType::MINUS)) {
+        Token op = previous_;
+        auto right = parse_unary();
+        auto new_expr = std::make_unique<Expression>();
+        // Represent unary minus as 0 - right
+        auto zero_literal = std::make_unique<Expression>();
+        zero_literal->variant = LiteralNode{0.0, op};
+        zero_literal->line = op.line;
+        zero_literal->column = op.column;
+        new_expr->variant = BinaryOperationNode{std::move(zero_literal), op, std::move(right)};
+        new_expr->line = op.line;
+        new_expr->column = op.column;
+        return new_expr;
+    }
+    return parse_call();
+}
+
+std::unique_ptr<Expression> Parser::parse_call() {
     auto expr = parse_primary();
 
     while (match(TokenType::DOT) || match(TokenType::LEFT_BRACKET)) {
@@ -181,9 +225,11 @@ std::unique_ptr<Expression> Parser::parse_primary() {
         expr->variant = LiteralNode{std::stod(std::string(previous_.text)), previous_};
         expr->line = previous_.line;
         expr->column = previous_.column;
-    }
-    else {
-        error("Expected an identifier or number for an expression.");
+    } else if (match(TokenType::LEFT_PAREN)) {
+        expr = parse_expression();
+        consume(TokenType::RIGHT_PAREN, "Expected ')' after expression.");
+    } else {
+        error("Expected an expression.");
         expr->variant = LiteralNode{std::string(""), previous_};
         expr->line = previous_.line;
         expr->column = previous_.column;

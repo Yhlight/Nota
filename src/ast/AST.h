@@ -33,10 +33,17 @@ struct AssignmentNode {
     int column;
 };
 
+struct BinaryOperationNode {
+    std::unique_ptr<Expression> left;
+    Token op;
+    std::unique_ptr<Expression> right;
+};
+
 using ExpressionVariant = std::variant<
     MemberAccessNode,
     IndexAccessNode,
-    LiteralNode
+    LiteralNode,
+    BinaryOperationNode
 >;
 
 struct Expression {

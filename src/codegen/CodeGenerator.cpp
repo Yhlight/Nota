@@ -55,6 +55,8 @@ std::string CodeGenerator::generate(const RootNode& root) {
     build_tree(*root.root_component, *root_instance);
 
     // Second pass: apply assignments
+    evaluator_ = std::make_unique<ExpressionEvaluator>(component_map_, root_instance.get());
+    evaluator_->build_parent_map(root_instance.get(), nullptr);
     apply_assignments(root);
 
     // Third pass: generate code
@@ -100,7 +102,7 @@ void CodeGenerator::apply_assignments(const RootNode& root) {
                     bool found = false;
                     for (auto& prop : target_component->properties) {
                         if (prop.name.text == prop_name) {
-                            prop.value = evaluator.evaluate_value(assignment.value, table);
+                            prop.value = evaluator.evaluate_value(assignment.value, table, instance);
                             found = true;
                             break;
                         }
@@ -227,7 +229,7 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
             css_prop = to_css_property(std::string(prop->name.text));
         }
 
-        std::string css_val = to_css_value(prop->value, css_prop);
+        std::string css_val = to_css_value(prop->value, css_prop, const_cast<ComponentNode*>(&component));
         if (!css_prop.empty() && !css_val.empty()) {
             props_stream << "    " << css_prop << ": " << css_val << ";\n";
         }
@@ -245,13 +247,22 @@ std::string CodeGenerator::to_css_property(const std::string& nota_property) {
     return nota_property;
 }
 
-std::string CodeGenerator::to_css_value(const ASTValue& value, const std::string& property_name) {
-    if (auto* literal = std::get_if<LiteralNode>(&value)) {
-        if (auto* number = std::get_if<double>(&literal->value)) {
+std::string CodeGenerator::to_css_value(const ASTValue& value, const std::string& property_name, ComponentNode* current_component) {
+    ASTValue evaluated_value;
+    const ASTValue* value_to_process = &value;
+
+    if (const auto* expr = std::get_if<std::unique_ptr<Expression>>(&value)) {
+        SymbolTable table;
+        evaluated_value = evaluator_->evaluate_expression(**expr, table, current_component);
+        value_to_process = &evaluated_value;
+    }
+
+    if (const auto* literal = std::get_if<LiteralNode>(value_to_process)) {
+        if (const auto* number = std::get_if<double>(&literal->value)) {
             return format_double(*number, property_name);
         }
-        if (auto* str_val = std::get_if<std::string>(&literal->value)) {
-             if (str_val->front() == '"' && str_val->back() == '"') {
+        if (const auto* str_val = std::get_if<std::string>(&literal->value)) {
+             if (!str_val->empty() && str_val->front() == '"' && str_val->back() == '"') {
                 return str_val->substr(1, str_val->length() - 2);
             }
             return *str_val;

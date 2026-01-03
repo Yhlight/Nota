@@ -79,11 +79,15 @@ Token Lexer::next_token() {
         case '.': return make_token(TokenType::DOT);
         case '[': return make_token(TokenType::LEFT_BRACKET);
         case ']': return make_token(TokenType::RIGHT_BRACKET);
+        case '(': return make_token(TokenType::LEFT_PAREN);
+        case ')': return make_token(TokenType::RIGHT_PAREN);
         case '=': return make_token(TokenType::EQUAL);
         case '"': return string();
         case '%': return make_token(TokenType::PERCENT);
         case '*': return make_token(TokenType::STAR);
         case '/': return make_token(TokenType::SLASH);
+        case '+': return make_token(TokenType::PLUS);
+        case '-': return make_token(TokenType::MINUS);
     }
 
     return error_token("Unexpected character.");

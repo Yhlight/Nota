@@ -255,8 +255,8 @@ App
     Box
     {
         color: black;  // 覆写Box的颜色
-        // 更标准的写法是
-        this.color = black;
+        // this. 是可选的
+        // this.color: black;
 
         Rect  // 追加一个Rect，而不是覆写第一个Rect
         {
@@ -289,7 +289,8 @@ App
 {
     Box
     {
-        this.chilren[0].color = "black";  // 覆写
+        // 'this.' 是可选的
+        children[0].color: "black";  // 覆写
     }
 }
 ```

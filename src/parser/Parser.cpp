@@ -256,7 +256,7 @@ std::unique_ptr<Expression> Parser::parse_primary() {
 }
 
 AssignmentNode Parser::parse_assignment(std::unique_ptr<Expression> target) {
-    consume(TokenType::EQUAL, "Expected '=' after target.");
+    consume(TokenType::COLON, "Expected ':' after target.");
     AssignmentNode assignment;
     assignment.target = std::move(target);
     assignment.value = parse_value();

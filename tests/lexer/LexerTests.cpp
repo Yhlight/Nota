@@ -19,15 +19,22 @@ void run_lexer_test(const std::string& source, const std::vector<TokenExpectatio
 }
 
 TEST(LexerTest, SingleCharacterTokens) {
-    std::string source = "{}:;% / *"; // Separated / and * to avoid comment ambiguity
+    std::string source = "{}:; / *"; // Separated / and * to avoid comment ambiguity
     std::vector<TokenExpectation> expectations = {
         {TokenType::LEFT_BRACE, "{"},
         {TokenType::RIGHT_BRACE, "}"},
         {TokenType::COLON, ":"},
         {TokenType::SEMICOLON, ";"},
-        {TokenType::PERCENT, "%"},
         {TokenType::SLASH, "/"},
         {TokenType::STAR, "*"},
+    };
+    run_lexer_test(source, expectations);
+}
+
+TEST(LexerTest, PercentageLiteral) {
+    std::string source = "100%";
+    std::vector<TokenExpectation> expectations = {
+        {TokenType::PERCENTAGE, "100%"},
     };
     run_lexer_test(source, expectations);
 }

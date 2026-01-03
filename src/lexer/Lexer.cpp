@@ -81,9 +81,7 @@ Token Lexer::next_token() {
         case ']': return make_token(TokenType::RIGHT_BRACKET);
         case '(': return make_token(TokenType::LEFT_PAREN);
         case ')': return make_token(TokenType::RIGHT_PAREN);
-        case '=': return make_token(TokenType::EQUAL);
         case '"': return string();
-        case '%': return make_token(TokenType::PERCENT);
         case '*': return make_token(TokenType::STAR);
         case '/': return make_token(TokenType::SLASH);
         case '+': return make_token(TokenType::PLUS);
@@ -164,6 +162,11 @@ Token Lexer::number() {
         while (std::isdigit(peek())) {
             advance();
         }
+    }
+
+    if (peek() == '%') {
+        advance();
+        return make_token(TokenType::PERCENTAGE);
     }
 
     return make_token(TokenType::NUMBER);

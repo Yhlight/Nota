@@ -243,6 +243,10 @@ std::unique_ptr<Expression> Parser::parse_primary() {
         expr->variant = LiteralNode{std::stod(std::string(previous_.text)), previous_};
         expr->line = previous_.line;
         expr->column = previous_.column;
+    } else if (match(TokenType::PERCENTAGE)) {
+        expr->variant = LiteralNode{std::string(previous_.text), previous_};
+        expr->line = previous_.line;
+        expr->column = previous_.column;
     } else if (match(TokenType::LEFT_PAREN)) {
         expr = parse_expression();
         consume(TokenType::RIGHT_PAREN, "Expected ')' after expression.");
@@ -256,7 +260,7 @@ std::unique_ptr<Expression> Parser::parse_primary() {
 }
 
 AssignmentNode Parser::parse_assignment(std::unique_ptr<Expression> target) {
-    consume(TokenType::EQUAL, "Expected '=' after target.");
+    consume(TokenType::COLON, "Expected ':' after target.");
     AssignmentNode assignment;
     assignment.target = std::move(target);
     assignment.value = parse_value();

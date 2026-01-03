@@ -9,7 +9,7 @@ TEST(ExpressionErrorTests, OutOfBoundsIndex) {
             Row {
                 id: r1
             }
-            this.children[1].width = 100
+            this.children[1].width: 100
         }
     )";
 
@@ -30,7 +30,7 @@ TEST(ExpressionErrorTests, NonExistentProperty) {
     std::string source = R"(
         App {
             Rect {} // Add a child to access
-            this.children[0].non_existent = "error"
+            this.children[0].non_existent: "error"
         }
     )";
 

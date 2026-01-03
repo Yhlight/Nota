@@ -8,7 +8,6 @@ enum class TokenType {
     COLON, SEMICOLON,
     DOT, LEFT_BRACKET, RIGHT_BRACKET,
     LEFT_PAREN, RIGHT_PAREN,
-    EQUAL,
 
     // Literals
     IDENTIFIER, STRING, NUMBER,
@@ -18,7 +17,7 @@ enum class TokenType {
     LEFT, RIGHT, TOP, BOTTOM, CENTER,
 
     // Special
-    PERCENT,
+    PERCENTAGE,
 
     // Comments
     SLASH, STAR,

@@ -2,6 +2,7 @@
 #include "codegen/ExpressionEvaluator.h"
 #include "ast/ASTUtils.h"
 #include <iostream>
+#include <optional>
 #include <cmath>
 #include <algorithm>
 #include <functional>
@@ -18,6 +19,18 @@ std::string format_double(double val, const std::string& property_name) {
         return std::to_string(static_cast<int>(val)) + unit;
     }
     return std::to_string(val) + unit;
+}
+
+std::optional<std::string> get_string_from_property(const PropertyNode& prop) {
+    if (const auto* literal = std::get_if<LiteralNode>(&prop.value)) {
+        if (const auto* str_val = std::get_if<std::string>(&literal->value)) {
+            if (!str_val->empty() && str_val->front() == '"' && str_val->back() == '"') {
+                return str_val->substr(1, str_val->length() - 2);
+            }
+            return *str_val;
+        }
+    }
+    return std::nullopt;
 }
 
 bool has_positional_properties(const ComponentNode& component) {
@@ -136,11 +149,34 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         generate_item_component(*item_def, component, parent, html_builder);
     } else {
         std::string class_name = get_or_create_class_for_component(component, parent, overridden_properties);
+        std::string custom_class;
+        std::string id;
+
+        for (const auto& prop : component.properties) {
+            if (prop.name.text == "class") {
+                if (auto val = get_string_from_property(prop)) {
+                    custom_class = *val;
+                }
+            } else if (prop.name.text == "id") {
+                if (auto val = get_string_from_property(prop)) {
+                    id = *val;
+                }
+            }
+        }
+
+        std::string final_class = class_name;
+        if (!custom_class.empty()) {
+            final_class += " " + custom_class;
+        }
 
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
 
-        html_builder << "<" << tag << " class=\"" << class_name << "\">";
+        html_builder << "<" << tag << " class=\"" << final_class << "\"";
+        if (!id.empty()) {
+            html_builder << " id=\"" << id << "\"";
+        }
+        html_builder << ">";
 
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
@@ -236,7 +272,7 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
 
     for (const auto& pair : property_map) {
         const auto* prop = pair.second;
-        if (prop->name.text == "text") continue;
+        if (prop->name.text == "text" || prop->name.text == "class" || prop->name.text == "id") continue;
 
         std::string css_prop;
         if (prop->name.text == "color" && component.type.text != "Text") {
@@ -302,6 +338,9 @@ std::optional<CodeGenerator::EvaluatedValue> CodeGenerator::to_css_value(const A
             return *number;
         }
         if (const auto* str_val = std::get_if<std::string>(&literal->value)) {
+            if (!str_val->empty() && str_val->back() == '%') {
+                return *str_val;
+            }
             if (!str_val->empty() && str_val->front() == '"' && str_val->back() == '"') {
                 return str_val->substr(1, str_val->length() - 2);
             }

@@ -15,7 +15,7 @@ TEST(RootExpressionTests, AssignmentFromRoot) {
                     color: "red";
                 }
             }
-            root.children[0].children[0].color = "blue";
+            root.children[0].children[0].color: "blue";
         }
     )";
 

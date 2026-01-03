@@ -241,3 +241,28 @@ TEST(CodeGeneratorTest, PositionProperty) {
     EXPECT_NE(output.find("position: absolute;"), std::string::npos);
     EXPECT_NE(output.find("position: relative;"), std::string::npos);
 }
+
+TEST(FeatureTests, ClassAndAssignment) {
+    std::string source = R"(
+        App {
+            width: 100%;
+            height: 100%;
+
+            Row {
+                class: "my-custom-class";
+                width: 50%;
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    CodeGenerator generator;
+    std::string output = generator.generate(ast);
+
+    EXPECT_NE(output.find(R"(class="Row-1 my-custom-class")"), std::string::npos);
+    EXPECT_NE(output.find("width: 50%;"), std::string::npos);
+}

@@ -63,5 +63,11 @@ std::unique_ptr<ComponentNode> deep_copy(const ComponentNode& node) {
         new_assignment.value = deep_copy_ast_value(assignment.value);
         new_node->assignments.push_back(std::move(new_assignment));
     }
+    for (const auto& handler : node.event_handlers) {
+        EventHandlerNode new_handler;
+        new_handler.name = handler.name;
+        new_handler.value = deep_copy_ast_value(handler.value);
+        new_node->event_handlers.push_back(std::move(new_handler));
+    }
     return new_node;
 }

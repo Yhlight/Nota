@@ -5,6 +5,7 @@
 #include "lexer/Lexer.h"
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 class Parser {
 public:
@@ -27,6 +28,7 @@ private:
     std::unique_ptr<ItemNode> parse_item_definition();
     std::unique_ptr<ComponentNode> parse_component();
     PropertyNode parse_property();
+    EventHandlerNode parse_event_handler();
     ASTValue parse_value();
     std::unique_ptr<Expression> parse_expression();
     std::unique_ptr<Expression> parse_term();
@@ -42,4 +44,5 @@ private:
     Token previous_;
     bool had_error_ = false;
     std::vector<CompilerError> errors_;
+    const std::unordered_set<std::string> supported_event_handlers_{"onClick", "onHover"};
 };

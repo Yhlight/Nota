@@ -20,6 +20,14 @@ std::string format_double(double val, const std::string& property_name) {
     return std::to_string(val) + unit;
 }
 
+// Helper to convert Nota event names to HTML attributes
+std::string to_html_attribute(const std::string& nota_event) {
+    std::string html_event = nota_event;
+    std::transform(html_event.begin(), html_event.end(), html_event.begin(),
+                   [](unsigned char c){ return std::tolower(c); });
+    return html_event;
+}
+
 bool has_positional_properties(const ComponentNode& component) {
     return std::any_of(component.properties.begin(), component.properties.end(), [](const PropertyNode& prop) {
         return prop.name.text == "x" || prop.name.text == "y" || prop.name.text == "index";
@@ -157,7 +165,16 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
 
-        html_builder << "<" << tag << " class=\"" << final_class << "\">";
+        html_builder << "<" << tag << " class=\"" << final_class << "\"";
+
+        for (const auto& handler : component.event_handlers) {
+            std::string attr_name = to_html_attribute(std::string(handler.name.text));
+            if (auto val = evaluate_string_value(handler.value, const_cast<ComponentNode*>(&component))) {
+                html_builder << " " << attr_name << "=\"" << *val << "\"";
+            }
+        }
+
+        html_builder << ">";
 
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
@@ -326,6 +343,27 @@ std::optional<CodeGenerator::EvaluatedValue> CodeGenerator::to_css_value(const A
         }
     } else if (const auto* pos_node = std::get_if<PositionNode>(value_to_process)) {
         return *pos_node;
+    }
+    return std::nullopt;
+}
+
+std::optional<std::string> CodeGenerator::evaluate_string_value(const ASTValue& value, ComponentNode* current_component) {
+    ASTValue evaluated_value;
+    const ASTValue* value_to_process = &value;
+
+    if (const auto* expr = std::get_if<std::unique_ptr<Expression>>(&value)) {
+        SymbolTable table;
+        evaluated_value = evaluator_->evaluate_expression(**expr, table, current_component);
+        value_to_process = &evaluated_value;
+    }
+
+    if (const auto* literal = std::get_if<LiteralNode>(value_to_process)) {
+        if (const auto* str_val = std::get_if<std::string>(&literal->value)) {
+            if (!str_val->empty() && str_val->front() == '"' && str_val->back() == '"') {
+                return str_val->substr(1, str_val->length() - 2);
+            }
+            return *str_val;
+        }
     }
     return std::nullopt;
 }

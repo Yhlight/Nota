@@ -51,6 +51,10 @@ void SemanticAnalyzer::visit(const ItemNode& node, std::shared_ptr<SymbolTable> 
             visit(*child, local_scope, std::string(node.name.text));
         }
     }
+
+    for (const auto& handler : node.event_handlers) {
+        visit(handler, local_scope, std::string(node.name.text));
+    }
 }
 
 void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTable> table, const std::string& parent_type) {
@@ -72,6 +76,18 @@ void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTa
 
     for (const auto& assignment : node.assignments) {
         visit(assignment, local_scope);
+    }
+
+    for (const auto& handler : node.event_handlers) {
+        visit(handler, local_scope, type_name);
+    }
+}
+
+void SemanticAnalyzer::visit(const EventHandlerNode& node, std::shared_ptr<SymbolTable> table, const std::string& component_type) {
+    // TODO: Add more robust validation
+    // For now, just check that the value is a string literal
+    if (!std::holds_alternative<LiteralNode>(node.value) || !std::holds_alternative<std::string>(std::get<LiteralNode>(node.value).value)) {
+        errors_.push_back({"Event handler '" + std::string(node.name.text) + "' value must be a string literal.", node.name.line, node.name.column});
     }
 }
 

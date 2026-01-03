@@ -75,7 +75,12 @@ void Parser::parse_component_body(Node& node) {
                     synchronize();
                 }
             } else if (lexer_.peek_next_significant_char() == ':') {
-                node->properties.push_back(parse_property());
+                // Check if the identifier is a supported event handler
+                if (supported_event_handlers_.count(std::string(current_.text))) {
+                    node->event_handlers.push_back(parse_event_handler());
+                } else {
+                    node->properties.push_back(parse_property());
+                }
             } else {
                 node->children.push_back(parse_component());
             }
@@ -125,6 +130,20 @@ PropertyNode Parser::parse_property() {
     match(TokenType::SEMICOLON);
 
     return prop;
+}
+
+EventHandlerNode Parser::parse_event_handler() {
+    EventHandlerNode handler;
+    handler.name = current_;
+    advance();
+
+    consume(TokenType::COLON, "Expected ':' after event handler name.");
+
+    handler.value = parse_value();
+
+    match(TokenType::SEMICOLON);
+
+    return handler;
 }
 
 bool is_position_keyword(TokenType type) {

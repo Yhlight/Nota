@@ -23,6 +23,7 @@ private:
     using EvaluatedValue = std::variant<double, std::string, PositionNode>;
     std::string to_css_property(const std::string& nota_property);
     std::optional<EvaluatedValue> to_css_value(const ASTValue& value, const std::string& property_name, ComponentNode* current_component);
+    std::optional<std::string> evaluate_string_value(const ASTValue& value, ComponentNode* current_component);
 
     std::unique_ptr<ExpressionEvaluator> evaluator_;
     std::unordered_map<std::string, const ItemNode*> item_definitions_;

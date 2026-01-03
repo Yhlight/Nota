@@ -71,12 +71,19 @@ struct PropertyNode {
     ASTValue value; // ASTValue is now defined in ASTFwd.h
 };
 
+// --- Event Handler Node ---
+struct EventHandlerNode {
+    Token name;
+    ASTValue value;
+};
+
 // --- Component Node ---
 struct ComponentNode {
     Token type;
     std::vector<PropertyNode> properties;
     std::vector<std::unique_ptr<ComponentNode>> children;
     std::vector<AssignmentNode> assignments;
+    std::vector<EventHandlerNode> event_handlers;
 };
 
 // --- Item Definition Node ---
@@ -84,6 +91,7 @@ struct ItemNode {
     Token name;
     std::vector<PropertyNode> properties;
     std::vector<std::unique_ptr<ComponentNode>> children;
+    std::vector<EventHandlerNode> event_handlers;
 };
 
 // --- Root of the AST ---

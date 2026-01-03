@@ -77,7 +77,14 @@ std::string CodeGenerator::generate(const RootNode& root) {
     output << css_stream_.str();
     output << "</style>\n";
     output << "</head>\n";
-    output << "<body class=\"" << root_class << "\">\n";
+
+    std::string custom_class_name = get_custom_class_name(*root_instance);
+    std::string final_root_class = root_class;
+    if (!custom_class_name.empty()) {
+        final_root_class += " " + custom_class_name;
+    }
+
+    output << "<body class=\"" << final_root_class << "\">\n";
     output << html_stream_.str();
     output << "</body>\n";
     output << "</html>\n";
@@ -135,12 +142,18 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         const ItemNode* item_def = item_definitions_.at(type_name);
         generate_item_component(*item_def, component, parent, html_builder);
     } else {
-        std::string class_name = get_or_create_class_for_component(component, parent, overridden_properties);
+        std::string generated_class_name = get_or_create_class_for_component(component, parent, overridden_properties);
+        std::string custom_class_name = get_custom_class_name(component);
+
+        std::string final_class_name = generated_class_name;
+        if (!custom_class_name.empty()) {
+            final_class_name += " " + custom_class_name;
+        }
 
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
 
-        html_builder << "<" << tag << " class=\"" << class_name << "\">";
+        html_builder << "<" << tag << " class=\"" << final_class_name << "\">";
 
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
@@ -201,6 +214,8 @@ std::string CodeGenerator::get_or_create_class_for_component(const ComponentNode
 std::string CodeGenerator::generate_css_properties_string(const ComponentNode& component, const ComponentNode* parent, const std::vector<const PropertyNode*>* overridden_properties) {
     std::stringstream props_stream;
 
+    props_stream << "component-type: " << component.type.text << ";\n";
+
     if (component.type.text == "Row") props_stream << "    display: flex;\n    flex-direction: row;\n";
     else if (component.type.text == "Col") props_stream << "    display: flex;\n    flex-direction: column;\n";
 
@@ -236,7 +251,7 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
 
     for (const auto& pair : property_map) {
         const auto* prop = pair.second;
-        if (prop->name.text == "text") continue;
+        if (prop->name.text == "text" || prop->name.text == "class") continue;
 
         std::string css_prop;
         if (prop->name.text == "color" && component.type.text != "Text") {
@@ -311,4 +326,18 @@ std::optional<CodeGenerator::EvaluatedValue> CodeGenerator::to_css_value(const A
         return *pos_node;
     }
     return std::nullopt;
+}
+
+std::string CodeGenerator::get_custom_class_name(const ComponentNode& component) {
+    for (const auto& prop : component.properties) {
+        if (prop.name.text == "class") {
+            if (auto val = to_css_value(prop.value, "class", const_cast<ComponentNode*>(&component))) {
+                if (auto* str_val = std::get_if<std::string>(&*val)) {
+                    return *str_val;
+                }
+            }
+            break;
+        }
+    }
+    return "";
 }

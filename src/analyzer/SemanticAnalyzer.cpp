@@ -82,7 +82,7 @@ void SemanticAnalyzer::visit(const PropertyNode& node, std::shared_ptr<SymbolTab
         errors_.push_back({"Property '" + name + "' redefined.", node.name.line, node.name.column});
     }
 
-    if (name == "id") return;
+    if (name == "id" || name == "class") return;
 
     if (valid_properties_.count(component_type) && valid_properties_.at(component_type).find(name) == valid_properties_.at(component_type).end()) {
         errors_.push_back({"Property '" + name + "' is not a valid property of '" + component_type + "'.", node.name.line, node.name.column});

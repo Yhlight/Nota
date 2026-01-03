@@ -241,3 +241,24 @@ TEST(CodeGeneratorTest, PositionProperty) {
     EXPECT_NE(output.find("position: absolute;"), std::string::npos);
     EXPECT_NE(output.find("position: relative;"), std::string::npos);
 }
+
+TEST(CodeGeneratorTest, CustomClassProperty) {
+    std::string source = R"(
+        App {
+            Rect {
+                class: "my-custom-class";
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    CodeGenerator generator;
+    std::string output = generator.generate(ast);
+
+    std::regex class_regex(R"(class="Rect-\d+ my-custom-class")");
+    EXPECT_TRUE(std::regex_search(output, class_regex));
+}

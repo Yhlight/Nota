@@ -176,6 +176,11 @@ Token Lexer::identifier() {
 
     std::string_view text(start_, current_ - start_);
     if (text == "Item") return make_token(TokenType::ITEM);
+    if (text == "left") return make_token(TokenType::LEFT);
+    if (text == "right") return make_token(TokenType::RIGHT);
+    if (text == "top") return make_token(TokenType::TOP);
+    if (text == "bottom") return make_token(TokenType::BOTTOM);
+    if (text == "center") return make_token(TokenType::CENTER);
 
     return make_token(TokenType::IDENTIFIER);
 }

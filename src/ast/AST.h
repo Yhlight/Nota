@@ -5,8 +5,21 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <optional>
 
 // --- Value Nodes ---
+
+// Represents a position keyword (e.g., "left", "center")
+struct PositionKeywordNode {
+    Token keyword;
+};
+
+// Represents the value of a 'position' property, which can have one or two keywords
+struct PositionNode {
+    PositionKeywordNode first;
+    std::optional<PositionKeywordNode> second;
+};
+
 using LiteralValue = std::variant<std::string, double>;
 struct LiteralNode {
     LiteralValue value;

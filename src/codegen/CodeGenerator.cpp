@@ -204,8 +204,24 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
     if (component.type.text == "Row") props_stream << "    display: flex;\n    flex-direction: row;\n";
     else if (component.type.text == "Col") props_stream << "    display: flex;\n    flex-direction: column;\n";
 
-    if (has_positional_properties(component)) props_stream << "    position: absolute;\n";
-    if (has_child_with_positional_properties(component)) props_stream << "    position: relative;\n";
+    bool has_position = false;
+    for (const auto& prop : component.properties) {
+        if (prop.name.text == "position") {
+            has_position = true;
+            break;
+        }
+    }
+
+    if (has_positional_properties(component) || has_position) {
+        props_stream << "    position: absolute;\n";
+    }
+    if (has_child_with_positional_properties(component) || std::any_of(component.children.begin(), component.children.end(), [](const auto& child) {
+        return std::any_of(child->properties.begin(), child->properties.end(), [](const auto& prop) {
+            return prop.name.text == "position";
+        });
+    })) {
+        props_stream << "    position: relative;\n";
+    }
 
     std::map<std::string, const PropertyNode*> property_map; // Use map for sorting
     for (const auto& prop : component.properties) {
@@ -225,13 +241,37 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
         std::string css_prop;
         if (prop->name.text == "color" && component.type.text != "Text") {
             css_prop = "background-color";
+        } else if (prop->name.text == "position") {
+            // Special handling for position, no direct css property
         } else {
             css_prop = to_css_property(std::string(prop->name.text));
         }
 
-        std::string css_val = to_css_value(prop->value, css_prop, const_cast<ComponentNode*>(&component));
-        if (!css_prop.empty() && !css_val.empty()) {
-            props_stream << "    " << css_prop << ": " << css_val << ";\n";
+        auto evaluated_value = to_css_value(prop->value, css_prop, const_cast<ComponentNode*>(&component));
+
+        if (evaluated_value) {
+            std::visit([&](auto&& arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, double>) {
+                    props_stream << "    " << css_prop << ": " << format_double(arg, css_prop) << ";\n";
+                } else if constexpr (std::is_same_v<T, std::string>) {
+                    props_stream << "    " << css_prop << ": " << arg << ";\n";
+                } else if constexpr (std::is_same_v<T, PositionNode>) {
+                    std::string first = std::string(arg.first.keyword.text);
+                    std::string second = arg.second ? std::string(arg.second->keyword.text) : "";
+
+                    if (first == "center") {
+                        props_stream << "    left: 50%;\n";
+                        props_stream << "    top: 50%;\n";
+                        props_stream << "    transform: translate(-50%, -50%);\n";
+                    } else {
+                        if (first == "left" || second == "left") props_stream << "    left: 0;\n";
+                        if (first == "right" || second == "right") props_stream << "    right: 0;\n";
+                        if (first == "top" || second == "top") props_stream << "    top: 0;\n";
+                        if (first == "bottom" || second == "bottom") props_stream << "    bottom: 0;\n";
+                    }
+                }
+            }, *evaluated_value);
         }
     }
     return props_stream.str();
@@ -247,7 +287,7 @@ std::string CodeGenerator::to_css_property(const std::string& nota_property) {
     return nota_property;
 }
 
-std::string CodeGenerator::to_css_value(const ASTValue& value, const std::string& property_name, ComponentNode* current_component) {
+std::optional<CodeGenerator::EvaluatedValue> CodeGenerator::to_css_value(const ASTValue& value, const std::string& property_name, ComponentNode* current_component) {
     ASTValue evaluated_value;
     const ASTValue* value_to_process = &value;
 
@@ -259,14 +299,16 @@ std::string CodeGenerator::to_css_value(const ASTValue& value, const std::string
 
     if (const auto* literal = std::get_if<LiteralNode>(value_to_process)) {
         if (const auto* number = std::get_if<double>(&literal->value)) {
-            return format_double(*number, property_name);
+            return *number;
         }
         if (const auto* str_val = std::get_if<std::string>(&literal->value)) {
-             if (!str_val->empty() && str_val->front() == '"' && str_val->back() == '"') {
+            if (!str_val->empty() && str_val->front() == '"' && str_val->back() == '"') {
                 return str_val->substr(1, str_val->length() - 2);
             }
             return *str_val;
         }
+    } else if (const auto* pos_node = std::get_if<PositionNode>(value_to_process)) {
+        return *pos_node;
     }
-    return "";
+    return std::nullopt;
 }

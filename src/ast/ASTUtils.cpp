@@ -30,6 +30,8 @@ ASTValue deep_copy_ast_value(const ASTValue& value) {
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, LiteralNode>) {
                 return arg; // LiteralNode is copyable
+            } else if constexpr (std::is_same_v<T, PositionNode>) {
+                return arg; // PositionNode is copyable
             } else if constexpr (std::is_same_v<T, std::unique_ptr<ComponentNode>>) {
                 return deep_copy(*arg);
             } else if constexpr (std::is_same_v<T, std::unique_ptr<Expression>>) {

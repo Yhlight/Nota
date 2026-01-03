@@ -12,10 +12,12 @@ struct MemberAccessNode;
 struct IndexAccessNode;
 struct AssignmentNode;
 struct Expression;
+struct PositionNode;
 
 // Forward declaration for the AST value variant
 using ASTValue = std::variant<
     LiteralNode,
     std::unique_ptr<ComponentNode>,
-    std::unique_ptr<Expression>
+    std::unique_ptr<Expression>,
+    PositionNode
 >;

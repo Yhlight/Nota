@@ -128,12 +128,30 @@ PropertyNode Parser::parse_property() {
     return prop;
 }
 
+bool is_position_keyword(TokenType type) {
+    return type == TokenType::LEFT || type == TokenType::RIGHT ||
+           type == TokenType::TOP || type == TokenType::BOTTOM ||
+           type == TokenType::CENTER;
+}
+
 ASTValue Parser::parse_value() {
     if (match(TokenType::STRING)) {
         return LiteralNode{std::string(previous_.text), previous_};
     }
 
-    // Any non-string value is treated as a potential expression.
+    if (is_position_keyword(current_.type)) {
+        PositionNode pos_node;
+        pos_node.first = { current_ };
+        advance();
+
+        if (is_position_keyword(current_.type)) {
+            pos_node.second = { current_ };
+            advance();
+        }
+        return pos_node;
+    }
+
+    // Any other non-string value is treated as a potential expression.
     return parse_expression();
 }
 

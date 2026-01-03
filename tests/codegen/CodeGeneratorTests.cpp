@@ -217,3 +217,27 @@ TEST(CodeGeneratorTest, MergeDuplicateCssRules) {
 
     EXPECT_TRUE(body_content.find(expected_divs) != std::string::npos);
 }
+
+TEST(CodeGeneratorTest, PositionProperty) {
+    std::string source = R"(
+        App {
+            Rect {
+                position: center;
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    CodeGenerator generator;
+    std::string output = generator.generate(ast);
+
+    EXPECT_NE(output.find("left: 50%;"), std::string::npos);
+    EXPECT_NE(output.find("top: 50%;"), std::string::npos);
+    EXPECT_NE(output.find("transform: translate(-50%, -50%);"), std::string::npos);
+    EXPECT_NE(output.find("position: absolute;"), std::string::npos);
+    EXPECT_NE(output.find("position: relative;"), std::string::npos);
+}

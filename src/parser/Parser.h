@@ -1,27 +1,29 @@
 #pragma once
 
 #include "ast/AST.h"
-#include "lexer/Lexer.h"
 #include "core/Error.h"
-#include <vector>
+#include "lexer/Lexer.h"
 #include <string>
+#include <vector>
 
 class Parser {
 public:
     Parser(Lexer& lexer);
-
-    RootNode parse();
     const std::vector<CompilerError>& errors() const;
+    RootNode parse();
 
 private:
+    // Utility methods
     void advance();
     bool match(TokenType type);
     void consume(TokenType type, const std::string& message);
     bool check(TokenType type) const;
+    void synchronize();
+    void error(const std::string& message);
 
+    // Parsing methods
     template <typename Node>
     void parse_component_body(Node& node);
-
     std::unique_ptr<ItemNode> parse_item_definition();
     std::unique_ptr<ComponentNode> parse_component();
     PropertyNode parse_property();
@@ -30,10 +32,7 @@ private:
     std::unique_ptr<Expression> parse_primary();
     AssignmentNode parse_assignment(std::unique_ptr<Expression> target);
 
-
-    void synchronize();
-    void error(const std::string& message);
-
+    // State
     Lexer& lexer_;
     Token current_;
     Token previous_;

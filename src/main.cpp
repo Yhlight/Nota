@@ -1,10 +1,11 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
-#include "lexer/Lexer.h"
-#include "parser/Parser.h"
+
 #include "analyzer/SemanticAnalyzer.h"
 #include "codegen/CodeGenerator.h"
+#include "lexer/Lexer.h"
+#include "parser/Parser.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 2 || argc > 3) {

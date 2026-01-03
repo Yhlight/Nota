@@ -389,7 +389,7 @@ Item
 Nota现在支持下述属性  
 width, height  =>  支持数字(px，不带单位的数字都是px)或百分比  
 spacing  =>  仅支持数字，仅在Row和Col中有效，映射为gap  
-padding  =>  内边距，支持数字(px)或百分比  
+padding  =>  内边距，支持数字(px)或百分比。
 text  =>  容器的文本，Text也可以使用  
 class，id  
 x, y  

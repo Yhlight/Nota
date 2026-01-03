@@ -12,10 +12,12 @@ public:
     char peek_next_significant_char() const;
 
 private:
+    // Navigation
     char advance();
     char peek_next() const;
     bool is_at_end() const;
 
+    // Token creation
     Token make_token(TokenType type) const;
     Token error_token(const char* message) const;
     Token string();

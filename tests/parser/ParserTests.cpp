@@ -70,3 +70,34 @@ TEST(ParserTest, InvalidSyntaxShouldReportError) {
 
     EXPECT_FALSE(parser.errors().empty());
 }
+
+TEST(ParserTest, ParseComponentWithDynamicAssignment) {
+    std::string source = R"(
+        App {
+            children[0].color: "black";
+        }
+    )";
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode root = parser.parse();
+
+    ASSERT_NE(root.root_component, nullptr);
+    EXPECT_EQ(root.root_component->type.text, "App");
+    ASSERT_EQ(root.root_component->assignments.size(), 1);
+
+    const auto& assignment = root.root_component->assignments[0];
+    ASSERT_TRUE(assignment.target);
+
+    // Check the target expression: children[0].color
+    auto* member_access = std::get_if<MemberAccessNode>(&assignment.target->variant);
+    ASSERT_NE(member_access, nullptr);
+    EXPECT_EQ(member_access->member.text, "color");
+
+    // Check the value: "black"
+    ASSERT_TRUE(std::holds_alternative<LiteralNode>(assignment.value));
+    const auto& value_node = std::get<LiteralNode>(assignment.value);
+    ASSERT_TRUE(std::holds_alternative<std::string>(value_node.value));
+    EXPECT_EQ(std::get<std::string>(value_node.value), "\"black\"");
+
+    EXPECT_TRUE(parser.errors().empty());
+}

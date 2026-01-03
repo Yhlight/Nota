@@ -135,12 +135,29 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         const ItemNode* item_def = item_definitions_.at(type_name);
         generate_item_component(*item_def, component, parent, html_builder);
     } else {
-        std::string class_name = get_or_create_class_for_component(component, parent, overridden_properties);
+        std::string generated_class = get_or_create_class_for_component(component, parent, overridden_properties);
+        std::string custom_class;
+
+        for (const auto& prop : component.properties) {
+            if (prop.name.text == "class") {
+                if (auto val = to_css_value(prop.value, "class", const_cast<ComponentNode*>(&component))) {
+                    if (holds_alternative<std::string>(*val)) {
+                        custom_class = std::get<std::string>(*val);
+                    }
+                }
+                break;
+            }
+        }
+
+        std::string final_class = generated_class;
+        if (!custom_class.empty()) {
+            final_class += " " + custom_class;
+        }
 
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
 
-        html_builder << "<" << tag << " class=\"" << class_name << "\">";
+        html_builder << "<" << tag << " class=\"" << final_class << "\">";
 
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
@@ -236,7 +253,7 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
 
     for (const auto& pair : property_map) {
         const auto* prop = pair.second;
-        if (prop->name.text == "text") continue;
+        if (prop->name.text == "text" || prop->name.text == "class") continue;
 
         std::string css_prop;
         if (prop->name.text == "color" && component.type.text != "Text") {

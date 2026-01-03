@@ -241,3 +241,31 @@ TEST(CodeGeneratorTest, PositionProperty) {
     EXPECT_NE(output.find("position: absolute;"), std::string::npos);
     EXPECT_NE(output.find("position: relative;"), std::string::npos);
 }
+
+TEST(CodeGeneratorTest, CustomClassProperty) {
+    std::string source = R"(
+        App {
+            Rect {
+                class: "my-custom-class";
+                width: 100;
+            }
+        }
+    )";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    CodeGenerator generator;
+    std::string output = generator.generate(ast);
+
+    // Check that the custom class is present in the HTML
+    EXPECT_NE(output.find(R"(class="Rect-1 my-custom-class")"), std::string::npos);
+
+    // Check that the 'class' property is not in the CSS
+    EXPECT_EQ(output.find("class:"), std::string::npos);
+
+    // Check that other properties are still applied
+    EXPECT_NE(output.find("width: 100px;"), std::string::npos);
+}

@@ -66,9 +66,7 @@ void Parser::parse_component_body(Node& node) {
 
     while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::END_OF_FILE)) {
         if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
-            if (lexer_.peek_next_significant_char() == ':') {
-                node->properties.push_back(parse_property());
-            } else if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
+            if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
                 if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
                     auto target = parse_expression();
                     node->assignments.push_back(parse_assignment(std::move(target)));
@@ -76,8 +74,9 @@ void Parser::parse_component_body(Node& node) {
                     error("Assignments are not allowed in Item definitions.");
                     synchronize();
                 }
-            }
-            else {
+            } else if (lexer_.peek_next_significant_char() == ':') {
+                node->properties.push_back(parse_property());
+            } else {
                 node->children.push_back(parse_component());
             }
         } else {
@@ -256,7 +255,7 @@ std::unique_ptr<Expression> Parser::parse_primary() {
 }
 
 AssignmentNode Parser::parse_assignment(std::unique_ptr<Expression> target) {
-    consume(TokenType::EQUAL, "Expected '=' after target.");
+    consume(TokenType::COLON, "Expected ':' after target.");
     AssignmentNode assignment;
     assignment.target = std::move(target);
     assignment.value = parse_value();

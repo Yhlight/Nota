@@ -16,7 +16,7 @@ TEST(ExpressionEvaluationTests, AssignmentToChildProperty) {
                     color: "red";
                 }
             }
-            this.children[0].children[0].color = "blue";
+            this.children[0].children[0].color: "blue";
         }
     )";
 
@@ -48,7 +48,7 @@ TEST(ExpressionEvaluationTests, ComplexAssignment) {
                     width: 50;
                 }
             }
-            this.children[0].children[1].width = this.children[0].children[0].width;
+            this.children[0].children[1].width: this.children[0].children[0].width;
         }
     )";
 

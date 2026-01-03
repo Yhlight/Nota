@@ -52,6 +52,9 @@ void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTa
         errors_.push_back({"Unknown component type '" + type_name + "'.", node.type.line, node.type.column});
     }
     auto local_scope = std::make_shared<SymbolTable>(table);
+    for (const auto& state : node.states) {
+        visit(state, local_scope);
+    }
     for (const auto& prop : node.properties) {
         visit(prop, local_scope, type_name);
     }
@@ -67,6 +70,15 @@ void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTa
         visit(handler, type_name);
     }
 }
+
+void SemanticAnalyzer::visit(const StateNode& node, std::shared_ptr<SymbolTable> table) {
+    std::string name(node.name.text);
+    auto symbol = std::make_shared<Symbol>(name, SymbolType::STATE, &node);
+    if (!table->insert(name, symbol)) {
+        errors_.push_back({"State variable '" + name + "' is already defined.", node.name.line, node.name.column});
+    }
+}
+
 // Overload for EventHandlerNode to accept component type
 void SemanticAnalyzer::visit(const EventHandlerNode& node, const std::string& component_type) {
     std::string event_name(node.name.text);
@@ -94,6 +106,19 @@ void SemanticAnalyzer::visit(const PropertyNode& node, std::shared_ptr<SymbolTab
             const auto& allowed_types = property_types_.at(name);
             if (std::find(allowed_types.begin(), allowed_types.end(), type) == allowed_types.end()) {
                 errors_.push_back({"Invalid type for property '" + name + "'.", literal->token.line, literal->token.column});
+            }
+        }
+    } else if (auto* expr_ptr = std::get_if<std::unique_ptr<Expression>>(&node.value)) {
+        const auto& expr = *expr_ptr;
+        if (auto* literal_node = std::get_if<LiteralNode>(&expr->variant)) {
+            if (std::holds_alternative<std::string>(literal_node->value)) {
+                std::string identifier_name = std::get<std::string>(literal_node->value);
+                auto symbol = table->lookup(identifier_name);
+                if (symbol == nullptr) {
+                    errors_.push_back({"Undefined state variable '" + identifier_name + "'.", node.name.line, node.name.column});
+                } else if (symbol->type != SymbolType::STATE) {
+                    errors_.push_back({"Identifier '" + identifier_name + "' is not a state variable.", node.name.line, node.name.column});
+                }
             }
         }
     }

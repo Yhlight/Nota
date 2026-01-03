@@ -32,6 +32,18 @@ static std::string trim(const std::string& s) {
     return std::string(start, end + 1);
 }
 
+std::string get_js_value(const ASTValue& value) {
+    if (const auto* literal = std::get_if<LiteralNode>(&value)) {
+        if (const auto* number = std::get_if<double>(&literal->value)) {
+            return std::to_string(*number);
+        }
+        if (const auto* str_val = std::get_if<std::string>(&literal->value)) {
+            return *str_val;
+        }
+    }
+    return "null";
+}
+
 bool has_positional_properties(const ComponentNode& component) {
     return std::any_of(component.properties.begin(), component.properties.end(), [](const PropertyNode& prop) {
         return prop.name.text == "x" || prop.name.text == "y" || prop.name.text == "index";
@@ -86,13 +98,36 @@ std::string CodeGenerator::generate(const RootNode& root) {
     output << html_stream_.str();
     // Fourth pass: generate scripts
     generate_scripts(root);
-    if (!script_stream_.str().empty()) {
-        output << "<script>\n";
-        output << "document.addEventListener('DOMContentLoaded', function() {\n";
-        output << script_stream_.str();
-        output << "});\n";
-        output << "</script>\n";
-    }
+    output << "<script>\n";
+    output << "const NotaRuntime = {\n";
+    output << "    states: {},\n";
+    output << "    listeners: {},\n";
+    output << "    register(componentId, initialState) {\n";
+    output << "        this.states[componentId] = initialState;\n";
+    output << "    },\n";
+    output << "    setState(componentId, newState) {\n";
+    output << "        Object.assign(this.states[componentId], newState);\n";
+    output << "        this.render(componentId);\n";
+    output << "    },\n";
+    output << "    render(componentId) {\n";
+    output << "        if (this.listeners[componentId]) {\n";
+    output << "            this.listeners[componentId].forEach(l => l());\n";
+    output << "        }\n";
+    output << "    },\n";
+    output << "    bind(componentId, stateKey, updateFn) {\n";
+    output << "        if (!this.listeners[componentId]) {\n";
+    output << "            this.listeners[componentId] = [];\n";
+    output << "        }\n";
+    output << "        this.listeners[componentId].push(() => {\n";
+    output << "            updateFn(this.states[componentId][stateKey]);\n";
+    output << "        });\n";
+    output << "        updateFn(this.states[componentId][stateKey]);\n";
+    output << "    }\n";
+    output << "};\n";
+    output << "document.addEventListener('DOMContentLoaded', function() {\n";
+    output << script_stream_.str();
+    output << "});\n";
+    output << "</script>\n";
     output << "</body>\n";
     output << "</html>\n";
     return output.str();
@@ -161,31 +196,54 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         }
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
-        std::string id_attr;
-        if (!component.event_handlers.empty()) {
-            id_attr = " id=\"" + get_or_assign_id(component) + "\"";
-        } else {
+
+        bool has_user_id = false;
+        for (const auto& prop : component.properties) {
+            if (prop.name.text == "id") {
+                has_user_id = true;
+                break;
+            }
+        }
+
+        bool needs_runtime_id = !component.states.empty() || !component.event_handlers.empty();
+        if (!needs_runtime_id) {
             for (const auto& prop : component.properties) {
-                if (prop.name.text == "id") {
-                    if (auto val = to_css_value(prop.value, "id", const_cast<ComponentNode*>(&component))) {
-                         if (holds_alternative<std::string>(*val)) {
-                            id_attr = " id=\"" + std::get<std::string>(*val) + "\"";
+                if (auto* expr_ptr = std::get_if<std::unique_ptr<Expression>>(&prop.value)) {
+                    const auto& expr = *expr_ptr;
+                    if (auto* literal_node = std::get_if<LiteralNode>(&expr->variant)) {
+                        if (std::holds_alternative<std::string>(literal_node->value)) {
+                            needs_runtime_id = true;
+                            break;
                         }
                     }
-                    break;
                 }
             }
         }
+
+        std::string id;
+        std::string id_attr;
+        if (has_user_id || needs_runtime_id) {
+            id = get_or_assign_id(component);
+            id_attr = " id=\"" + id + "\"";
+        }
+
         html_builder << "<" << tag << " class=\"" << final_class << "\"" << id_attr << ">";
+
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
-                if (std::holds_alternative<LiteralNode>(prop.value)) {
-                    const auto& literal = std::get<LiteralNode>(prop.value);
-                    if (std::holds_alternative<std::string>(literal.value)) {
-                        std::string text_val = std::get<std::string>(literal.value);
-                        if (text_val.front() == '"' && text_val.back() == '"') {
-                            html_builder << text_val.substr(1, text_val.length() - 2);
+                if (auto* expr_ptr = std::get_if<std::unique_ptr<Expression>>(&prop.value)) {
+                    const auto& expr = *expr_ptr;
+                    if (auto* literal_node = std::get_if<LiteralNode>(&expr->variant)) {
+                        if (std::holds_alternative<std::string>(literal_node->value)) {
+                            std::string state_var = std::get<std::string>(literal_node->value);
+                            script_stream_ << "NotaRuntime.bind('" << id << "', '" << state_var << "', (value) => {\n";
+                            script_stream_ << "    document.getElementById('" << id << "').innerText = value;\n";
+                            script_stream_ << "});\n";
                         }
+                    }
+                } else if (auto* literal = std::get_if<LiteralNode>(&prop.value)) {
+                    if (std::holds_alternative<std::string>(literal->value)) {
+                        html_builder << std::get<std::string>(literal->value);
                     }
                 }
             }
@@ -355,12 +413,21 @@ void CodeGenerator::generate_scripts(const RootNode& root) {
 }
 
 void CodeGenerator::find_and_generate_scripts(const ComponentNode& component) {
-    if (!component.event_handlers.empty()) {
+    if (!component.states.empty() || !component.event_handlers.empty()) {
         std::string id = get_or_assign_id(component);
-        std::string var_name = "comp" + std::to_string(script_var_counter_++);
-        script_stream_ << "const " << var_name << " = document.getElementById('" << id << "');\n";
-        script_stream_ << "if (" << var_name << ") {\n";
-        for (const auto& handler : component.event_handlers) {
+        if (!component.states.empty()) {
+            script_stream_ << "NotaRuntime.register('" << id << "', {\n";
+            for (const auto& state : component.states) {
+                script_stream_ << "    " << state.name.text << ": " << get_js_value(state.value) << ",\n";
+            }
+            script_stream_ << "});\n";
+        }
+
+        if (!component.event_handlers.empty()) {
+            std::string var_name = "comp" + std::to_string(script_var_counter_++);
+            script_stream_ << "const " << var_name << " = document.getElementById('" << id << "');\n";
+            script_stream_ << "if (" << var_name << ") {\n";
+            for (const auto& handler : component.event_handlers) {
             std::string event_name = std::string(handler.name.text);
             std::string dom_event;
             if (event_name == "onClick") dom_event = "click";
@@ -375,6 +442,7 @@ void CodeGenerator::find_and_generate_scripts(const ComponentNode& component) {
             }
         }
         script_stream_ << "}\n";
+    }
     }
     for (const auto& child : component.children) {
         find_and_generate_scripts(*child);

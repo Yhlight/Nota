@@ -63,21 +63,23 @@ template <typename Node>
 void Parser::parse_component_body(Node& node) {
     consume(TokenType::LEFT_BRACE, "Expected '{' after component type.");
     while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::END_OF_FILE)) {
-        if (check(TokenType::IDENTIFIER)) {
+        if (check(TokenType::STATE)) {
+            if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
+                node->states.push_back(parse_state_declaration());
+            } else {
+                error("State declarations are not allowed in Item definitions.");
+                synchronize();
+            }
+        } else if (check(TokenType::IDENTIFIER)) {
             std::string_view name(current_.text);
             if (name.starts_with("on") && lexer_.peek_next_significant_char() == ':') {
                 if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
                     node->event_handlers.push_back(parse_event_handler());
                 } else {
                     error("Event handlers are not allowed in Item definitions.");
-                    // Consume the handler to allow parsing to continue
                     (void)parse_event_handler();
                 }
-                continue;
-            }
-        }
-        if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
-            if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
+            } else if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
                 if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
                     auto target = parse_expression();
                     node->assignments.push_back(parse_assignment(std::move(target)));
@@ -90,12 +92,25 @@ void Parser::parse_component_body(Node& node) {
             } else {
                 node->children.push_back(parse_component());
             }
+        } else if (check(TokenType::ITEM)) {
+            node->children.push_back(parse_component());
         } else {
             error("Unexpected token in component body.");
             advance();
         }
     }
     consume(TokenType::RIGHT_BRACE, "Expected '}' after component body.");
+}
+
+StateNode Parser::parse_state_declaration() {
+    consume(TokenType::STATE, "Expected 'state' keyword.");
+    StateNode state;
+    state.name = current_;
+    consume(TokenType::IDENTIFIER, "Expected state variable name.");
+    consume(TokenType::COLON, "Expected ':' after state variable name.");
+    state.value = parse_value();
+    match(TokenType::SEMICOLON);
+    return state;
 }
 
 EventHandlerNode Parser::parse_event_handler() {

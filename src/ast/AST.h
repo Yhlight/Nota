@@ -77,9 +77,16 @@ struct EventHandlerNode {
     std::string body;
 };
 
+// --- State Node ---
+struct StateNode {
+    Token name;
+    ASTValue value;
+};
+
 // --- Component Node ---
 struct ComponentNode {
     Token type;
+    std::vector<StateNode> states;
     std::vector<PropertyNode> properties;
     std::vector<std::unique_ptr<ComponentNode>> children;
     std::vector<AssignmentNode> assignments;

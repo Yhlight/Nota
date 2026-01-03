@@ -21,6 +21,7 @@ public:
 private:
     void visit(const ItemNode& node, std::shared_ptr<SymbolTable> table);
     void visit(const ComponentNode& node, std::shared_ptr<SymbolTable> table, const std::string& parent_type);
+    void visit(const StateNode& node, std::shared_ptr<SymbolTable> table);
     void visit(const EventHandlerNode& node, const std::string& component_type);
     void visit(const PropertyNode& node, std::shared_ptr<SymbolTable> table, const std::string& component_type);
     void visit(const AssignmentNode& node, std::shared_ptr<SymbolTable> table);

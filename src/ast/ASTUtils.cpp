@@ -48,6 +48,12 @@ ASTValue deep_copy_ast_value(const ASTValue& value) {
 std::unique_ptr<ComponentNode> deep_copy(const ComponentNode& node) {
     auto new_node = std::make_unique<ComponentNode>();
     new_node->type = node.type;
+    for (const auto& state : node.states) {
+        StateNode new_state;
+        new_state.name = state.name;
+        new_state.value = deep_copy_ast_value(state.value);
+        new_node->states.push_back(std::move(new_state));
+    }
     for (const auto& prop : node.properties) {
         PropertyNode new_prop;
         new_prop.name = prop.name;
@@ -62,6 +68,9 @@ std::unique_ptr<ComponentNode> deep_copy(const ComponentNode& node) {
         new_assignment.target = deep_copy_expression(*assignment.target);
         new_assignment.value = deep_copy_ast_value(assignment.value);
         new_node->assignments.push_back(std::move(new_assignment));
+    }
+    for (const auto& handler : node.event_handlers) {
+        new_node->event_handlers.push_back(handler);
     }
     return new_node;
 }

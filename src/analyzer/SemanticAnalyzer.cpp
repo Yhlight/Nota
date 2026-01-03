@@ -5,6 +5,7 @@
 
 SemanticAnalyzer::SemanticAnalyzer() {
     built_in_types_ = {"App", "Row", "Col", "Rect", "Text"};
+    valid_events_ = {"onClick", "onHover"};
     valid_properties_["App"] = {"width", "height", "color"};
     valid_properties_["Row"] = {"width", "height", "color", "spacing"};
     valid_properties_["Col"] = {"width", "height", "color", "spacing"};
@@ -72,6 +73,17 @@ void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTa
 
     for (const auto& assignment : node.assignments) {
         visit(assignment, local_scope);
+    }
+
+    for (const auto& handler : node.event_handlers) {
+        visit(handler, type_name);
+    }
+}
+
+void SemanticAnalyzer::visit(const EventHandlerNode& node, const std::string& component_type) {
+    std::string event_name(node.name.text);
+    if (valid_events_.find(event_name) == valid_events_.end()) {
+        errors_.push_back({"Unknown event '" + event_name + "' on component '" + component_type + "'.", node.name.line, node.name.column});
     }
 }
 

@@ -27,10 +27,18 @@ private:
     std::unique_ptr<ExpressionEvaluator> evaluator_;
     std::unordered_map<std::string, const ItemNode*> item_definitions_;
     std::unordered_map<const ComponentNode*, ComponentNode*> component_map_;
+    void generate_scripts(const RootNode& root);
+    void find_and_generate_scripts(const ComponentNode& component);
+    std::string get_or_assign_id(const ComponentNode& component);
+
     std::stringstream css_stream_;
     std::stringstream html_stream_;
+    std::stringstream script_stream_;
     std::unordered_map<const ComponentNode*, std::string> class_map_;
+    std::unordered_map<const ComponentNode*, std::string> id_map_;
     std::unordered_map<std::string, std::string> style_to_class_map_;
     std::vector<CompilerError> errors_;
     int class_counter_ = 0;
+    int id_counter_ = 0;
+    int script_var_counter_ = 0;
 };

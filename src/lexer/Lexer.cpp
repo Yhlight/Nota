@@ -184,3 +184,41 @@ Token Lexer::identifier() {
 
     return make_token(TokenType::IDENTIFIER);
 }
+
+std::string Lexer::read_raw_block(char open_delimiter) {
+    char close_delimiter;
+    switch (open_delimiter) {
+        case '{': close_delimiter = '}'; break;
+        case '(': close_delimiter = ')'; break;
+        case '[': close_delimiter = ']'; break;
+        default: return "";
+    }
+
+    skip_whitespace();
+    if (peek() != open_delimiter) return "";
+
+    const char* block_start = current_;
+    int level = 0;
+
+    do {
+        if (peek() == open_delimiter) {
+            level++;
+        } else if (peek() == close_delimiter) {
+            level--;
+        } else if (peek() == '\n') {
+            line_++;
+            column_ = 0;
+        }
+
+        if (is_at_end()) {
+            return ""; // Or handle error for unterminated block
+        }
+        advance();
+    } while (level > 0);
+
+    return std::string(block_start + 1, current_ - block_start - 2);
+}
+
+void Lexer::reposition(const char* position) {
+    current_ = position;
+}

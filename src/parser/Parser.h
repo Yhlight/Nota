@@ -24,6 +24,7 @@ private:
     // Parsing methods
     template <typename Node>
     void parse_component_body(Node& node);
+    EventHandlerNode parse_event_handler();
     std::unique_ptr<ItemNode> parse_item_definition();
     std::unique_ptr<ComponentNode> parse_component();
     PropertyNode parse_property();

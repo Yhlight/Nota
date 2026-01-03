@@ -79,6 +79,17 @@ std::string CodeGenerator::generate(const RootNode& root) {
     output << "</head>\n";
     output << "<body class=\"" << root_class << "\">\n";
     output << html_stream_.str();
+
+    // Fourth pass: generate scripts
+    generate_scripts(root);
+    if (!script_stream_.str().empty()) {
+        output << "<script>\n";
+        output << "document.addEventListener('DOMContentLoaded', function() {\n";
+        output << script_stream_.str();
+        output << "});\n";
+        output << "</script>\n";
+    }
+
     output << "</body>\n";
     output << "</html>\n";
 
@@ -157,7 +168,23 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
 
-        html_builder << "<" << tag << " class=\"" << final_class << "\">";
+        std::string id_attr;
+        if (!component.event_handlers.empty()) {
+            id_attr = " id=\"" + get_or_assign_id(component) + "\"";
+        } else {
+            for (const auto& prop : component.properties) {
+                if (prop.name.text == "id") {
+                    if (auto val = to_css_value(prop.value, "id", const_cast<ComponentNode*>(&component))) {
+                         if (holds_alternative<std::string>(*val)) {
+                            id_attr = " id=\"" + std::get<std::string>(*val) + "\"";
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        html_builder << "<" << tag << " class=\"" << final_class << "\"" << id_attr << ">";
 
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
@@ -253,7 +280,7 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
 
     for (const auto& pair : property_map) {
         const auto* prop = pair.second;
-        if (prop->name.text == "text" || prop->name.text == "class") continue;
+        if (prop->name.text == "text" || prop->name.text == "class" || prop->name.text == "id") continue;
 
         std::string css_prop;
         if (prop->name.text == "color" && component.type.text != "Text") {
@@ -328,4 +355,59 @@ std::optional<CodeGenerator::EvaluatedValue> CodeGenerator::to_css_value(const A
         return *pos_node;
     }
     return std::nullopt;
+}
+
+std::string CodeGenerator::get_or_assign_id(const ComponentNode& component) {
+    if (id_map_.count(&component)) {
+        return id_map_.at(&component);
+    }
+
+    // Check for user-defined 'id' property first
+    for (const auto& prop : component.properties) {
+        if (prop.name.text == "id") {
+             if (auto val = to_css_value(prop.value, "id", const_cast<ComponentNode*>(&component))) {
+                if (holds_alternative<std::string>(*val)) {
+                    std::string user_id = std::get<std::string>(*val);
+                    id_map_[&component] = user_id;
+                    return user_id;
+                }
+            }
+        }
+    }
+
+    std::string new_id = "nota-comp-" + std::to_string(id_counter_++);
+    id_map_[&component] = new_id;
+    return new_id;
+}
+
+void CodeGenerator::generate_scripts(const RootNode& root) {
+    if (root.root_component) {
+        find_and_generate_scripts(*root.root_component);
+    }
+}
+
+void CodeGenerator::find_and_generate_scripts(const ComponentNode& component) {
+    if (!component.event_handlers.empty()) {
+        std::string id = get_or_assign_id(component);
+        std::string var_name = "comp" + std::to_string(script_var_counter_++);
+        script_stream_ << "const " << var_name << " = document.getElementById('" << id << "');\n";
+        script_stream_ << "if (" << var_name << ") {\n";
+        for (const auto& handler : component.event_handlers) {
+            std::string event_name = std::string(handler.name.text);
+            if (event_name == "onClick") {
+                script_stream_ << "  " << var_name << ".addEventListener('click', function() {\n";
+                script_stream_ << "    " << handler.body << "\n";
+                script_stream_ << "  });\n";
+            } else if (event_name == "onHover") {
+                script_stream_ << "  " << var_name << ".addEventListener('mouseover', function() {\n";
+                script_stream_ << "    " << handler.body << "\n";
+                script_stream_ << "  });\n";
+            }
+        }
+        script_stream_ << "}\n";
+    }
+
+    for (const auto& child : component.children) {
+        find_and_generate_scripts(*child);
+    }
 }

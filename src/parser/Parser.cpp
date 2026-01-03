@@ -1,6 +1,7 @@
 #include "parser/Parser.h"
 
 #include <stdexcept>
+#include <sstream>
 
 Parser::Parser(Lexer& lexer) : lexer_(lexer) {}
 
@@ -65,6 +66,20 @@ void Parser::parse_component_body(Node& node) {
     consume(TokenType::LEFT_BRACE, "Expected '{' after component type.");
 
     while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::END_OF_FILE)) {
+        if (check(TokenType::IDENTIFIER)) {
+            std::string_view name(current_.text);
+            if (name.starts_with("on") && lexer_.peek_next_significant_char() == ':') {
+                if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
+                    node->event_handlers.push_back(parse_event_handler());
+                } else {
+                    error("Event handlers are not allowed in Item definitions.");
+                    // Consume the handler to allow parsing to continue
+                    (void)parse_event_handler();
+                }
+                continue; // Move to the next item in the component body
+            }
+        }
+
         if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
             if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
                 if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
@@ -86,6 +101,25 @@ void Parser::parse_component_body(Node& node) {
     }
 
     consume(TokenType::RIGHT_BRACE, "Expected '}' after component body.");
+}
+
+EventHandlerNode Parser::parse_event_handler() {
+    EventHandlerNode handler;
+    handler.name = current_;
+    consume(TokenType::IDENTIFIER, "Expected event handler name.");
+    consume(TokenType::COLON, "Expected ':' after event handler name.");
+
+    // At this point, the parser has consumed the ':', and `current_` is '{'.
+    // We need to reposition the lexer to the start of the '{' token.
+    lexer_.reposition(current_.text.data());
+
+    handler.body = lexer_.read_raw_block('{');
+
+    // Now that the block is read, the lexer is past the '}'.
+    // We need to sync the parser by fetching the next token.
+    advance();
+
+    return handler;
 }
 
 std::unique_ptr<ItemNode> Parser::parse_item_definition() {

@@ -10,6 +10,8 @@ public:
     Token next_token();
     char peek() const;
     char peek_next_significant_char() const;
+    std::string read_raw_block(char delimiter);
+    void reposition(const char* position);
 
 private:
     // Navigation

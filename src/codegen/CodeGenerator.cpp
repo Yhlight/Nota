@@ -13,11 +13,23 @@
 std::string format_double(double val, const std::string& property_name) {
     bool is_unitless = (property_name == "z-index");
     std::string unit = is_unitless ? "" : "px";
-
     if (std::fmod(val, 1.0) == 0.0) {
         return std::to_string(static_cast<int>(val)) + unit;
     }
     return std::to_string(val) + unit;
+}
+
+// Helper to trim whitespace from a string
+static std::string trim(const std::string& s) {
+    auto start = s.begin();
+    while (start != s.end() && std::isspace(*start)) {
+        start++;
+    }
+    auto end = s.end();
+    do {
+        end--;
+    } while (std::distance(start, end) > 0 && std::isspace(*end));
+    return std::string(start, end + 1);
 }
 
 bool has_positional_properties(const ComponentNode& component) {
@@ -36,15 +48,12 @@ std::string CodeGenerator::generate(const RootNode& root) {
     if (!root.root_component) {
         return "";
     }
-
     for (const auto& item_def : root.item_definitions) {
         item_definitions_[std::string(item_def->name.text)] = item_def.get();
     }
-
     // First pass: build the component tree
     auto root_instance = deep_copy(*root.root_component);
     component_map_[root.root_component.get()] = root_instance.get();
-
     std::function<void(const ComponentNode&, ComponentNode&)> build_tree =
         [&](const ComponentNode& original, ComponentNode& instance) {
         for (size_t i = 0; i < original.children.size(); ++i) {
@@ -53,20 +62,16 @@ std::string CodeGenerator::generate(const RootNode& root) {
         }
     };
     build_tree(*root.root_component, *root_instance);
-
     // Second pass: apply assignments
     evaluator_ = std::make_unique<ExpressionEvaluator>(component_map_, root_instance.get());
     evaluator_->build_parent_map(root_instance.get(), nullptr);
     apply_assignments(root);
-
     // Third pass: generate code
     std::string root_class = get_or_create_class_for_component(*root_instance, nullptr, nullptr);
     class_map_[root_instance.get()] = root_class;
-
     for (const auto& child : root_instance->children) {
         generate_component(*child, root_instance.get(), html_stream_);
     }
-
     std::stringstream output;
     output << "<!DOCTYPE html>\n";
     output << "<html>\n";
@@ -79,7 +84,6 @@ std::string CodeGenerator::generate(const RootNode& root) {
     output << "</head>\n";
     output << "<body class=\"" << root_class << "\">\n";
     output << html_stream_.str();
-
     // Fourth pass: generate scripts
     generate_scripts(root);
     if (!script_stream_.str().empty()) {
@@ -89,19 +93,15 @@ std::string CodeGenerator::generate(const RootNode& root) {
         output << "});\n";
         output << "</script>\n";
     }
-
     output << "</body>\n";
     output << "</html>\n";
-
     return output.str();
 }
 
 void CodeGenerator::apply_assignments(const RootNode& root) {
     if (!root.root_component) return;
-
     ExpressionEvaluator evaluator(component_map_, component_map_.at(root.root_component.get()));
     SymbolTable table;
-
     std::function<void(const ComponentNode&, ComponentNode*)> traverse =
         [&](const ComponentNode& original, ComponentNode* instance) {
         for (const auto& assignment : original.assignments) {
@@ -128,14 +128,11 @@ void CodeGenerator::apply_assignments(const RootNode& root) {
                 errors_.push_back({ "Invalid assignment expression.", assignment.line, assignment.column });
             }
         }
-
         for (size_t i = 0; i < original.children.size(); ++i) {
             traverse(*original.children[i], instance->children[i].get());
         }
     };
-
     traverse(*root.root_component, component_map_.at(root.root_component.get()));
-
     // Collect errors from the evaluator
     errors_.insert(errors_.end(), evaluator.errors().begin(), evaluator.errors().end());
 }
@@ -148,7 +145,6 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
     } else {
         std::string generated_class = get_or_create_class_for_component(component, parent, overridden_properties);
         std::string custom_class;
-
         for (const auto& prop : component.properties) {
             if (prop.name.text == "class") {
                 if (auto val = to_css_value(prop.value, "class", const_cast<ComponentNode*>(&component))) {
@@ -159,15 +155,12 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
                 break;
             }
         }
-
         std::string final_class = generated_class;
         if (!custom_class.empty()) {
             final_class += " " + custom_class;
         }
-
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
-
         std::string id_attr;
         if (!component.event_handlers.empty()) {
             id_attr = " id=\"" + get_or_assign_id(component) + "\"";
@@ -183,9 +176,7 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
                 }
             }
         }
-
         html_builder << "<" << tag << " class=\"" << final_class << "\"" << id_attr << ">";
-
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
                 if (std::holds_alternative<LiteralNode>(prop.value)) {
@@ -199,11 +190,9 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
                 }
             }
         }
-
         for (const auto& child : component.children) {
             generate_component(*child, &component, html_builder);
         }
-
         html_builder << "</" << tag << ">";
     }
 }
@@ -216,12 +205,10 @@ void CodeGenerator::generate_item_component(const ItemNode& item_def, const Comp
     for (const auto& prop : instance.properties) {
         property_map[std::string(prop.name.text)] = &prop;
     }
-
     std::vector<const PropertyNode*> merged_properties;
     for (const auto& pair : property_map) {
         merged_properties.push_back(pair.second);
     }
-
     for (const auto& child : item_def.children) {
         generate_component(*child, parent, html_builder, &merged_properties);
     }
@@ -229,25 +216,19 @@ void CodeGenerator::generate_item_component(const ItemNode& item_def, const Comp
 
 std::string CodeGenerator::get_or_create_class_for_component(const ComponentNode& component, const ComponentNode* parent, const std::vector<const PropertyNode*>* overridden_properties) {
     std::string style_key = generate_css_properties_string(component, parent, overridden_properties);
-
     if (style_to_class_map_.count(style_key)) {
         return style_to_class_map_.at(style_key);
     }
-
     std::string new_class_name = std::string(component.type.text) + "-" + std::to_string(class_counter_++);
     style_to_class_map_[style_key] = new_class_name;
-
     css_stream_ << "." << new_class_name << " {\n" << style_key << "}\n";
-
     return new_class_name;
 }
 
 std::string CodeGenerator::generate_css_properties_string(const ComponentNode& component, const ComponentNode* parent, const std::vector<const PropertyNode*>* overridden_properties) {
     std::stringstream props_stream;
-
     if (component.type.text == "Row") props_stream << "    display: flex;\n    flex-direction: row;\n";
     else if (component.type.text == "Col") props_stream << "    display: flex;\n    flex-direction: column;\n";
-
     bool has_position = false;
     for (const auto& prop : component.properties) {
         if (prop.name.text == "position") {
@@ -255,7 +236,6 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
             break;
         }
     }
-
     if (has_positional_properties(component) || has_position) {
         props_stream << "    position: absolute;\n";
     }
@@ -266,22 +246,18 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
     })) {
         props_stream << "    position: relative;\n";
     }
-
     std::map<std::string, const PropertyNode*> property_map; // Use map for sorting
     for (const auto& prop : component.properties) {
         property_map[std::string(prop.name.text)] = &prop;
     }
-
     if (overridden_properties) {
         for (const auto* prop : *overridden_properties) {
             property_map[std::string(prop->name.text)] = prop;
         }
     }
-
     for (const auto& pair : property_map) {
         const auto* prop = pair.second;
         if (prop->name.text == "text" || prop->name.text == "class" || prop->name.text == "id") continue;
-
         std::string css_prop;
         if (prop->name.text == "color" && component.type.text != "Text") {
             css_prop = "background-color";
@@ -290,9 +266,7 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
         } else {
             css_prop = to_css_property(std::string(prop->name.text));
         }
-
         auto evaluated_value = to_css_value(prop->value, css_prop, const_cast<ComponentNode*>(&component));
-
         if (evaluated_value) {
             std::visit([&](auto&& arg) {
                 using T = std::decay_t<decltype(arg)>;
@@ -303,7 +277,6 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
                 } else if constexpr (std::is_same_v<T, PositionNode>) {
                     std::string first = std::string(arg.first.keyword.text);
                     std::string second = arg.second ? std::string(arg.second->keyword.text) : "";
-
                     if (first == "center") {
                         props_stream << "    left: 50%;\n";
                         props_stream << "    top: 50%;\n";
@@ -321,7 +294,6 @@ std::string CodeGenerator::generate_css_properties_string(const ComponentNode& c
     return props_stream.str();
 }
 
-
 std::string CodeGenerator::to_css_property(const std::string& nota_property) {
     if (nota_property == "spacing") return "gap";
     if (nota_property == "radius") return "border-radius";
@@ -334,13 +306,11 @@ std::string CodeGenerator::to_css_property(const std::string& nota_property) {
 std::optional<CodeGenerator::EvaluatedValue> CodeGenerator::to_css_value(const ASTValue& value, const std::string& property_name, ComponentNode* current_component) {
     ASTValue evaluated_value;
     const ASTValue* value_to_process = &value;
-
     if (const auto* expr = std::get_if<std::unique_ptr<Expression>>(&value)) {
         SymbolTable table;
         evaluated_value = evaluator_->evaluate_expression(**expr, table, current_component);
         value_to_process = &evaluated_value;
     }
-
     if (const auto* literal = std::get_if<LiteralNode>(value_to_process)) {
         if (const auto* number = std::get_if<double>(&literal->value)) {
             return *number;
@@ -361,7 +331,6 @@ std::string CodeGenerator::get_or_assign_id(const ComponentNode& component) {
     if (id_map_.count(&component)) {
         return id_map_.at(&component);
     }
-
     // Check for user-defined 'id' property first
     for (const auto& prop : component.properties) {
         if (prop.name.text == "id") {
@@ -374,7 +343,6 @@ std::string CodeGenerator::get_or_assign_id(const ComponentNode& component) {
             }
         }
     }
-
     std::string new_id = "nota-comp-" + std::to_string(id_counter_++);
     id_map_[&component] = new_id;
     return new_id;
@@ -394,19 +362,20 @@ void CodeGenerator::find_and_generate_scripts(const ComponentNode& component) {
         script_stream_ << "if (" << var_name << ") {\n";
         for (const auto& handler : component.event_handlers) {
             std::string event_name = std::string(handler.name.text);
-            if (event_name == "onClick") {
-                script_stream_ << "  " << var_name << ".addEventListener('click', function() {\n";
-                script_stream_ << "    " << handler.body << "\n";
-                script_stream_ << "  });\n";
-            } else if (event_name == "onHover") {
-                script_stream_ << "  " << var_name << ".addEventListener('mouseover', function() {\n";
-                script_stream_ << "    " << handler.body << "\n";
+            std::string dom_event;
+            if (event_name == "onClick") dom_event = "click";
+            else if (event_name == "onHover") dom_event = "mouseover";
+            else if (event_name == "onKeyPress") dom_event = "keypress";
+            else if (event_name == "onChange") dom_event = "change";
+            else if (event_name == "onSubmit") dom_event = "submit";
+            if (!dom_event.empty()) {
+                script_stream_ << "  " << var_name << ".addEventListener('" << dom_event << "', function(event) {\n";
+                script_stream_ << "    " << trim(handler.body) << "\n";
                 script_stream_ << "  });\n";
             }
         }
         script_stream_ << "}\n";
     }
-
     for (const auto& child : component.children) {
         find_and_generate_scripts(*child);
     }

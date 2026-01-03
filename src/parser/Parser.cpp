@@ -1,14 +1,13 @@
 #include "parser/Parser.h"
-
 #include <stdexcept>
 #include <sstream>
+#include <unordered_set>
 
 Parser::Parser(Lexer& lexer) : lexer_(lexer) {}
 
 RootNode Parser::parse() {
     advance(); // Load the first token
     RootNode root;
-
     while (!check(TokenType::END_OF_FILE)) {
         if (check(TokenType::ITEM)) {
             root.item_definitions.push_back(parse_item_definition());
@@ -24,7 +23,6 @@ RootNode Parser::parse() {
             synchronize();
         }
     }
-
     return root;
 }
 
@@ -64,7 +62,6 @@ bool Parser::check(TokenType type) const {
 template <typename Node>
 void Parser::parse_component_body(Node& node) {
     consume(TokenType::LEFT_BRACE, "Expected '{' after component type.");
-
     while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::END_OF_FILE)) {
         if (check(TokenType::IDENTIFIER)) {
             std::string_view name(current_.text);
@@ -76,10 +73,9 @@ void Parser::parse_component_body(Node& node) {
                     // Consume the handler to allow parsing to continue
                     (void)parse_event_handler();
                 }
-                continue; // Move to the next item in the component body
+                continue;
             }
         }
-
         if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
             if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
                 if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
@@ -96,10 +92,9 @@ void Parser::parse_component_body(Node& node) {
             }
         } else {
             error("Unexpected token in component body.");
-            advance(); // Skip the token to avoid an infinite loop
+            advance();
         }
     }
-
     consume(TokenType::RIGHT_BRACE, "Expected '}' after component body.");
 }
 
@@ -108,27 +103,17 @@ EventHandlerNode Parser::parse_event_handler() {
     handler.name = current_;
     consume(TokenType::IDENTIFIER, "Expected event handler name.");
     consume(TokenType::COLON, "Expected ':' after event handler name.");
-
-    // At this point, the parser has consumed the ':', and `current_` is '{'.
-    // We need to reposition the lexer to the start of the '{' token.
     lexer_.reposition(current_.text.data());
-
     handler.body = lexer_.read_raw_block('{');
-
-    // Now that the block is read, the lexer is past the '}'.
-    // We need to sync the parser by fetching the next token.
     advance();
-
     return handler;
 }
 
 std::unique_ptr<ItemNode> Parser::parse_item_definition() {
     consume(TokenType::ITEM, "Expected 'Item' keyword.");
-
     auto item = std::make_unique<ItemNode>();
     item->name = current_;
     consume(TokenType::IDENTIFIER, "Expected an identifier for the Item name.");
-
     parse_component_body(item);
     return item;
 }
@@ -138,11 +123,9 @@ std::unique_ptr<ComponentNode> Parser::parse_component() {
         error("Expected a component type identifier or 'Item'.");
         return nullptr;
     }
-
     auto component = std::make_unique<ComponentNode>();
     component->type = current_;
     advance();
-
     parse_component_body(component);
     return component;
 }
@@ -151,13 +134,9 @@ PropertyNode Parser::parse_property() {
     PropertyNode prop;
     prop.name = current_;
     advance();
-
     consume(TokenType::COLON, "Expected ':' after property name.");
-
     prop.value = parse_value();
-
     match(TokenType::SEMICOLON);
-
     return prop;
 }
 
@@ -171,20 +150,16 @@ ASTValue Parser::parse_value() {
     if (match(TokenType::STRING)) {
         return LiteralNode{std::string(previous_.text), previous_};
     }
-
     if (is_position_keyword(current_.type)) {
         PositionNode pos_node;
         pos_node.first = { current_ };
         advance();
-
         if (is_position_keyword(current_.type)) {
             pos_node.second = { current_ };
             advance();
         }
         return pos_node;
     }
-
-    // Any other non-string value is treated as a potential expression.
     return parse_expression();
 }
 
@@ -225,7 +200,6 @@ std::unique_ptr<Expression> Parser::parse_unary() {
         Token op = previous_;
         auto right = parse_unary();
         auto new_expr = std::make_unique<Expression>();
-        // Represent unary minus as 0 - right
         auto zero_literal = std::make_unique<Expression>();
         zero_literal->variant = LiteralNode{0.0, op};
         zero_literal->line = op.line;
@@ -240,7 +214,6 @@ std::unique_ptr<Expression> Parser::parse_unary() {
 
 std::unique_ptr<Expression> Parser::parse_call() {
     auto expr = parse_primary();
-
     while (match(TokenType::DOT) || match(TokenType::LEFT_BRACKET)) {
         Token op = previous_;
         if (op.type == TokenType::DOT) {
@@ -262,7 +235,6 @@ std::unique_ptr<Expression> Parser::parse_call() {
             expr = std::move(new_expr);
         }
     }
-
     return expr;
 }
 
@@ -298,7 +270,6 @@ AssignmentNode Parser::parse_assignment(std::unique_ptr<Expression> target) {
     match(TokenType::SEMICOLON);
     return assignment;
 }
-
 
 void Parser::synchronize() {
     advance();

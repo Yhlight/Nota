@@ -77,6 +77,12 @@ struct EventHandlerNode {
     ASTValue value;
 };
 
+// --- State Declaration Node ---
+struct StateDeclarationNode {
+    Token name;
+    ASTValue initial_value;
+};
+
 // --- Component Node ---
 struct ComponentNode {
     Token type;
@@ -84,6 +90,7 @@ struct ComponentNode {
     std::vector<std::unique_ptr<ComponentNode>> children;
     std::vector<AssignmentNode> assignments;
     std::vector<EventHandlerNode> event_handlers;
+    std::vector<StateDeclarationNode> state_declarations;
 };
 
 // --- Item Definition Node ---
@@ -92,6 +99,7 @@ struct ItemNode {
     std::vector<PropertyNode> properties;
     std::vector<std::unique_ptr<ComponentNode>> children;
     std::vector<EventHandlerNode> event_handlers;
+    std::vector<StateDeclarationNode> state_declarations;
 };
 
 // --- Root of the AST ---

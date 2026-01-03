@@ -34,4 +34,5 @@ private:
     std::unordered_map<std::string, std::string> style_to_class_map_;
     std::vector<CompilerError> errors_;
     int class_counter_ = 0;
+    int component_id_counter_ = 0;
 };

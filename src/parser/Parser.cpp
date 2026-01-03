@@ -65,7 +65,9 @@ void Parser::parse_component_body(Node& node) {
     consume(TokenType::LEFT_BRACE, "Expected '{' after component type.");
 
     while (!check(TokenType::RIGHT_BRACE) && !check(TokenType::END_OF_FILE)) {
-        if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
+        if (check(TokenType::STATE)) {
+            node->state_declarations.push_back(parse_state_declaration());
+        } else if (check(TokenType::IDENTIFIER) || check(TokenType::ITEM)) {
             if (lexer_.peek_next_significant_char() == '.' || lexer_.peek_next_significant_char() == '[') {
                 if constexpr (std::is_same_v<Node, std::unique_ptr<ComponentNode>>) {
                     auto target = parse_expression();
@@ -144,6 +146,17 @@ EventHandlerNode Parser::parse_event_handler() {
     match(TokenType::SEMICOLON);
 
     return handler;
+}
+
+StateDeclarationNode Parser::parse_state_declaration() {
+    consume(TokenType::STATE, "Expected 'state' keyword.");
+    StateDeclarationNode decl;
+    decl.name = current_;
+    consume(TokenType::IDENTIFIER, "Expected an identifier for the state variable name.");
+    consume(TokenType::COLON, "Expected ':' after state variable name.");
+    decl.initial_value = parse_value();
+    match(TokenType::SEMICOLON);
+    return decl;
 }
 
 bool is_position_keyword(TokenType type) {

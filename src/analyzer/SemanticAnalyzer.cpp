@@ -55,6 +55,10 @@ void SemanticAnalyzer::visit(const ItemNode& node, std::shared_ptr<SymbolTable> 
     for (const auto& handler : node.event_handlers) {
         visit(handler, local_scope, std::string(node.name.text));
     }
+
+    for (const auto& decl : node.state_declarations) {
+        visit(decl, local_scope, std::string(node.name.text));
+    }
 }
 
 void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTable> table, const std::string& parent_type) {
@@ -80,6 +84,18 @@ void SemanticAnalyzer::visit(const ComponentNode& node, std::shared_ptr<SymbolTa
 
     for (const auto& handler : node.event_handlers) {
         visit(handler, local_scope, type_name);
+    }
+
+    for (const auto& decl : node.state_declarations) {
+        visit(decl, local_scope, type_name);
+    }
+}
+
+void SemanticAnalyzer::visit(const StateDeclarationNode& node, std::shared_ptr<SymbolTable> table, const std::string& component_type) {
+    std::string name(node.name.text);
+    auto symbol = std::make_shared<Symbol>(name, SymbolType::STATE, &node);
+    if (!table->insert(name, symbol)) {
+        errors_.push_back({"State variable '" + name + "' is already defined in this scope.", node.name.line, node.name.column});
     }
 }
 
@@ -110,6 +126,16 @@ void SemanticAnalyzer::visit(const PropertyNode& node, std::shared_ptr<SymbolTab
             const auto& allowed_types = property_types_.at(name);
             if (std::find(allowed_types.begin(), allowed_types.end(), type) == allowed_types.end()) {
                 errors_.push_back({"Invalid type for property '" + name + "'.", literal->token.line, literal->token.column});
+            }
+        }
+    } else if (auto* expr = std::get_if<std::unique_ptr<Expression>>(&node.value)) {
+        if (auto* literal = std::get_if<LiteralNode>(&(*expr)->variant)) {
+            if (std::holds_alternative<std::string>(literal->value)) {
+                const std::string& identifier = std::get<std::string>(literal->value);
+                auto symbol = table->lookup(identifier);
+                if (!symbol || symbol->type != SymbolType::STATE) {
+                    errors_.push_back({"Undeclared state variable '" + identifier + "' used in binding.", literal->token.line, literal->token.column});
+                }
             }
         }
     }

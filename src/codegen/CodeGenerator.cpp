@@ -84,6 +84,35 @@ std::string CodeGenerator::generate(const RootNode& root) {
     output << "body, div, span { margin: 0; padding: 0; box-sizing: border-box; overflow: hidden; }\n";
     output << css_stream_.str();
     output << "</style>\n";
+    output << "<script>\n";
+    output << "const NotaRuntime = {\n";
+    output << "    _state: {},\n";
+    output << "    _subscribers: new Map(),\n";
+    output << "    initState(componentId, initialState) {\n";
+    output << "        this._state[componentId] = initialState;\n";
+    output << "    },\n";
+    output << "    setState(componentId, key, value) {\n";
+    output << "        if (this._state[componentId] && this._state[componentId][key] !== value) {\n";
+    output << "            this._state[componentId][key] = value;\n";
+    output << "            this._notify(componentId, key);\n";
+    output << "        }\n";
+    output << "    },\n";
+    output << "    subscribe(componentId, key, callback) {\n";
+    output << "        const fullKey = `${componentId}.${key}`;\n";
+    output << "        if (!this._subscribers.has(fullKey)) {\n";
+    output << "            this._subscribers.set(fullKey, []);\n";
+    output << "        }\n";
+    output << "        this._subscribers.get(fullKey).push(callback);\n";
+    output << "    },\n";
+    output << "    _notify(componentId, key) {\n";
+    output << "        const fullKey = `${componentId}.${key}`;\n";
+    output << "        if (this._subscribers.has(fullKey)) {\n";
+    output << "            const value = this._state[componentId][key];\n";
+    output << "            this._subscribers.get(fullKey).forEach(cb => cb(value));\n";
+    output << "        }\n";
+    output << "    }\n";
+    output << "};\n";
+    output << "</script>\n";
     output << "</head>\n";
     output << "<body class=\"" << root_class << "\">\n";
     output << html_stream_.str();
@@ -165,12 +194,32 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         std::string tag = "div";
         if (component.type.text == "Text") tag = "span";
 
-        html_builder << "<" << tag << " class=\"" << final_class << "\"";
+        std::string component_id;
+        if (!component.state_declarations.empty()) {
+            component_id = "nota-component-" + std::to_string(component_id_counter_++);
+            html_builder << "<" << tag << " id=\"" << component_id << "\" class=\"" << final_class << "\"";
+        } else {
+            html_builder << "<" << tag << " class=\"" << final_class << "\"";
+        }
 
         for (const auto& handler : component.event_handlers) {
             std::string attr_name = to_html_attribute(std::string(handler.name.text));
             if (auto val = evaluate_string_value(handler.value, const_cast<ComponentNode*>(&component))) {
-                html_builder << " " << attr_name << "=\"" << *val << "\"";
+                std::string_view handler_code = *val;
+                size_t pos = handler_code.find('=');
+                if (pos != std::string::npos) {
+                    std::string_view state_var = handler_code.substr(0, pos);
+                    std::string_view new_value = handler_code.substr(pos + 1);
+                    // trim whitespace
+                    state_var.remove_prefix(std::min(state_var.find_first_not_of(" "), state_var.size()));
+                    state_var.remove_suffix(std::min(state_var.size() - state_var.find_last_not_of(" ") - 1, state_var.size()));
+                    new_value.remove_prefix(std::min(new_value.find_first_not_of(" "), new_value.size()));
+                    new_value.remove_suffix(std::min(new_value.size() - new_value.find_last_not_of(" ") - 1, new_value.size()));
+
+                    html_builder << " " << attr_name << "=\"NotaRuntime.setState('" << component_id << "', '" << state_var << "', " << new_value << ")\"";
+                } else {
+                    html_builder << " " << attr_name << "=\"" << *val << "\"";
+                }
             }
         }
 
@@ -178,7 +227,18 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
 
         for (const auto& prop : component.properties) {
             if (prop.name.text == "text") {
-                if (std::holds_alternative<LiteralNode>(prop.value)) {
+                if (auto* expr = std::get_if<std::unique_ptr<Expression>>(&prop.value)) {
+                    if (auto* literal = std::get_if<LiteralNode>(&(*expr)->variant)) {
+                        if (std::holds_alternative<std::string>(literal->value)) {
+                            std::string state_var = std::get<std::string>(literal->value);
+                            html_builder << "<script>\n";
+                            html_builder << "NotaRuntime.subscribe('" << component_id << "', '" << state_var << "', (value) => {\n";
+                            html_builder << "    document.getElementById('" << component_id << "').innerText = value;\n";
+                            html_builder << "});\n";
+                            html_builder << "</script>\n";
+                        }
+                    }
+                } else if (std::holds_alternative<LiteralNode>(prop.value)) {
                     const auto& literal = std::get<LiteralNode>(prop.value);
                     if (std::holds_alternative<std::string>(literal.value)) {
                         std::string text_val = std::get<std::string>(literal.value);
@@ -195,6 +255,24 @@ void CodeGenerator::generate_component(const ComponentNode& component, const Com
         }
 
         html_builder << "</" << tag << ">";
+
+        if (!component_id.empty()) {
+            html_builder << "<script>\n";
+            html_builder << "{\n";
+            html_builder << "    const initialState = {};\n";
+            for (const auto& decl : component.state_declarations) {
+                if (auto val = evaluate_string_value(decl.initial_value, const_cast<ComponentNode*>(&component))) {
+                    html_builder << "    initialState['" << decl.name.text << "'] = \"" << *val << "\";\n";
+                } else if (auto css_val = to_css_value(decl.initial_value, "", const_cast<ComponentNode*>(&component))) {
+                    if (std::holds_alternative<double>(*css_val)) {
+                        html_builder << "    initialState['" << decl.name.text << "'] = " << std::get<double>(*css_val) << ";\n";
+                    }
+                }
+            }
+            html_builder << "    NotaRuntime.initState('" << component_id << "', initialState);\n";
+            html_builder << "}\n";
+            html_builder << "</script>\n";
+        }
     }
 }
 

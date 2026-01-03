@@ -15,6 +15,7 @@ enum class TokenType {
 
     // Keywords
     ITEM,
+    STATE,
     LEFT, RIGHT, TOP, BOTTOM, CENTER,
 
     // Special

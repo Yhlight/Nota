@@ -57,6 +57,29 @@ TEST(SemanticAnalyzerTests, InvalidProperty) {
     EXPECT_EQ(analyzer.errors()[0].column, 13);
 }
 
+TEST(SemanticAnalyzerTests, UndeclaredStateVariable) {
+    std::string source = R"-(
+        App {
+            Text {
+                text: myState;
+            }
+        }
+    )-";
+
+    Lexer lexer(source);
+    Parser parser(lexer);
+    RootNode ast = parser.parse();
+    ASSERT_TRUE(parser.errors().empty());
+
+    SemanticAnalyzer analyzer;
+    bool result = analyzer.analyze(ast);
+
+    ASSERT_FALSE(result);
+    ASSERT_EQ(analyzer.errors().size(), 1);
+    EXPECT_EQ(analyzer.errors()[0].message, "Undeclared state variable 'myState' used in binding.");
+    EXPECT_EQ(analyzer.errors()[0].line, 4);
+}
+
 TEST(SemanticAnalyzerTests, SpacingInRect) {
     std::string source = R"(
         Rect {

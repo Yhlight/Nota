@@ -7,6 +7,7 @@
 enum class SymbolType {
     COMPONENT,
     PROPERTY,
+    STATE,
 };
 
 struct Symbol {

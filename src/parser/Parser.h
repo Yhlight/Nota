@@ -29,6 +29,7 @@ private:
     std::unique_ptr<ComponentNode> parse_component();
     PropertyNode parse_property();
     EventHandlerNode parse_event_handler();
+    StateDeclarationNode parse_state_declaration();
     ASTValue parse_value();
     std::unique_ptr<Expression> parse_expression();
     std::unique_ptr<Expression> parse_term();

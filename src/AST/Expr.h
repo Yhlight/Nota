@@ -8,13 +8,30 @@
 
 namespace nota::ast {
 
-    // Forward declaration for the visitor
-    class ExprVisitor;
+    // Forward declarations
+    class LiteralExpr;
+
+    class ExprVisitor {
+    public:
+        virtual ~ExprVisitor() = default;
+        virtual std::any visitLiteralExpr(LiteralExpr& expr) = 0;
+    };
 
     class Expr {
     public:
         virtual ~Expr() = default;
         virtual std::any accept(ExprVisitor& visitor) = 0;
+    };
+
+    class LiteralExpr : public Expr {
+    public:
+        const Token value;
+
+        explicit LiteralExpr(Token value) : value(std::move(value)) {}
+
+        std::any accept(ExprVisitor& visitor) override {
+            return visitor.visitLiteralExpr(*this);
+        }
     };
 
 } // namespace nota::ast

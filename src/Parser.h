@@ -15,6 +15,7 @@ namespace nota {
 
         bool is_at_end();
         Token peek();
+        Token peek_next();
         Token previous();
         Token advance();
         bool check(TokenType type);

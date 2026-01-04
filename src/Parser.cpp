@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include "AST/Expr.h"
+#include <algorithm> // For std::remove
 
 namespace nota {
 
@@ -7,6 +8,7 @@ namespace nota {
 
     bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
     Token Parser::peek() { return tokens[current]; }
+    Token Parser::peek_next() { if (is_at_end()) return peek(); return tokens[current + 1]; }
     Token Parser::previous() { return tokens[current - 1]; }
     Token Parser::advance() { if (!is_at_end()) current++; return previous(); }
     bool Parser::check(TokenType type) { if (is_at_end()) return false; return peek().type == type; }
@@ -31,7 +33,6 @@ namespace nota {
         if (match({TokenType::NUMBER, TokenType::STRING})) {
             return std::make_unique<ast::LiteralExpr>(previous());
         }
-        // Proper error handling will be added later.
         return nullptr;
     }
 
@@ -47,8 +48,11 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Stmt> Parser::statement() {
-        if (match({TokenType::IDENTIFIER})) {
-            // This could be a component or a property. For now, assume property.
+        if (check(TokenType::IDENTIFIER)) {
+            if (peek_next().type == TokenType::LEFT_BRACE) {
+                return declaration();
+            }
+            advance(); // Consume the identifier
             return propertyDeclaration();
         }
         // Handle other statement types later.
@@ -56,27 +60,30 @@ namespace nota {
     }
 
     std::unique_ptr<ast::Stmt> Parser::declaration() {
-        if (check(TokenType::IDENTIFIER) && tokens[current + 1].type == TokenType::LEFT_BRACE) {
-             Token name = advance();
-             consume(TokenType::LEFT_BRACE, "Expect '{' after component name.");
-             std::vector<std::unique_ptr<ast::Stmt>> body;
-             while (!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
-                 body.push_back(statement());
-             }
-             consume(TokenType::RIGHT_BRACE, "Expect '}' after component body.");
-             return std::make_unique<ast::ComponentStmt>(name, std::move(body));
+        Token name = advance(); // Assume IDENTIFIER has been checked
+        consume(TokenType::LEFT_BRACE, "Expect '{' after component name.");
+        std::vector<std::unique_ptr<ast::Stmt>> body;
+        while (!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
+            body.push_back(statement());
         }
-        return statement();
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after component body.");
+        return std::make_unique<ast::ComponentStmt>(name, std::move(body));
     }
 
     std::vector<std::unique_ptr<ast::Stmt>> Parser::parse() {
         std::vector<std::unique_ptr<ast::Stmt>> statements;
         while (!is_at_end()) {
-            auto decl = declaration();
-            if (decl) {
-                statements.push_back(std::move(decl));
+            if (check(TokenType::IDENTIFIER) && peek_next().type == TokenType::LEFT_BRACE) {
+                statements.push_back(declaration());
+            } else {
+                // This handles top-level properties if we ever support them.
+                // For now, it will likely result in a nullptr, which is fine.
+                statements.push_back(statement());
+                if (is_at_end()) break;
             }
         }
+        // Filter out any nullptrs that may have been added
+        statements.erase(std::remove(statements.begin(), statements.end(), nullptr), statements.end());
         return statements;
     }
 

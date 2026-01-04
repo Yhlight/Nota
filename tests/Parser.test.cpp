@@ -45,3 +45,24 @@ TEST(ParserTest, ParsesComponentWithNumericProperty) {
     EXPECT_EQ(literal_expr->value.type, nota::TokenType::NUMBER);
     EXPECT_EQ(literal_expr->value.lexeme, "100");
 }
+
+TEST(ParserTest, ParsesNestedComponent) {
+    std::string source = "App { Row {} }";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scan_tokens();
+
+    nota::Parser parser(tokens);
+    std::vector<std::unique_ptr<nota::ast::Stmt>> ast = parser.parse();
+
+    ASSERT_EQ(ast.size(), 1);
+
+    auto* root_component = dynamic_cast<nota::ast::ComponentStmt*>(ast[0].get());
+    ASSERT_NE(root_component, nullptr);
+    EXPECT_EQ(root_component->name.lexeme, "App");
+
+    ASSERT_EQ(root_component->body.size(), 1);
+    auto* nested_component = dynamic_cast<nota::ast::ComponentStmt*>(root_component->body[0].get());
+    ASSERT_NE(nested_component, nullptr);
+    EXPECT_EQ(nested_component->name.lexeme, "Row");
+    EXPECT_TRUE(nested_component->body.empty());
+}

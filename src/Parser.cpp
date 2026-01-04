@@ -43,7 +43,51 @@ std::unique_ptr<Stmt> Parser::property_declaration() {
 }
 
 std::unique_ptr<Expr> Parser::expression() {
-    return primary();
+    return term();
+}
+
+std::unique_ptr<Expr> Parser::term() {
+    std::unique_ptr<Expr> expr = factor();
+
+    while (match({TokenType::MINUS, TokenType::PLUS})) {
+        Token op = previous();
+        std::unique_ptr<Expr> right = factor();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
+    }
+
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::factor() {
+    std::unique_ptr<Expr> expr = unary();
+
+    while (match({TokenType::SLASH, TokenType::PERCENT})) {
+        Token op = previous();
+        std::unique_ptr<Expr> right = unary();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
+    }
+
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::unary() {
+    // For now, we don't have unary operators, so this just passes through to call().
+    return call();
+}
+
+std::unique_ptr<Expr> Parser::call() {
+    std::unique_ptr<Expr> expr = primary();
+
+    while (true) {
+        if (match({TokenType::DOT})) {
+            Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");
+            expr = std::make_unique<GetExpr>(std::move(expr), name);
+        } else {
+            break;
+        }
+    }
+
+    return expr;
 }
 
 std::unique_ptr<Expr> Parser::primary() {

@@ -9,7 +9,7 @@ enum class TokenType {
     LEFT_PAREN, RIGHT_PAREN,
     LEFT_BRACKET, RIGHT_BRACKET,
     COLON, SEMICOLON, DOT, COMMA,
-    SLASH, PERCENT, HASH,
+    MINUS, PLUS, SLASH, PERCENT, HASH,
 
     // Literals.
     IDENTIFIER,
@@ -37,7 +37,7 @@ inline std::string to_string(TokenType type) {
         "LEFT_PAREN", "RIGHT_PAREN",
         "LEFT_BRACKET", "RIGHT_BRACKET",
         "COLON", "SEMICOLON", "DOT", "COMMA",
-        "SLASH", "PERCENT", "HASH",
+        "MINUS", "PLUS", "SLASH", "PERCENT", "HASH",
         "IDENTIFIER",
         "NUMBER",
         "STRING",

@@ -18,3 +18,14 @@ TEST(ResolverTest, SimpleComponentWithId) {
     // this verifies the traversal logic doesn't have obvious errors.
     ASSERT_NO_THROW(resolver.resolve(statements));
 }
+
+TEST(ResolverTest, PropertyReference) {
+    std::string source = "App { id: myApp width: myApp.width }";
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+    Resolver resolver;
+    ASSERT_NO_THROW(resolver.resolve(statements));
+}

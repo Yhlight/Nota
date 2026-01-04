@@ -1,5 +1,5 @@
 #include "CodeGenerator.h"
-
+#include "AST/Stmt.h"
 #include <map>
 
 // Helper map for component to tag mapping
@@ -11,6 +11,9 @@ static const std::map<std::string, std::string> component_tag_map = {
     {"Text", "span"},
 };
 
+CodeGenerator::CodeGenerator(std::map<std::string, const ItemStmt*> custom_types)
+    : custom_types(custom_types) {}
+
 CompilationResult CodeGenerator::generate(const std::vector<std::unique_ptr<Stmt>>& statements) {
     for (const auto& statement : statements) {
         statement->accept(*this);
@@ -19,42 +22,49 @@ CompilationResult CodeGenerator::generate(const std::vector<std::unique_ptr<Stmt
 }
 
 std::any CodeGenerator::visit(const ComponentStmt& stmt) {
-    std::string class_name = "nota-" + stmt.name.lexeme + "-" + std::to_string(class_counter++);
-    std::string tag = component_tag_map.count(stmt.name.lexeme) ? component_tag_map.at(stmt.name.lexeme) : "div";
+    if (custom_types.count(stmt.name.lexeme)) {
+        // This is a custom component, so we generate its body.
+        const ItemStmt* item = custom_types.at(stmt.name.lexeme);
+        item->body->accept(*this);
+    } else {
+        // This is a built-in component.
+        std::string class_name = "nota-" + stmt.name.lexeme + "-" + std::to_string(class_counter++);
+        std::string tag = component_tag_map.count(stmt.name.lexeme) ? component_tag_map.at(stmt.name.lexeme) : "div";
 
-    html_out << "<" << tag << " class=\"" << class_name << "\">";
+        html_out << "<" << tag << " class=\"" << class_name << "\">";
 
-    css_out << "." << class_name << " {\n";
-    // Default styles
-    css_out << "  box-sizing: border-box;\n";
-    css_out << "  overflow: hidden;\n";
-    css_out << "  margin: 0;\n";
-    css_out << "  padding: 0;\n";
+        css_out << "." << class_name << " {\n";
+        // Default styles
+        css_out << "  box-sizing: border-box;\n";
+        css_out << "  overflow: hidden;\n";
+        css_out << "  margin: 0;\n";
+        css_out << "  padding: 0;\n";
 
-    if (stmt.name.lexeme == "Row") {
-        css_out << "  display: flex;\n";
-        css_out << "  flex-direction: row;\n";
-    } else if (stmt.name.lexeme == "Col") {
-        css_out << "  display: flex;\n";
-        css_out << "  flex-direction: column;\n";
-    }
-
-    // Process properties first
-    for (const auto& child_stmt : stmt.body) {
-        if (dynamic_cast<PropertyStmt*>(child_stmt.get())) {
-            child_stmt->accept(*this);
+        if (stmt.name.lexeme == "Row") {
+            css_out << "  display: flex;\n";
+            css_out << "  flex-direction: row;\n";
+        } else if (stmt.name.lexeme == "Col") {
+            css_out << "  display: flex;\n";
+            css_out << "  flex-direction: column;\n";
         }
-    }
-    css_out << "}\n"; // Close the current component's CSS rule
 
-    // Process nested components next
-    for (const auto& child_stmt : stmt.body) {
-        if (dynamic_cast<ComponentStmt*>(child_stmt.get())) {
-            child_stmt->accept(*this);
+        // Process properties first
+        for (const auto& child_stmt : stmt.body) {
+            if (dynamic_cast<PropertyStmt*>(child_stmt.get())) {
+                child_stmt->accept(*this);
+            }
         }
-    }
+        css_out << "}\n"; // Close the current component's CSS rule
 
-    html_out << "</" << tag << ">";
+        // Process nested components next
+        for (const auto& child_stmt : stmt.body) {
+            if (dynamic_cast<ComponentStmt*>(child_stmt.get())) {
+                child_stmt->accept(*this);
+            }
+        }
+
+        html_out << "</" << tag << ">";
+    }
     return {};
 }
 
@@ -81,6 +91,12 @@ std::any CodeGenerator::visit(const IdentifierExpr& expr) {
 
 std::any CodeGenerator::visit(const BinaryExpr& expr) {
     // To be implemented
+    return {};
+}
+
+std::any CodeGenerator::visit(const ItemStmt& stmt) {
+    // We don't generate any code for an Item definition itself,
+    // only for its instantiation. The resolver handles storing it.
     return {};
 }
 

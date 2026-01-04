@@ -1,0 +1,11 @@
+Item ColoredBox {
+    Rect {
+        width: 50
+        height: 50
+        color: "blue"
+    }
+}
+
+App {
+    ColoredBox {}
+}

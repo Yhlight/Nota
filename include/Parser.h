@@ -13,6 +13,7 @@ public:
 
 private:
     std::unique_ptr<Stmt> declaration();
+    std::unique_ptr<Stmt> item_declaration();
     std::unique_ptr<Stmt> component_declaration();
     std::unique_ptr<Stmt> property_declaration();
     std::unique_ptr<Expr> expression();

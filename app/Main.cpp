@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     resolver.resolve(statements);
 
     // 4. Code Generator
-    CodeGenerator generator;
+    CodeGenerator generator(resolver.get_custom_types());
     CompilationResult result = generator.generate(statements);
 
     // Write output files

@@ -8,6 +8,7 @@
 #include <vector>
 
 const std::map<std::string, TokenType> Lexer::keywords = {
+    {"Item", TokenType::ITEM},
     {"import", TokenType::IMPORT},
     {"as", TokenType::AS},
     {"package", TokenType::PACKAGE},

@@ -7,6 +7,10 @@ void Resolver::resolve(const std::vector<std::unique_ptr<Stmt>>& statements) {
     }
 }
 
+const std::map<std::string, const ItemStmt*>& Resolver::get_custom_types() const {
+    return custom_types;
+}
+
 void Resolver::resolve(const Stmt& stmt) {
     stmt.accept(*this);
 }
@@ -16,11 +20,25 @@ void Resolver::resolve(const Expr& expr) {
 }
 
 std::any Resolver::visit(const ComponentStmt& stmt) {
+    if (custom_types.count(stmt.name.lexeme)) {
+        // This is an instantiation of a custom component.
+        // We will handle this in the code generator.
+    }
+
     begin_scope();
     for (const auto& statement : stmt.body) {
         resolve(*statement);
     }
     end_scope();
+    return {};
+}
+
+std::any Resolver::visit(const ItemStmt& stmt) {
+    if (custom_types.count(stmt.name.lexeme)) {
+        // In a more robust compiler, we would report an error here.
+    }
+    custom_types[stmt.name.lexeme] = &stmt;
+    resolve(*stmt.body);
     return {};
 }
 

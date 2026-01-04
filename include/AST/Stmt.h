@@ -9,12 +9,14 @@
 // Forward declarations
 struct ComponentStmt;
 struct PropertyStmt;
+struct ItemStmt;
 
 // Visitor Interface
 class StmtVisitor {
 public:
     virtual std::any visit(const ComponentStmt& stmt) = 0;
     virtual std::any visit(const PropertyStmt& stmt) = 0;
+    virtual std::any visit(const ItemStmt& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -31,6 +33,18 @@ struct ComponentStmt : Stmt {
     const std::vector<std::unique_ptr<Stmt>> body;
 
     ComponentStmt(Token name, std::vector<std::unique_ptr<Stmt>> body)
+        : name(std::move(name)), body(std::move(body)) {}
+
+    std::any accept(StmtVisitor& visitor) const override {
+        return visitor.visit(*this);
+    }
+};
+
+struct ItemStmt : Stmt {
+    const Token name;
+    const std::unique_ptr<Stmt> body;
+
+    ItemStmt(Token name, std::unique_ptr<Stmt> body)
         : name(std::move(name)), body(std::move(body)) {}
 
     std::any accept(StmtVisitor& visitor) const override {

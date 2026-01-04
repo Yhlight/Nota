@@ -13,6 +13,7 @@
 class Resolver : public ExprVisitor, public StmtVisitor {
 public:
     void resolve(const std::vector<std::unique_ptr<Stmt>>& statements);
+    const std::map<std::string, const ItemStmt*>& get_custom_types() const;
 
 private:
     void resolve(const Stmt& stmt);
@@ -20,6 +21,7 @@ private:
 
     std::any visit(const ComponentStmt& stmt) override;
     std::any visit(const PropertyStmt& stmt) override;
+    std::any visit(const ItemStmt& stmt) override;
 
     std::any visit(const LiteralExpr& expr) override;
     std::any visit(const IdentifierExpr& expr) override;
@@ -32,4 +34,5 @@ private:
     void define(const Token& name);
 
     std::stack<std::map<std::string, bool>> scopes;
+    std::map<std::string, const ItemStmt*> custom_types;
 };

@@ -17,6 +17,7 @@ enum class TokenType {
     STRING,
 
     // Keywords (subset for now)
+    ITEM,
     IMPORT, AS, PACKAGE, EXPORT,
     IF, ELSE,
     TRUE, FALSE,
@@ -41,6 +42,7 @@ inline std::string to_string(TokenType type) {
         "IDENTIFIER",
         "NUMBER",
         "STRING",
+        "ITEM",
         "IMPORT", "AS", "PACKAGE", "EXPORT",
         "IF", "ELSE",
         "TRUE", "FALSE",

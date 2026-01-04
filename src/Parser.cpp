@@ -14,6 +14,9 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
 
 std::unique_ptr<Stmt> Parser::declaration() {
     try {
+        if (match({TokenType::ITEM})) {
+            return item_declaration();
+        }
         if (peek().type == TokenType::IDENTIFIER && (current + 1) < tokens.size() && tokens[current + 1].type == TokenType::LEFT_BRACE) {
             return component_declaration();
         }
@@ -22,6 +25,15 @@ std::unique_ptr<Stmt> Parser::declaration() {
         synchronize();
         return nullptr;
     }
+}
+
+std::unique_ptr<Stmt> Parser::item_declaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect item name.");
+    consume(TokenType::LEFT_BRACE, "Expect '{' after item name.");
+    // For now, an item body is just a single component.
+    std::unique_ptr<Stmt> body = component_declaration();
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after item body.");
+    return std::make_unique<ItemStmt>(name, std::move(body));
 }
 
 std::unique_ptr<Stmt> Parser::component_declaration() {

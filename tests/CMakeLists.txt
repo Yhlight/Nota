@@ -1,6 +1,7 @@
 # Define the test executable
 add_executable(nota-tests
     Sample.test.cpp
+    Lexer.test.cpp
 )
 
 # Link the test executable against our library and GoogleTest

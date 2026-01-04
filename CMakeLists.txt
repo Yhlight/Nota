@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Add the GoogleTest subdirectory
 add_subdirectory(third_party/googletest)
 
-# Create a static library for the core application logic
-add_library(nota_lib STATIC src/main.cpp)
+# Add source files and define the nota_lib library
+add_subdirectory(src)
 
 # Create the main executable and link it against the library
 add_executable(nota src/main.cpp)

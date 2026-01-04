@@ -17,6 +17,12 @@
     版本：属性不穿透原则，模块系统
 */
 
+/*
+    作者：yinghuolight
+    日期：2026/1/4
+    版本：属性引用，按钮，事件响应，事件委派，状态，自定义属性与条件渲染，类型系统
+*/
+
 ## Nota
 Nota是一门与QML语法高度相似的前端界面语言
 
@@ -33,35 +39,35 @@ nota支持单行注释和多行注释
 ## 示例代码
 ```Nota
 App {
-    width: 100%;
-    height: 100%;
-    color: #f0f0f0;
+    width: 100%
+    height: 100%
+    color: #f0f0f0
 
     Row {
-        id: "header";
-        width: 100%;
-        height: 60;
-        color: #333;
-        spacing: 20;
+        id: header
+        width: 100%
+        height: 60
+        color: #333
+        spacing: 20
 
         Rect { width: 40; height: 40; radius: 20; color: white; }
         Text { text: "Nota Dashboard"; color: white; }
     }
 
     Col {
-        width: 80%;
-        padding: 40;
-        spacing: 15;
+        width: 80%
+        padding: 40
+        spacing: 15
 
         Rect { 
-            width: 100%; 
-            height: 200; 
-            color: white; 
-            radius: 8;
+            width: 100%
+            height: 200
+            color: white
+            radius: 8
         }
 
         Row {
-            spacing: 10;
+            spacing: 10
             Rect { width: 50; height: 50; color: blue; }
             Rect { width: 50; height: 50; color: red; }
         }
@@ -218,10 +224,10 @@ Item Box
 {
     Rect
     {
-        color: red;
-        width: 50px;
-        height: 50px;
-        text: "盒子";
+        color: red
+        width: 50px
+        height: 50px
+        text: "盒子"
     }
 }
 
@@ -242,17 +248,17 @@ App
 ```nota
 Item Box
 {
-    color: red;
-    width: 50px;
-    height: 50px;
-    text: "盒子";
+    color: red
+    width: 50px
+    height: 50px
+    text: "盒子"
 
     Rect
     {
-        color: red;
-        width: 50px;
-        height: 50px;
-        text: "盒子";
+        color: red
+        width: 50px
+        height: 50px
+        text: "盒子"
     }
 }
 
@@ -260,14 +266,34 @@ App
 {
     Box
     {
-        color: black;  // 覆写Box的颜色
-        // 更标准的写法是
-        this.color = black;
+        color: black  // 覆写Box的颜色
+        // 更标准的写法是 this.color: black
 
         Rect  // 追加一个Rect，而不是覆写第一个Rect
         {
-            color: black;
+            color: black
         }
+    }
+}
+```
+
+#### 属性引用
+
+```nota
+Item Box
+{
+    id: box
+    color: red
+    width: 50px
+    height: 50px
+    text: "盒子"
+
+    Rect
+    {
+        color: red
+        width: box.width / 2
+        height: box.height / 2
+        text: "盒子"
     }
 }
 ```
@@ -279,10 +305,10 @@ Item Box
 {
     Rect
     {
-        color: red;
-        width: 50px;
-        height: 50px;
-        text: "盒子";
+        color: red
+        width: 50px
+        height: 50px
+        text: "盒子"
     }
 
     Rect
@@ -295,7 +321,7 @@ App
 {
     Box
     {
-        this.chilren[0].color = "black";  // 覆写
+        this.children[0].color: "black"  // 覆写
     }
 }
 ```
@@ -322,15 +348,15 @@ Nota不使用外边距
 ```Nota
 Rect
 {
-    witdh: 100px;
-    height: 100px;
+    witdh: 100px
+    height: 100px
 
     Rect
     {
-        width: 10px;
-        height: 10px;
-        x: parent.width / 2;
-        y: parent.height / 2;
+        width: 10px
+        height: 10px
+        x: parent.width / 2
+        y: parent.height / 2
         // 此时左上角点应该与父亲的中心点重合
     }
 }
@@ -359,9 +385,9 @@ Item
 {
     Item
     {
-        position: left top;
-        x: 50;
-        y: 50;
+        position: left top
+        x: 50
+        y: 50
         // 相对left top 50 50
     }
 }
@@ -378,12 +404,12 @@ Item
 {
     Item
     {
-        index: 2;  // 在父亲上
+        index: 2  // 在父亲上
     }
 
     Item
     {
-        index: -1;  // 在父亲下
+        index: -1  // 在父亲下
     }
 }
 ```
@@ -500,6 +526,138 @@ Item Box2
 }
 ```
 
+### 按钮
+
+```nota
+Button
+{
+    onClick: "alert("CLIKE!!!")"
+}
+```
+
+### 事件响应
+
+```nota
+Rect
+{
+    onClick: "alert("CLIKE!!!");"
+    onHover: {
+        console.log("HelloWorld");
+        console.log("Hover!!!");
+    }
+}
+```
+
+### 事件委派
+
+```nota
+Rect
+{
+    id: idR
+
+    Rect
+    {
+        delegate [onClick, onHover] for parent
+        delegate [onClick, onHover] for idR  // 委派对象必须存在父级关系
+
+        onClick: "alert("CLIKE!!!")"
+
+        onHover: {
+            console.log("HelloWorld");
+            console.log("Hover!!!");
+        }
+    }
+}
+```
+
+### 状态
+
+```nota
+Rect {
+    id: mainBox
+    width: 100
+    height: 100
+    color: blue
+
+    states: [
+        State {  // 自动状态管理，发生事件自动触发
+            name: "down"
+            when: ClickEvent
+            color: red
+        },
+
+        State {
+            name: "hov"
+            when: HoverEvent
+            color: red
+        }
+    ]
+
+    onClick: {
+        state = "down"  // 也可以手动触发，但是推荐自动触发
+    }
+}
+```
+
+### 自定义属性与条件渲染
+
+```nota
+Rect
+{
+    id: box
+    property bool isFlag: false
+    property bool notDefaultValue
+
+    if(isFlag)
+    {
+        Rect
+        {
+
+        }
+    }
+    else
+    {
+        Button
+        {
+
+        }
+    }
+}
+```
+
+### 类型系统
+
+在Nota之中，存在下述基本类型  
+
+int  整数  
+double  浮点数  
+bool  布尔值  
+string  字符串  
+void  空值  
+list  列表，使用[]，如果只有一个元素，可以省略[]  
+State  状态  
+
+以及下述对象类型  
+
+Item，Rect...  
+
+```nota
+Item Box
+{
+    property int int_value: 123
+    property double double_value: 1.03
+    property bool bool_value: false
+    property string string_value: "HelloWorld"
+    property list<Rect> list_value
+    property State state: State {
+        
+    }
+    property Item item_value: Item {
+
+    }
+}
+```
+
 ### 属性
 
 Nota现在支持下述属性  
@@ -507,7 +665,7 @@ width, height  =>  支持数字(px，不带单位的数字都是px)或百分比
 spacing  =>  仅支持数字，仅在Row和Col中有效，映射为gap  
 padding  =>  内边距，支持数字(px)或百分比  
 text  =>  容器的文本，Text也可以使用  
-class，id  
+id  
 x, y  
 index  
 

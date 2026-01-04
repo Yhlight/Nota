@@ -101,7 +101,11 @@ std::any CodeGenerator::visit(const ComponentStmt& stmt) {
 }
 
 std::any CodeGenerator::visit(const PropertyStmt& stmt) {
-    css_out << "  " << stmt.name.lexeme << ": ";
+    std::string prop_name = stmt.name.lexeme;
+    if (prop_name == "spacing") prop_name = "gap";
+    else if (prop_name == "radius") prop_name = "border-radius";
+
+    css_out << "  " << prop_name << ": ";
     std::any value = stmt.value->accept(*this);
     if (value.type() == typeid(double)) {
         css_out << std::any_cast<double>(value) << "px";

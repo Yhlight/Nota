@@ -34,6 +34,25 @@ TEST(CodeGenTest, SimpleGoldenFile) {
     ASSERT_EQ(result.css, expected_css);
 }
 
+TEST(CodeGenTest, MorePropertiesGoldenFile) {
+    std::string source = read_file_content("tests/golden/more_properties.nota");
+
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+    Resolver resolver;
+    resolver.resolve(statements);
+    CodeGenerator generator(resolver.get_custom_types());
+    CompilationResult result = generator.generate(statements);
+
+    std::string expected_html = read_file_content("tests/golden/more_properties.html");
+    std::string expected_css = read_file_content("tests/golden/more_properties.css");
+
+    ASSERT_EQ(result.html, expected_html);
+    ASSERT_EQ(result.css, expected_css);
+}
+
 TEST(CodeGenTest, PropertyOverrideGoldenFile) {
     std::string source = read_file_content("tests/golden/property_override.nota");
 

@@ -17,6 +17,9 @@ private:
     std::any visit(const ComponentStmt& stmt) override;
     std::any visit(const PropertyStmt& stmt) override;
     std::any visit(const ItemStmt& stmt) override;
+    std::any visit(const PackageStmt& stmt) override;
+    std::any visit(const ImportStmt& stmt) override;
+    std::any visit(const ExportStmt& stmt) override;
 
     std::any visit(const LiteralExpr& expr) override;
     std::any visit(const IdentifierExpr& expr) override;

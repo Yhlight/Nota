@@ -53,6 +53,21 @@ std::any Evaluator::visit(const ItemStmt& stmt) {
     return {};
 }
 
+std::any Evaluator::visit(const PackageStmt& stmt) {
+    // Not relevant for evaluation
+    return {};
+}
+
+std::any Evaluator::visit(const ImportStmt& stmt) {
+    // Not relevant for evaluation
+    return {};
+}
+
+std::any Evaluator::visit(const ExportStmt& stmt) {
+    // Not relevant for evaluation
+    return {};
+}
+
 std::any Evaluator::visit(const LiteralExpr& expr) {
     return expr.value;
 }

@@ -14,6 +14,15 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
 
 std::unique_ptr<Stmt> Parser::declaration() {
     try {
+        if (match({TokenType::PACKAGE})) {
+            return package_declaration();
+        }
+        if (match({TokenType::IMPORT})) {
+            return import_declaration();
+        }
+        if (match({TokenType::EXPORT})) {
+            return export_declaration();
+        }
         if (match({TokenType::ITEM})) {
             return item_declaration();
         }
@@ -36,6 +45,34 @@ std::unique_ptr<Stmt> Parser::item_declaration() {
     }
     consume(TokenType::RIGHT_BRACE, "Expect '}' after item body.");
     return std::make_unique<ItemStmt>(name, std::move(body));
+}
+
+std::unique_ptr<Stmt> Parser::package_declaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect package name.");
+    consume(TokenType::SEMICOLON, "Expect ';' after package name.");
+    return std::make_unique<PackageStmt>(name);
+}
+
+std::unique_ptr<Stmt> Parser::import_declaration() {
+    Token path = consume(TokenType::STRING, "Expect module path.");
+    Token alias = Token{TokenType::IDENTIFIER, "", nullptr, 0};
+    if (match({TokenType::AS})) {
+        alias = consume(TokenType::IDENTIFIER, "Expect alias name.");
+    }
+    consume(TokenType::SEMICOLON, "Expect ';' after import statement.");
+    return std::make_unique<ImportStmt>(path, alias);
+}
+
+std::unique_ptr<Stmt> Parser::export_declaration() {
+    consume(TokenType::LEFT_BRACE, "Expect '{' after 'export'.");
+    std::vector<Token> names;
+    if (!check(TokenType::RIGHT_BRACE)) {
+        do {
+            names.push_back(consume(TokenType::IDENTIFIER, "Expect component name."));
+        } while (match({TokenType::COMMA}));
+    }
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after export list.");
+    return std::make_unique<ExportStmt>(names);
 }
 
 std::unique_ptr<Stmt> Parser::component_declaration() {

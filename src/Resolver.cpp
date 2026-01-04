@@ -46,6 +46,21 @@ std::any Resolver::visit(const ItemStmt& stmt) {
     return {};
 }
 
+std::any Resolver::visit(const PackageStmt& stmt) {
+    // For now, we'll just ignore package statements.
+    return {};
+}
+
+std::any Resolver::visit(const ImportStmt& stmt) {
+    // For now, we'll just ignore import statements.
+    return {};
+}
+
+std::any Resolver::visit(const ExportStmt& stmt) {
+    // For now, we'll just ignore export statements.
+    return {};
+}
+
 std::any Resolver::visit(const PropertyStmt& stmt) {
     if (stmt.name.lexeme == "id") {
         if (auto* id_expr = dynamic_cast<IdentifierExpr*>(stmt.value.get())) {

@@ -158,3 +158,18 @@ std::any CodeGenerator::visit(const ItemStmt& stmt) {
     // only for its instantiation. The resolver handles storing it.
     return {};
 }
+
+std::any CodeGenerator::visit(const PackageStmt& stmt) {
+    // Not relevant for code generation
+    return {};
+}
+
+std::any CodeGenerator::visit(const ImportStmt& stmt) {
+    // Not relevant for code generation
+    return {};
+}
+
+std::any CodeGenerator::visit(const ExportStmt& stmt) {
+    // Not relevant for code generation
+    return {};
+}

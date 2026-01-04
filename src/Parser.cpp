@@ -30,8 +30,10 @@ std::unique_ptr<Stmt> Parser::declaration() {
 std::unique_ptr<Stmt> Parser::item_declaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect item name.");
     consume(TokenType::LEFT_BRACE, "Expect '{' after item name.");
-    // For now, an item body is just a single component.
-    std::unique_ptr<Stmt> body = component_declaration();
+    std::vector<std::unique_ptr<Stmt>> body;
+    while (!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
+        body.push_back(declaration());
+    }
     consume(TokenType::RIGHT_BRACE, "Expect '}' after item body.");
     return std::make_unique<ItemStmt>(name, std::move(body));
 }

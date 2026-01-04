@@ -42,9 +42,9 @@ struct ComponentStmt : Stmt {
 
 struct ItemStmt : Stmt {
     const Token name;
-    const std::unique_ptr<Stmt> body;
+    const std::vector<std::unique_ptr<Stmt>> body;
 
-    ItemStmt(Token name, std::unique_ptr<Stmt> body)
+    ItemStmt(Token name, std::vector<std::unique_ptr<Stmt>> body)
         : name(std::move(name)), body(std::move(body)) {}
 
     std::any accept(StmtVisitor& visitor) const override {

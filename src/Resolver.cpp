@@ -38,7 +38,11 @@ std::any Resolver::visit(const ItemStmt& stmt) {
         // In a more robust compiler, we would report an error here.
     }
     custom_types[stmt.name.lexeme] = &stmt;
-    resolve(*stmt.body);
+    begin_scope();
+    for (const auto& statement : stmt.body) {
+        resolve(*statement);
+    }
+    end_scope();
     return {};
 }
 

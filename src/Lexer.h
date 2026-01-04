@@ -17,9 +17,12 @@ namespace nota {
         bool is_at_end();
         char advance();
         char peek();
+        char peek_next();
         void add_token(TokenType type);
         void add_token(TokenType type, const std::string& literal);
         void scan_token();
+        void number();
+        void string();
 
     public:
         explicit Lexer(std::string source);

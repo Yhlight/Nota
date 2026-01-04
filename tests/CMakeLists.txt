@@ -7,6 +7,7 @@ add_executable(nota-tests
     LexerTest.cpp
     ParserTest.cpp
     ResolverTest.cpp
+    CodeGenTest.cpp
 )
 
 target_link_libraries(nota-tests

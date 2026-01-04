@@ -1,0 +1,7 @@
+App {
+    Rect {
+        id: myBox
+        width: 100
+        height: myBox.width / 2
+    }
+}

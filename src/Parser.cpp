@@ -53,6 +53,13 @@ std::unique_ptr<Stmt> Parser::property_declaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect property name.");
     consume(TokenType::COLON, "Expect ':' after property name.");
     std::unique_ptr<Expr> value = expression();
+    if (name.lexeme == "id") {
+        if (auto* id_expr = dynamic_cast<IdentifierExpr*>(value.get())) {
+            // This is a component id, not a property.
+            // We'll handle this in the resolver.
+            return std::make_unique<PropertyStmt>(name, std::move(value));
+        }
+    }
     return std::make_unique<PropertyStmt>(name, std::move(value));
 }
 
@@ -75,7 +82,7 @@ std::unique_ptr<Expr> Parser::term() {
 std::unique_ptr<Expr> Parser::factor() {
     std::unique_ptr<Expr> expr = unary();
 
-    while (match({TokenType::SLASH, TokenType::PERCENT})) {
+    while (match({TokenType::SLASH, TokenType::STAR, TokenType::PERCENT})) {
         Token op = previous();
         std::unique_ptr<Expr> right = unary();
         expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));

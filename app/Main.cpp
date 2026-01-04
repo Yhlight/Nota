@@ -5,6 +5,7 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "Resolver.h"
+#include "Evaluator.h"
 #include "CodeGenerator.h"
 
 int main(int argc, char* argv[]) {
@@ -35,8 +36,12 @@ int main(int argc, char* argv[]) {
     Resolver resolver;
     resolver.resolve(statements);
 
-    // 4. Code Generator
-    CodeGenerator generator(resolver.get_custom_types());
+    // 4. Evaluator
+    Evaluator evaluator;
+    evaluator.evaluate(statements);
+
+    // 5. Code Generator
+    CodeGenerator generator(resolver.get_custom_types(), evaluator.get_results());
     CompilationResult result = generator.generate(statements);
 
     // Write output files

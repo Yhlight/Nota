@@ -2,6 +2,7 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "Resolver.h"
+#include "Evaluator.h"
 #include "CodeGenerator.h"
 #include <fstream>
 #include <sstream>
@@ -24,11 +25,34 @@ TEST(CodeGenTest, SimpleGoldenFile) {
     std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
     Resolver resolver;
     resolver.resolve(statements);
-    CodeGenerator generator(resolver.get_custom_types());
+    Evaluator evaluator;
+    evaluator.evaluate(statements);
+    CodeGenerator generator(resolver.get_custom_types(), evaluator.get_results());
     CompilationResult result = generator.generate(statements);
 
     std::string expected_html = read_file_content("tests/golden/simple.html");
     std::string expected_css = read_file_content("tests/golden/simple.css");
+
+    ASSERT_EQ(result.html, expected_html);
+    ASSERT_EQ(result.css, expected_css);
+}
+
+TEST(CodeGenTest, ExpressionEvaluationGoldenFile) {
+    std::string source = read_file_content("tests/golden/expression_evaluation.nota");
+
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.scan_tokens();
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+    Resolver resolver;
+    resolver.resolve(statements);
+    Evaluator evaluator;
+    evaluator.evaluate(statements);
+    CodeGenerator generator(resolver.get_custom_types(), evaluator.get_results());
+    CompilationResult result = generator.generate(statements);
+
+    std::string expected_html = read_file_content("tests/golden/expression_evaluation.html");
+    std::string expected_css = read_file_content("tests/golden/expression_evaluation.css");
 
     ASSERT_EQ(result.html, expected_html);
     ASSERT_EQ(result.css, expected_css);
@@ -43,7 +67,9 @@ TEST(CodeGenTest, PositioningGoldenFile) {
     std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
     Resolver resolver;
     resolver.resolve(statements);
-    CodeGenerator generator(resolver.get_custom_types());
+    Evaluator evaluator;
+    evaluator.evaluate(statements);
+    CodeGenerator generator(resolver.get_custom_types(), evaluator.get_results());
     CompilationResult result = generator.generate(statements);
 
     std::string expected_html = read_file_content("tests/golden/positioning.html");
@@ -62,7 +88,9 @@ TEST(CodeGenTest, MorePropertiesGoldenFile) {
     std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
     Resolver resolver;
     resolver.resolve(statements);
-    CodeGenerator generator(resolver.get_custom_types());
+    Evaluator evaluator;
+    evaluator.evaluate(statements);
+    CodeGenerator generator(resolver.get_custom_types(), evaluator.get_results());
     CompilationResult result = generator.generate(statements);
 
     std::string expected_html = read_file_content("tests/golden/more_properties.html");
@@ -81,7 +109,9 @@ TEST(CodeGenTest, PropertyOverrideGoldenFile) {
     std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
     Resolver resolver;
     resolver.resolve(statements);
-    CodeGenerator generator(resolver.get_custom_types());
+    Evaluator evaluator;
+    evaluator.evaluate(statements);
+    CodeGenerator generator(resolver.get_custom_types(), evaluator.get_results());
     CompilationResult result = generator.generate(statements);
 
     std::string expected_html = read_file_content("tests/golden/property_override.html");
@@ -100,7 +130,9 @@ TEST(CodeGenTest, CustomComponentGoldenFile) {
     std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
     Resolver resolver;
     resolver.resolve(statements);
-    CodeGenerator generator(resolver.get_custom_types());
+    Evaluator evaluator;
+    evaluator.evaluate(statements);
+    CodeGenerator generator(resolver.get_custom_types(), evaluator.get_results());
     CompilationResult result = generator.generate(statements);
 
     std::string expected_html = read_file_content("tests/golden/custom_component.html");

@@ -4,6 +4,7 @@ add_library(nota STATIC
     Parser.cpp
     Resolver.cpp
     CodeGenerator.cpp
+    Evaluator.cpp
 )
 
 target_include_directories(nota PUBLIC ../include)

@@ -11,8 +11,9 @@ static const std::map<std::string, std::string> component_tag_map = {
     {"Text", "span"},
 };
 
-CodeGenerator::CodeGenerator(std::map<std::string, const ItemStmt*> custom_types)
-    : custom_types(custom_types) {}
+CodeGenerator::CodeGenerator(std::map<std::string, const ItemStmt*> custom_types,
+                           const std::map<const PropertyStmt*, std::any>& results)
+    : custom_types(custom_types), results(results) {}
 
 CompilationResult CodeGenerator::generate(const std::vector<std::unique_ptr<Stmt>>& statements) {
     for (const auto& statement : statements) {
@@ -123,6 +124,9 @@ std::any CodeGenerator::visit(const ComponentStmt& stmt) {
 }
 
 std::any CodeGenerator::visit(const PropertyStmt& stmt) {
+    if (stmt.name.lexeme == "id") {
+        return {};
+    }
     std::string prop_name = stmt.name.lexeme;
     bool is_unitless = false;
 
@@ -136,38 +140,21 @@ std::any CodeGenerator::visit(const PropertyStmt& stmt) {
     }
 
     css_out << "  " << prop_name << ": ";
-    std::any value = stmt.value->accept(*this);
-    if (value.type() == typeid(double)) {
-        css_out << std::any_cast<double>(value);
-        if(!is_unitless) css_out << "px";
-    } else if (value.type() == typeid(std::string)) {
-        css_out << std::any_cast<std::string>(value);
+    if (results.count(&stmt)) {
+        std::any value = results.at(&stmt);
+        if (value.type() == typeid(double)) {
+            css_out << std::any_cast<double>(value);
+            if(!is_unitless) css_out << "px";
+        } else if (value.type() == typeid(std::string)) {
+            css_out << std::any_cast<std::string>(value);
+        }
     }
     css_out << ";\n";
-    return {};
-}
-
-std::any CodeGenerator::visit(const LiteralExpr& expr) {
-    return expr.value;
-}
-
-std::any CodeGenerator::visit(const IdentifierExpr& expr) {
-    // To be implemented
-    return {};
-}
-
-std::any CodeGenerator::visit(const BinaryExpr& expr) {
-    // To be implemented
     return {};
 }
 
 std::any CodeGenerator::visit(const ItemStmt& stmt) {
     // We don't generate any code for an Item definition itself,
     // only for its instantiation. The resolver handles storing it.
-    return {};
-}
-
-std::any CodeGenerator::visit(const GetExpr& expr) {
-    // To be implemented
     return {};
 }

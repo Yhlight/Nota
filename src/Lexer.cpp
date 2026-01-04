@@ -48,6 +48,7 @@ void Lexer::scan_token() {
         case ',': add_token(TokenType::COMMA); break;
         case '-': add_token(TokenType::MINUS); break;
         case '+': add_token(TokenType::PLUS); break;
+        case '*': add_token(TokenType::STAR); break;
         case '%': add_token(TokenType::PERCENT); break;
         case '#': add_token(TokenType::HASH); break;
         case '/':

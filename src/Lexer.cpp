@@ -58,6 +58,10 @@ namespace nota {
             case '{': add_token(TokenType::LEFT_BRACE); break;
             case '}': add_token(TokenType::RIGHT_BRACE); break;
             case ':': add_token(TokenType::COLON); break;
+            case '+': add_token(TokenType::PLUS); break;
+            case '-': add_token(TokenType::MINUS); break;
+            case '*': add_token(TokenType::STAR); break;
+            case '/': add_token(TokenType::SLASH); break;
             case '"': string(); break;
             case ' ': case '\r': case '\t': break;
             case '\n': line++; break;

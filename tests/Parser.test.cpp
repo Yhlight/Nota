@@ -66,3 +66,35 @@ TEST(ParserTest, ParsesNestedComponent) {
     EXPECT_EQ(nested_component->name.lexeme, "Row");
     EXPECT_TRUE(nested_component->body.empty());
 }
+
+TEST(ParserTest, ParsesPropertyWithBinaryExpr) {
+    std::string source = "App { width: 100 + 50 }";
+    nota::Lexer lexer(source);
+    std::vector<nota::Token> tokens = lexer.scan_tokens();
+
+    nota::Parser parser(tokens);
+    std::vector<std::unique_ptr<nota::ast::Stmt>> ast = parser.parse();
+
+    ASSERT_EQ(ast.size(), 1);
+
+    auto* component_stmt = dynamic_cast<nota::ast::ComponentStmt*>(ast[0].get());
+    ASSERT_NE(component_stmt, nullptr);
+
+    ASSERT_EQ(component_stmt->body.size(), 1);
+    auto* property_stmt = dynamic_cast<nota::ast::PropertyStmt*>(component_stmt->body[0].get());
+    ASSERT_NE(property_stmt, nullptr);
+    EXPECT_EQ(property_stmt->name.lexeme, "width");
+
+    auto* binary_expr = dynamic_cast<nota::ast::BinaryExpr*>(property_stmt->value.get());
+    ASSERT_NE(binary_expr, nullptr);
+
+    auto* left = dynamic_cast<nota::ast::LiteralExpr*>(binary_expr->left.get());
+    ASSERT_NE(left, nullptr);
+    EXPECT_EQ(left->value.lexeme, "100");
+
+    EXPECT_EQ(binary_expr->op.type, nota::TokenType::PLUS);
+
+    auto* right = dynamic_cast<nota::ast::LiteralExpr*>(binary_expr->right.get());
+    ASSERT_NE(right, nullptr);
+    EXPECT_EQ(right->value.lexeme, "50");
+}

@@ -25,7 +25,11 @@ namespace nota {
         std::unique_ptr<ast::Stmt> declaration();
         std::unique_ptr<ast::Stmt> statement();
         std::unique_ptr<ast::Stmt> propertyDeclaration();
+
         std::unique_ptr<ast::Expr> expression();
+        std::unique_ptr<ast::Expr> term();
+        std::unique_ptr<ast::Expr> factor();
+        std::unique_ptr<ast::Expr> unary();
         std::unique_ptr<ast::Expr> primary();
 
 

@@ -10,6 +10,7 @@ namespace nota {
         // Single-character tokens.
         LEFT_BRACE, RIGHT_BRACE,
         COLON, SEMICOLON, DOT,
+        PLUS, MINUS, STAR, SLASH,
 
         // Literals.
         IDENTIFIER, STRING, NUMBER,

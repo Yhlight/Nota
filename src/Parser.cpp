@@ -6,6 +6,7 @@ namespace nota {
 
     Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
+    // ... [Previous helper methods: is_at_end, peek, etc. remain the same] ...
     bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
     Token Parser::peek() { return tokens[current]; }
     Token Parser::peek_next() { if (is_at_end()) return peek(); return tokens[current + 1]; }
@@ -25,8 +26,38 @@ namespace nota {
 
     Token Parser::consume(TokenType type, const std::string& message) {
         if (check(type)) return advance();
-        // Proper error handling will be added later.
         return peek();
+    }
+
+
+    // --- Expression Parsing ---
+    std::unique_ptr<ast::Expr> Parser::expression() {
+        return term();
+    }
+
+    std::unique_ptr<ast::Expr> Parser::term() {
+        std::unique_ptr<ast::Expr> expr = factor();
+        while (match({TokenType::MINUS, TokenType::PLUS})) {
+            Token op = previous();
+            std::unique_ptr<ast::Expr> right = factor();
+            expr = std::make_unique<ast::BinaryExpr>(std::move(expr), op, std::move(right));
+        }
+        return expr;
+    }
+
+    std::unique_ptr<ast::Expr> Parser::factor() {
+        std::unique_ptr<ast::Expr> expr = unary();
+        while (match({TokenType::SLASH, TokenType::STAR})) {
+            Token op = previous();
+            std::unique_ptr<ast::Expr> right = unary();
+            expr = std::make_unique<ast::BinaryExpr>(std::move(expr), op, std::move(right));
+        }
+        return expr;
+    }
+
+    std::unique_ptr<ast::Expr> Parser::unary() {
+        // For now, unary just passes through to primary.
+        return primary();
     }
 
     std::unique_ptr<ast::Expr> Parser::primary() {
@@ -36,10 +67,8 @@ namespace nota {
         return nullptr;
     }
 
-    std::unique_ptr<ast::Expr> Parser::expression() {
-        return primary();
-    }
-
+    // --- Statement Parsing ---
+    // ... [propertyDeclaration, statement, declaration, parse remain mostly the same] ...
     std::unique_ptr<ast::Stmt> Parser::propertyDeclaration() {
         Token name = previous();
         consume(TokenType::COLON, "Expect ':' after property name.");
@@ -52,15 +81,14 @@ namespace nota {
             if (peek_next().type == TokenType::LEFT_BRACE) {
                 return declaration();
             }
-            advance(); // Consume the identifier
+            advance();
             return propertyDeclaration();
         }
-        // Handle other statement types later.
         return nullptr;
     }
 
     std::unique_ptr<ast::Stmt> Parser::declaration() {
-        Token name = advance(); // Assume IDENTIFIER has been checked
+        Token name = advance();
         consume(TokenType::LEFT_BRACE, "Expect '{' after component name.");
         std::vector<std::unique_ptr<ast::Stmt>> body;
         while (!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
@@ -76,13 +104,10 @@ namespace nota {
             if (check(TokenType::IDENTIFIER) && peek_next().type == TokenType::LEFT_BRACE) {
                 statements.push_back(declaration());
             } else {
-                // This handles top-level properties if we ever support them.
-                // For now, it will likely result in a nullptr, which is fine.
                 statements.push_back(statement());
                 if (is_at_end()) break;
             }
         }
-        // Filter out any nullptrs that may have been added
         statements.erase(std::remove(statements.begin(), statements.end(), nullptr), statements.end());
         return statements;
     }

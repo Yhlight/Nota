@@ -12,19 +12,22 @@ const std::map<const PropertyStmt*, std::any>& Evaluator::get_results() const {
 }
 
 std::any Evaluator::visit(const ComponentStmt& stmt) {
-    std::string old_component_id = current_component_id;
+    std::string component_id;
     for (const auto& prop_stmt : stmt.body) {
         if (auto* prop = dynamic_cast<PropertyStmt*>(prop_stmt.get())) {
             if (prop->name.lexeme == "id") {
                 if (auto* id_expr = dynamic_cast<IdentifierExpr*>(prop->value.get())) {
-                    current_component_id = id_expr->name.lexeme;
+                    component_id = id_expr->name.lexeme;
                 }
             }
         }
     }
-    if (current_component_id.empty()) {
-        current_component_id = "comp" + std::to_string(component_props.size());
+    if (component_id.empty()) {
+        component_id = "comp" + std::to_string(component_props.size());
     }
+
+    current_component_id = component_id;
+    component_stack.push(component_id);
 
     for (const auto& prop_stmt : stmt.body) {
         prop_stmt->accept(*this);
@@ -35,7 +38,13 @@ std::any Evaluator::visit(const ComponentStmt& stmt) {
             child_stmt->accept(*this);
         }
     }
-    current_component_id = old_component_id;
+
+    component_stack.pop();
+    if (!component_stack.empty()) {
+        current_component_id = component_stack.top();
+    } else {
+        current_component_id = "";
+    }
     return {};
 }
 
@@ -58,8 +67,22 @@ std::any Evaluator::visit(const LiteralExpr& expr) {
 }
 
 std::any Evaluator::visit(const IdentifierExpr& expr) {
-    // This is a simplification. A real implementation would handle scopes.
-    if(component_props.count(expr.name.lexeme)) {
+    if (expr.name.lexeme == "parent") {
+        if (component_stack.size() > 1) {
+            // Fragile: relies on the stack having at least 2 elements.
+            const auto& current_id = component_stack.top();
+            component_stack.pop(); // Pop temporarily
+            const auto& parent_id = component_stack.top();
+            component_stack.push(current_id); // Push back
+
+            if (component_props.count(parent_id)) {
+                return component_props[parent_id];
+            }
+        }
+        throw std::runtime_error("Cannot access 'parent' in this context.");
+    }
+
+    if (component_props.count(expr.name.lexeme)) {
         return component_props[expr.name.lexeme];
     }
     return {};
@@ -86,10 +109,14 @@ std::any Evaluator::visit(const BinaryExpr& expr) {
 }
 
 std::any Evaluator::visit(const GetExpr& expr) {
-    if (auto* obj = dynamic_cast<IdentifierExpr*>(expr.object.get())) {
-        if(component_props.count(obj->name.lexeme)) {
-            return component_props[obj->name.lexeme][expr.name.lexeme];
+    std::any object = expr.object->accept(*this);
+
+    if (object.type() == typeid(std::map<std::string, std::any>)) {
+        const auto& props = std::any_cast<std::map<std::string, std::any>>(object);
+        if (props.count(expr.name.lexeme)) {
+            return props.at(expr.name.lexeme);
         }
     }
-    throw std::runtime_error("Invalid get expression.");
+
+    throw std::runtime_error("Invalid property access.");
 }

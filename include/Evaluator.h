@@ -7,6 +7,7 @@
 #include <any>
 #include <vector>
 #include <memory>
+#include <stack>
 
 class Evaluator : public ExprVisitor, public StmtVisitor {
 public:
@@ -24,6 +25,7 @@ private:
     std::any visit(const GetExpr& expr) override;
 
     std::string current_component_id;
+    std::stack<std::string> component_stack;
     std::map<std::string, std::map<std::string, std::any>> component_props;
     std::map<const PropertyStmt*, std::any> results;
 };

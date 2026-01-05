@@ -11,6 +11,8 @@ struct ComponentStmt;
 struct PropertyStmt;
 struct ItemStmt;
 struct ImportStmt;
+struct PackageStmt;
+struct ExportStmt;
 
 // Visitor Interface
 class StmtVisitor {
@@ -19,6 +21,8 @@ public:
     virtual std::any visit(const PropertyStmt& stmt) = 0;
     virtual std::any visit(const ItemStmt& stmt) = 0;
     virtual std::any visit(const ImportStmt& stmt) = 0;
+    virtual std::any visit(const PackageStmt& stmt) = 0;
+    virtual std::any visit(const ExportStmt& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -36,6 +40,26 @@ struct ComponentStmt : Stmt {
 
     ComponentStmt(Token name, std::vector<std::unique_ptr<Stmt>> body)
         : name(std::move(name)), body(std::move(body)) {}
+
+    std::any accept(StmtVisitor& visitor) const override {
+        return visitor.visit(*this);
+    }
+};
+
+struct PackageStmt : Stmt {
+    const std::unique_ptr<Expr> name;
+
+    PackageStmt(std::unique_ptr<Expr> name) : name(std::move(name)) {}
+
+    std::any accept(StmtVisitor& visitor) const override {
+        return visitor.visit(*this);
+    }
+};
+
+struct ExportStmt : Stmt {
+    const std::vector<std::unique_ptr<Expr>> exports;
+
+    ExportStmt(std::vector<std::unique_ptr<Expr>> exports) : exports(std::move(exports)) {}
 
     std::any accept(StmtVisitor& visitor) const override {
         return visitor.visit(*this);

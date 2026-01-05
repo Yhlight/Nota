@@ -17,6 +17,12 @@ std::unique_ptr<Stmt> Parser::declaration() {
         if (match({TokenType::IMPORT})) {
             return importStatement();
         }
+        if (match({TokenType::PACKAGE})) {
+            return packageStatement();
+        }
+        if (match({TokenType::EXPORT})) {
+            return exportStatement();
+        }
         if (match({TokenType::ITEM})) {
             return item_declaration();
         }
@@ -34,6 +40,26 @@ std::unique_ptr<Stmt> Parser::importStatement() {
     Token path = consume(TokenType::STRING, "Expect path after 'import'.");
     consume(TokenType::SEMICOLON, "Expect ';' after import path.");
     return std::make_unique<ImportStmt>(std::make_unique<LiteralExpr>(path.literal));
+}
+
+std::unique_ptr<Stmt> Parser::packageStatement() {
+    std::unique_ptr<Expr> name = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after package name.");
+    return std::make_unique<PackageStmt>(std::move(name));
+}
+
+std::unique_ptr<Stmt> Parser::exportStatement() {
+    consume(TokenType::LEFT_BRACE, "Expect '{' after 'export'.");
+    std::vector<std::unique_ptr<Expr>> exports;
+    while (!check(TokenType::RIGHT_BRACE) && !is_at_end()) {
+        exports.push_back(expression());
+        if (!match({TokenType::COMMA})) {
+            break;
+        }
+    }
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after export list.");
+    consume(TokenType::SEMICOLON, "Expect ';' after export list.");
+    return std::make_unique<ExportStmt>(std::move(exports));
 }
 
 std::unique_ptr<Stmt> Parser::item_declaration() {

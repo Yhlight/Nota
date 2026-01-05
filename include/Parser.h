@@ -14,6 +14,8 @@ public:
 private:
     std::unique_ptr<Stmt> declaration();
     std::unique_ptr<Stmt> importStatement();
+    std::unique_ptr<Stmt> packageStatement();
+    std::unique_ptr<Stmt> exportStatement();
     std::unique_ptr<Stmt> item_declaration();
     std::unique_ptr<Stmt> component_declaration();
     std::unique_ptr<Stmt> property_declaration();

@@ -163,3 +163,13 @@ std::any CodeGenerator::visit(const ImportStmt& stmt) {
     // For now, do nothing.
     return {};
 }
+
+std::any CodeGenerator::visit(const PackageStmt& stmt) {
+    // For now, do nothing.
+    return {};
+}
+
+std::any CodeGenerator::visit(const ExportStmt& stmt) {
+    // For now, do nothing.
+    return {};
+}

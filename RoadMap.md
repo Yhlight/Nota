@@ -54,7 +54,7 @@ This document outlines the planned development phases for the Nota compiler, aim
 
 - **Objective:** Implement the full feature set of the Nota language.
 - **Tasks:**
-    1.  **Module System:** Implement `import`, `package`, and `export` functionality.
+    1.  **Module System:** Implement `import`, `package`, and `export` functionality. (Parsing for `import "..."` is complete).
     2.  **Custom Components:** Handle `Item` definitions, instantiation, and property overriding.
     3.  **Expressions & References:** Parse and translate expressions in property values (e.g., `box.width / 2`).
     4.  **Events & State Management:** Generate the necessary JavaScript to handle `onClick`, `states`, and other dynamic features.

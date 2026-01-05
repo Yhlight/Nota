@@ -53,6 +53,11 @@ std::any Evaluator::visit(const ItemStmt& stmt) {
     return {};
 }
 
+std::any Evaluator::visit(const ImportStmt& stmt) {
+    // For now, do nothing.
+    return {};
+}
+
 std::any Evaluator::visit(const LiteralExpr& expr) {
     return expr.value;
 }

@@ -1,5 +1,0 @@
-if(EXISTS "/app/build/tests/nota-tests[1]_tests.cmake")
-  include("/app/build/tests/nota-tests[1]_tests.cmake")
-else()
-  add_test(nota-tests_NOT_BUILT nota-tests_NOT_BUILT)
-endif()

@@ -14,6 +14,9 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
 
 std::unique_ptr<Stmt> Parser::declaration() {
     try {
+        if (match({TokenType::IMPORT})) {
+            return importStatement();
+        }
         if (match({TokenType::ITEM})) {
             return item_declaration();
         }
@@ -25,6 +28,12 @@ std::unique_ptr<Stmt> Parser::declaration() {
         synchronize();
         return nullptr;
     }
+}
+
+std::unique_ptr<Stmt> Parser::importStatement() {
+    Token path = consume(TokenType::STRING, "Expect path after 'import'.");
+    consume(TokenType::SEMICOLON, "Expect ';' after import path.");
+    return std::make_unique<ImportStmt>(std::make_unique<LiteralExpr>(path.literal));
 }
 
 std::unique_ptr<Stmt> Parser::item_declaration() {

@@ -46,6 +46,13 @@ std::any Resolver::visit(const ItemStmt& stmt) {
     return {};
 }
 
+std::any Resolver::visit(const ImportStmt& stmt) {
+    // For now, we'll just visit the path expression.
+    // In the future, we'll need to handle loading the imported file.
+    resolve(*stmt.path);
+    return {};
+}
+
 std::any Resolver::visit(const PropertyStmt& stmt) {
     if (stmt.name.lexeme == "id") {
         if (auto* id_expr = dynamic_cast<IdentifierExpr*>(stmt.value.get())) {

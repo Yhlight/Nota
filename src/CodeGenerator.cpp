@@ -158,3 +158,8 @@ std::any CodeGenerator::visit(const ItemStmt& stmt) {
     // only for its instantiation. The resolver handles storing it.
     return {};
 }
+
+std::any CodeGenerator::visit(const ImportStmt& stmt) {
+    // For now, do nothing.
+    return {};
+}

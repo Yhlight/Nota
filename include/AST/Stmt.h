@@ -10,6 +10,7 @@
 struct ComponentStmt;
 struct PropertyStmt;
 struct ItemStmt;
+struct ImportStmt;
 
 // Visitor Interface
 class StmtVisitor {
@@ -17,6 +18,7 @@ public:
     virtual std::any visit(const ComponentStmt& stmt) = 0;
     virtual std::any visit(const PropertyStmt& stmt) = 0;
     virtual std::any visit(const ItemStmt& stmt) = 0;
+    virtual std::any visit(const ImportStmt& stmt) = 0;
     virtual ~StmtVisitor() = default;
 };
 
@@ -34,6 +36,16 @@ struct ComponentStmt : Stmt {
 
     ComponentStmt(Token name, std::vector<std::unique_ptr<Stmt>> body)
         : name(std::move(name)), body(std::move(body)) {}
+
+    std::any accept(StmtVisitor& visitor) const override {
+        return visitor.visit(*this);
+    }
+};
+
+struct ImportStmt : Stmt {
+    const std::unique_ptr<Expr> path;
+
+    ImportStmt(std::unique_ptr<Expr> path) : path(std::move(path)) {}
 
     std::any accept(StmtVisitor& visitor) const override {
         return visitor.visit(*this);

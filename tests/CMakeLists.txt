@@ -6,6 +6,7 @@ add_executable(nota-tests
     InitialTest.cpp
     LexerTest.cpp
     ParserTest.cpp
+    ParserImportTest.cpp
     ResolverTest.cpp
     CodeGenTest.cpp
 )

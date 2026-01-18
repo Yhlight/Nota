@@ -51,7 +51,34 @@ void Generator::visit(const PropertyStmt& stmt) {
     // This is handled inside visit(ComponentStmt)
 }
 
+void Generator::visit(const ComponentDefStmt& stmt) {
+    // Component definitions are not rendered directly.
+    // They are stored in the registry and used when an instance is found.
+}
+
 void Generator::visit(const ComponentStmt& stmt) {
+    // Handle custom component instantiation
+    const ComponentDefStmt* def = ComponentRegistry::getInstance().getComponent(stmt.type.lexeme);
+    if (def) {
+        // This is an instance of a custom component.
+        // Store the property overrides from the instance.
+        for (const auto& child : stmt.body) {
+            if (auto* prop = dynamic_cast<PropertyStmt*>(child.get())) {
+                if (auto* value = dynamic_cast<LiteralExpr*>(prop->value.get())) {
+                    property_overrides[prop->name.lexeme] = value;
+                }
+            }
+        }
+
+        // Now, generate the component from its definition, applying the overrides.
+        generateStatement(*def->component);
+
+        // Clear the overrides for the next component.
+        property_overrides.clear();
+        return;
+    }
+
+
     if (stmt.type.lexeme == "App") {
         html_out << "<body class=\"nota-app\">";
         for (const auto& child : stmt.body) {
@@ -84,7 +111,16 @@ void Generator::visit(const ComponentStmt& stmt) {
     // Process properties
     for (const auto& child : stmt.body) {
         if (auto* prop = dynamic_cast<PropertyStmt*>(child.get())) {
-            if (auto* value = dynamic_cast<LiteralExpr*>(prop->value.get())) {
+            // Check for an override first
+            auto override_it = property_overrides.find(prop->name.lexeme);
+            const LiteralExpr* value = nullptr;
+            if (override_it != property_overrides.end()) {
+                value = override_it->second;
+            } else if (auto* lit_val = dynamic_cast<LiteralExpr*>(prop->value.get())) {
+                value = lit_val;
+            }
+
+            if (value) {
                 std::string prop_name = prop->name.lexeme;
                 std::string prop_value = value->value.lexeme;
 
@@ -94,9 +130,9 @@ void Generator::visit(const ComponentStmt& stmt) {
                 }
 
                 if (prop_name == "width") {
-                    css_out << "    width: " << prop_value << (isdigit(prop_value.back()) ? "px" : "") << ";\n";
+                    css_out << "    width: " << prop_value << (prop_value.find('%') == std::string::npos && isdigit(prop_value.back()) ? "px" : "") << ";\n";
                 } else if (prop_name == "height") {
-                    css_out << "    height: " << prop_value << (isdigit(prop_value.back()) ? "px" : "") << ";\n";
+                    css_out << "    height: " << prop_value << (prop_value.find('%') == std::string::npos && isdigit(prop_value.back()) ? "px" : "") << ";\n";
                 } else if (prop_name == "color") {
                     css_out << "    background-color: " << prop_value << ";\n";
                 } else if (prop_name == "spacing") {

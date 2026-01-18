@@ -3,6 +3,7 @@ add_library(nota-core
   Lexer.cpp
   Parser.cpp
   Generator.cpp
+  ComponentRegistry.cpp
 )
 
 # Make the include directory public for any target that links against nota-core

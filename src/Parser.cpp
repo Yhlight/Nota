@@ -15,6 +15,10 @@ std::unique_ptr<Program> Parser::parse() {
 }
 
 std::unique_ptr<Statement> Parser::statement() {
+    if (peek().type == TokenType::ITEM && tokens[current + 1].type == TokenType::IDENTIFIER) {
+        return componentDefinitionStatement();
+    }
+
     if (peek().type == TokenType::IDENTIFIER ||
         peek().type == TokenType::APP ||
         peek().type == TokenType::ROW ||
@@ -34,6 +38,32 @@ std::unique_ptr<Statement> Parser::statement() {
     advance();
     return nullptr;
 }
+
+std::unique_ptr<Statement> Parser::componentDefinitionStatement() {
+    advance(); // Consume 'Item'
+    Token name = consume(TokenType::IDENTIFIER, "Expect component name after 'Item'.");
+    consume(TokenType::LEFT_BRACE, "Expect '{' after component name.");
+
+    // The body of a definition contains one root component statement.
+    auto component = statement();
+
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after component definition body.");
+
+    auto* component_ptr = dynamic_cast<ComponentStmt*>(component.get());
+
+    if (component_ptr) {
+        // We need to move the ownership of the component to the definition
+        auto def = std::make_unique<ComponentDefStmt>(name, std::unique_ptr<ComponentStmt>(component_ptr));
+        component.release(); // release ownership from the unique_ptr
+
+        ComponentRegistry::getInstance().addComponent(name.lexeme, std::move(def));
+        // The definition itself is not part of the program's statement list for generation
+        return nullptr;
+    }
+    // TODO: Throw an error here if the body is not a single component statement.
+    return nullptr;
+}
+
 
 std::unique_ptr<Statement> Parser::componentStatement() {
     Token type = advance(); // Consume the component type

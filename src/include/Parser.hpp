@@ -3,6 +3,7 @@
 
 #include "AST.hpp"
 #include "Token.hpp"
+#include "ComponentRegistry.hpp"
 #include <vector>
 #include <memory>
 
@@ -18,6 +19,7 @@ private:
     std::unique_ptr<Statement> statement();
     std::unique_ptr<Statement> componentStatement();
     std::unique_ptr<Statement> propertyStatement();
+    std::unique_ptr<Statement> componentDefinitionStatement();
     std::unique_ptr<Expression> expression();
 
     bool isAtEnd();

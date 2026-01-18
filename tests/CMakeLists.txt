@@ -10,6 +10,7 @@ add_executable(nota-tests
   test_lexer.cpp
   test_parser.cpp
   test_generator.cpp
+  test_components.cpp
 )
 target_link_libraries(nota-tests
   GTest::gtest_main

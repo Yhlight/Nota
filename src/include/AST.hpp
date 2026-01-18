@@ -13,6 +13,7 @@ struct LiteralExpr;
 struct IdentifierExpr;
 struct PropertyStmt;
 struct ComponentStmt;
+struct ComponentDefStmt;
 
 // Visitor pattern for traversing the AST
 class ASTVisitor {
@@ -22,6 +23,7 @@ public:
     virtual void visit(const IdentifierExpr& expr) = 0;
     virtual void visit(const PropertyStmt& stmt) = 0;
     virtual void visit(const ComponentStmt& stmt) = 0;
+    virtual void visit(const ComponentDefStmt& stmt) = 0;
 };
 
 // Base class for all AST nodes
@@ -77,6 +79,17 @@ struct ComponentStmt : Statement {
 // Represents the root of a Nota file
 struct Program {
     std::vector<std::unique_ptr<Statement>> statements;
+};
+
+// Represents the definition of a custom component (e.g., Item Box { ... })
+struct ComponentDefStmt : Statement {
+    Token name;
+    std::unique_ptr<ComponentStmt> component;
+
+    ComponentDefStmt(Token name, std::unique_ptr<ComponentStmt> component)
+        : name(std::move(name)), component(std::move(component)) {}
+
+    void accept(ASTVisitor& visitor) const override { visitor.visit(*this); }
 };
 
 #endif // NOTA_AST_HPP

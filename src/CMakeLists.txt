@@ -1,5 +1,7 @@
 add_library(nota_lib
-    Compiler.cpp
+    Lexer.cpp
+    Parser.cpp
+    CodeGen.cpp
 )
 
 target_include_directories(nota_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)

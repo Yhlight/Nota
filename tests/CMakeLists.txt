@@ -1,5 +1,7 @@
 add_executable(nota_tests
-    test_dummy.cpp
+    test_lexer.cpp
+    test_parser.cpp
+    test_codegen.cpp
 )
 
 target_link_libraries(nota_tests

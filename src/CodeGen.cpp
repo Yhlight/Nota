@@ -28,9 +28,41 @@ static std::string generateInlineStyle(const ComponentNode& node) {
         std::string cssName = prop.name;
         std::string value = prop.value;
 
+        // Positioning logic
+        if (cssName == "x") {
+            cssName = "left";
+            // Ensure position: absolute is added once
+            if (!hasStyle || ss.str().find("position: absolute") == std::string::npos) {
+                ss << "position: absolute; ";
+            }
+        } else if (cssName == "y") {
+            cssName = "top";
+            if (!hasStyle || ss.str().find("position: absolute") == std::string::npos) {
+                ss << "position: absolute; ";
+            }
+        } else if (cssName == "position") {
+            // Nota "position" keyword handling
+            // position: left top, position: center, etc.
+            // Values might be unquoted identifiers.
+
+            // "center" -> left: 50%; top: 50%; transform: translate(-50%, -50%); position: absolute;
+            if (value == "center") {
+                ss << "left: 50%; top: 50%; transform: translate(-50%, -50%); position: absolute; ";
+                continue;
+            } else if (value == "left top" || value == "top left") {
+                ss << "left: 0; top: 0; position: absolute; ";
+                continue;
+            }
+            // TODO: Implement other positions (right top, right bottom, etc.)
+
+            // If unknown, fallback (or should we?)
+            continue;
+        }
+
         // Simple mapping
         if (cssName == "color") cssName = "background-color";
         if (cssName == "radius") cssName = "border-radius";
+        if (cssName == "spacing") cssName = "gap";
 
         // Handle units
         // If value is number (digits, maybe one decimal point), append px.
@@ -100,9 +132,9 @@ std::string CodeGen::generateCSS(const ComponentNode& root) {
     // Return base styles for the supported components
     return R"(
 .nota-app { margin: 0; padding: 0; width: 100%; height: 100%; }
-.nota-rect { display: block; }
-.nota-text { display: block; }
-.nota-row { display: flex; flex-direction: row; }
-.nota-col { display: flex; flex-direction: column; }
+.nota-rect { display: block; position: relative; }
+.nota-text { display: block; position: relative; }
+.nota-row { display: flex; flex-direction: row; position: relative; }
+.nota-col { display: flex; flex-direction: column; position: relative; }
 )";
 }

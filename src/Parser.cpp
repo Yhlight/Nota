@@ -63,6 +63,23 @@ std::unique_ptr<ComponentNode> Parser::parse() {
                         throw std::runtime_error("Expect property value.");
                     }
 
+                    // Handle multi-token values (e.g. position: left top)
+                    // This is a naive heuristic: if the next token is also an Identifier and not followed by Colon or Brace, consume it.
+                    // Actually, Nota grammar isn't fully strict here, but for "position: left top", we have two identifiers.
+                    // The Lexer will see "left" then "top".
+                    // The current parser loop expects "Prop: Value". "Value" is one token.
+                    // We need to consume subsequent identifiers if they look like part of the value.
+
+                    while (peek().type == TokenType::Identifier || peek().type == TokenType::Number) {
+                        // Check if it's the start of a new property or component
+                        if (current + 1 < tokens.size() && (tokens[current+1].type == TokenType::Colon || tokens[current+1].type == TokenType::LBrace)) {
+                            break;
+                        }
+
+                        // It's likely part of the value (e.g. "1px solid black" or "left top")
+                        value += " " + consume(peek().type, "Consume value part").value;
+                    }
+
                     node->properties.push_back(PropertyNode{name.value, value});
 
                     // Optional semicolon? Not strictly enforced in example, but good to handle if present

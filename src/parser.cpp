@@ -72,6 +72,34 @@ std::shared_ptr<Property> Parser::parseProperty() {
 }
 
 std::shared_ptr<Expression> Parser::parseExpression() {
+    return parseTerm();
+}
+
+std::shared_ptr<Expression> Parser::parseTerm() {
+    auto left = parseFactor();
+
+    while (current().type == TokenType::Plus || current().type == TokenType::Minus) {
+        std::string op = current().text;
+        advance();
+        auto right = parseFactor();
+        left = std::make_shared<BinaryExpression>(left, op, right);
+    }
+    return left;
+}
+
+std::shared_ptr<Expression> Parser::parseFactor() {
+    auto left = parsePrimary();
+
+    while (current().type == TokenType::Star || current().type == TokenType::Slash) {
+        std::string op = current().text;
+        advance();
+        auto right = parsePrimary();
+        left = std::make_shared<BinaryExpression>(left, op, right);
+    }
+    return left;
+}
+
+std::shared_ptr<Expression> Parser::parsePrimary() {
     Token t = current();
     advance();
 
@@ -90,11 +118,35 @@ std::shared_ptr<Expression> Parser::parseExpression() {
     } else if (t.type == TokenType::Identifier) {
         if (t.text == "true") return std::make_shared<Literal>(true);
         if (t.text == "false") return std::make_shared<Literal>(false);
-        // Treat as identifier reference or color if valid, for now generic identifier
-        // Or if it's like 'red' treat as string literal for color?
-        // Nota spec says: color: red;
-        // So 'red' is an identifier in token stream.
-        return std::make_shared<Literal>(t.text); // Treat identifiers as string values for now (like colors)
+
+        std::shared_ptr<Expression> expr = std::make_shared<Identifier>(t.text);
+
+        while (current().type == TokenType::Dot) {
+            advance();
+            Token member = current();
+            if (member.type != TokenType::Identifier) {
+                throw std::runtime_error("Expected identifier after dot");
+            }
+            advance();
+            expr = std::make_shared<MemberExpression>(expr, member.text);
+        }
+
+        // For backwards compatibility/simplicity where colors are identifiers
+        // We wrap simple identifiers in Literal if they are not part of a member chain?
+        // Or handle in generator. AST should preserve structure.
+        // But previously I returned Literal for identifiers.
+        // Let's verify usage. Lexer tests: color: red. red is Identifier.
+        // If I return Identifier node, Generator needs to handle Identifier node.
+        // Previous code: return std::make_shared<Literal>(t.text);
+        // I should probably check if it was just a single identifier and return Literal to avoid breaking Generator if it expects Literal for colors.
+        // BUT, MemberExpression needs Identifier as object.
+        // Let's update Generator to handle Identifier nodes and treat them as strings/values.
+        return expr;
+
+    } else if (t.type == TokenType::LParen) {
+        auto expr = parseExpression();
+        expect(TokenType::RParen);
+        return std::make_shared<GroupExpression>(expr);
     }
 
     throw std::runtime_error("Unexpected token in expression: " + t.text);

@@ -23,7 +23,11 @@ private:
 
     std::shared_ptr<Component> parseComponent();
     std::shared_ptr<Property> parseProperty();
+
     std::shared_ptr<Expression> parseExpression();
+    std::shared_ptr<Expression> parseTerm();
+    std::shared_ptr<Expression> parseFactor();
+    std::shared_ptr<Expression> parsePrimary();
 };
 
 }

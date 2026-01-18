@@ -118,6 +118,14 @@ Token Lexer::nextToken() {
         return t;
     }
 
+    if (current() == '+') { Token t = {TokenType::Plus, "+", line, column}; advance(); return t; }
+    if (current() == '-') { Token t = {TokenType::Minus, "-", line, column}; advance(); return t; }
+    if (current() == '*') { Token t = {TokenType::Star, "*", line, column}; advance(); return t; }
+    if (current() == '/') { Token t = {TokenType::Slash, "/", line, column}; advance(); return t; }
+    if (current() == '.') { Token t = {TokenType::Dot, ".", line, column}; advance(); return t; }
+    if (current() == '(') { Token t = {TokenType::LParen, "(", line, column}; advance(); return t; }
+    if (current() == ')') { Token t = {TokenType::RParen, ")", line, column}; advance(); return t; }
+
     Token t = {TokenType::Unknown, std::string(1, current()), line, column};
     advance();
     return t;

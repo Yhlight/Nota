@@ -28,3 +28,24 @@ TEST(LexerTest, StringAndColor) {
     EXPECT_EQ(tokens[3].type, nota::TokenType::String);
     EXPECT_EQ(tokens[3].text, "#ff0000");
 }
+
+TEST(LexerTest, Operators) {
+    nota::Lexer lexer("width: 100 + 20 * 5;");
+    auto tokens = lexer.tokenize();
+
+    // width : 100 + 20 * 5 ; EOF
+    // Id Col Num Plus Num Star Num Semi EOF
+    ASSERT_EQ(tokens.size(), 9);
+    EXPECT_EQ(tokens[3].type, nota::TokenType::Plus);
+    EXPECT_EQ(tokens[5].type, nota::TokenType::Star);
+    EXPECT_EQ(tokens[7].type, nota::TokenType::Semicolon);
+}
+
+TEST(LexerTest, MemberAccess) {
+    nota::Lexer lexer("width: box.width");
+    auto tokens = lexer.tokenize();
+
+    // width : box . width EOF
+    ASSERT_EQ(tokens.size(), 6);
+    EXPECT_EQ(tokens[3].type, nota::TokenType::Dot);
+}

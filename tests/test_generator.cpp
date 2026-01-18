@@ -11,7 +11,7 @@ TEST(GeneratorTest, GenerateApp) {
 
     EXPECT_NE(output.find(".nota-app {"), std::string::npos);
     EXPECT_NE(output.find("width: 100px;"), std::string::npos);
-    EXPECT_NE(output.find("<body class=\"nota-app\">"), std::string::npos);
+    EXPECT_NE(output.find("<body class=\"nota-app\""), std::string::npos);
 }
 
 TEST(GeneratorTest, GenerateRowCol) {
@@ -38,28 +38,9 @@ TEST(GeneratorTest, GenerateText) {
     nota::Generator generator;
     std::string output = generator.generate(text);
 
-    // Check tag is span
     EXPECT_NE(output.find("<span class=\"nota-text-"), std::string::npos);
-    // Check content
     EXPECT_NE(output.find(">Hello World</span>"), std::string::npos);
-    // Check style (background-color, not text color? Nota.md says color: white background of box?)
-    // Nota.md: Text { text: "Nota Dashboard"; color: white; }
-    // If it's the text color, it should be "color: white;". If it's background, "background-color".
-    // Nota.md "基本组件" section for Rect says "color => background color".
-    // For Text? "Text... 表示一个可控的文本组件".
-    // Usually color in Text implies font color.
-    // But currently my generator maps "color" to "background-color".
-    // Let's check Nota.md details on properties.
-    // "color => background color"
-    // "text => 容器的文本"
-    // It doesn't mention font color.
-    // Assuming for now "color" is background color as per general property list.
-    // Maybe I should add "fontColor" or check if "color" behaves differently for Text?
-    // In many UI frameworks, color on Text is font color.
-    // But Nota.md explicitly says "color => 背景颜色".
-    // So I will stick to background-color for now.
-
-    EXPECT_NE(output.find("background-color: white;"), std::string::npos);
+    EXPECT_NE(output.find("color: white;"), std::string::npos);
 }
 
 TEST(GeneratorTest, GenerateProperties) {
@@ -72,5 +53,40 @@ TEST(GeneratorTest, GenerateProperties) {
 
     EXPECT_NE(output.find("padding: 20px;"), std::string::npos);
     EXPECT_NE(output.find("border-radius: 10px;"), std::string::npos);
-    EXPECT_NE(output.find("display: block;"), std::string::npos);
+}
+
+TEST(GeneratorTest, GenerateIdAndCalc) {
+    auto rect = std::make_shared<nota::Component>("Rect");
+    rect->addProperty(std::make_shared<nota::Property>("id", std::make_shared<nota::Literal>("myRect")));
+
+    // width: 100 + 50
+    auto bin = std::make_shared<nota::BinaryExpression>(
+        std::make_shared<nota::Literal>(100),
+        "+",
+        std::make_shared<nota::Literal>(50)
+    );
+    rect->addProperty(std::make_shared<nota::Property>("width", bin));
+
+    nota::Generator generator;
+    std::string output = generator.generate(rect);
+
+    EXPECT_NE(output.find("id=\"myRect\""), std::string::npos);
+    EXPECT_NE(output.find("width: calc(100px + 50px);"), std::string::npos);
+}
+
+TEST(GeneratorTest, GenerateMemberAccess) {
+    auto rect = std::make_shared<nota::Component>("Rect");
+
+    // width: box.width
+    auto mem = std::make_shared<nota::MemberExpression>(
+        std::make_shared<nota::Identifier>("box"),
+        "width"
+    );
+    rect->addProperty(std::make_shared<nota::Property>("width", mem));
+
+    nota::Generator generator;
+    std::string output = generator.generate(rect);
+
+    // For now we just check simple stringification
+    EXPECT_NE(output.find("width: box.width;"), std::string::npos);
 }

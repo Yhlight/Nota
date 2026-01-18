@@ -13,6 +13,13 @@ enum class TokenType {
     RBrace,
     Percent, // For 100%
     Semicolon,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Dot,
+    LParen,
+    RParen,
     EndOfFile,
     Unknown
 };

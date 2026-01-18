@@ -27,6 +27,26 @@ struct Identifier : Expression {
     Identifier(std::string n) : name(n) {}
 };
 
+struct BinaryExpression : Expression {
+    std::shared_ptr<Expression> left;
+    std::string op;
+    std::shared_ptr<Expression> right;
+    BinaryExpression(std::shared_ptr<Expression> l, std::string o, std::shared_ptr<Expression> r)
+        : left(l), op(o), right(r) {}
+};
+
+struct MemberExpression : Expression {
+    std::shared_ptr<Expression> object;
+    std::string member;
+    MemberExpression(std::shared_ptr<Expression> obj, std::string m)
+        : object(obj), member(m) {}
+};
+
+struct GroupExpression : Expression {
+    std::shared_ptr<Expression> expression;
+    GroupExpression(std::shared_ptr<Expression> e) : expression(e) {}
+};
+
 struct Property : Node {
     std::string name;
     std::shared_ptr<Expression> value;

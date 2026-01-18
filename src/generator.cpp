@@ -57,7 +57,22 @@ void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
     css << generateStyles(comp, className);
     css << "}\n";
 
-    html << "<" << tag << " class=\"" << className << "\">";
+    html << "<" << tag << " class=\"" << className << "\"";
+
+    // Check for id property
+    for (const auto& prop : comp->properties) {
+        if (prop->name == "id") {
+            if (auto lit = std::dynamic_pointer_cast<Literal>(prop->value)) {
+                 if (std::holds_alternative<std::string>(lit->value)) {
+                     html << " id=\"" << std::get<std::string>(lit->value) << "\"";
+                 }
+            } else if (auto id = std::dynamic_pointer_cast<Identifier>(prop->value)) {
+                 html << " id=\"" << id->name << "\"";
+            }
+        }
+    }
+
+    html << ">";
 
     if (!textContent.empty()) {
         html << textContent;
@@ -92,7 +107,11 @@ std::string Generator::generateStyles(const std::shared_ptr<Component>& comp, co
         } else if (prop->name == "height") {
             ss << "height: " << val << ";\n";
         } else if (prop->name == "color") {
-            ss << "background-color: " << val << ";\n";
+            if (comp->type == "Text") {
+                ss << "color: " << val << ";\n";
+            } else {
+                ss << "background-color: " << val << ";\n";
+            }
         } else if (prop->name == "spacing") {
             ss << "gap: " << val << ";\n";
         } else if (prop->name == "padding") {
@@ -115,6 +134,16 @@ std::string Generator::getValue(const std::shared_ptr<Expression>& expr) {
         } else if (std::holds_alternative<bool>(lit->value)) {
              return std::get<bool>(lit->value) ? "true" : "false";
         }
+    } else if (auto id = std::dynamic_pointer_cast<Identifier>(expr)) {
+        return id->name;
+    } else if (auto bin = std::dynamic_pointer_cast<BinaryExpression>(expr)) {
+        return "calc(" + getValue(bin->left) + " " + bin->op + " " + getValue(bin->right) + ")";
+    } else if (auto grp = std::dynamic_pointer_cast<GroupExpression>(expr)) {
+        return "(" + getValue(grp->expression) + ")";
+    } else if (auto mem = std::dynamic_pointer_cast<MemberExpression>(expr)) {
+        // Just return simple representation for now, e.g. box.width
+        // In real implementation this might map to var(--box-width)
+        return getValue(mem->object) + "." + mem->member;
     }
     return "";
 }

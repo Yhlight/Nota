@@ -20,6 +20,9 @@ enum class TokenType {
     Dot,
     LParen,
     RParen,
+    Item,
+    This,
+    Parent,
     EndOfFile,
     Unknown
 };

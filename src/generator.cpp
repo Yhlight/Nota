@@ -3,6 +3,29 @@
 
 namespace nota {
 
+std::string Generator::generate(const std::shared_ptr<Program>& program) {
+    // 1. Register definitions
+    definitions.clear();
+    std::shared_ptr<Component> appRoot = nullptr;
+
+    for (const auto& comp : program->components) {
+        if (comp->type == "Item") {
+            if (!comp->name.empty()) {
+                definitions[comp->name] = comp;
+            }
+        } else if (comp->type == "App") {
+            appRoot = comp;
+        }
+    }
+
+    if (!appRoot) {
+        return ""; // Or throw error
+    }
+
+    // 2. Generate App
+    return generate(appRoot);
+}
+
 std::string Generator::generate(const std::shared_ptr<Component>& root) {
     html.str("");
     css.str("");
@@ -26,22 +49,54 @@ std::string Generator::generate(const std::shared_ptr<Component>& root) {
     return finalDoc.str();
 }
 
+std::shared_ptr<Component> Generator::expandComponent(const std::shared_ptr<Component>& instance) {
+    auto it = definitions.find(instance->type);
+    if (it == definitions.end()) {
+        return instance;
+    }
+
+    auto def = it->second;
+    auto expanded = std::make_shared<Component>(instance->type, "");
+
+    // Copy properties from definition
+    for (const auto& prop : def->properties) {
+        expanded->addProperty(prop);
+    }
+
+    // Override with instance properties
+    for (const auto& prop : instance->properties) {
+        expanded->addProperty(prop);
+    }
+
+    // Copy children from definition
+    for (const auto& child : def->children) {
+        expanded->addChild(child);
+    }
+
+    // Append instance children
+    for (const auto& child : instance->children) {
+        expanded->addChild(child);
+    }
+
+    return expanded;
+}
+
 void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
+    auto actualComp = expandComponent(comp);
+
     std::string className;
     std::string tag = "div";
     std::string textContent = "";
 
-    if (comp->type == "App") {
+    if (actualComp->type == "App") {
         className = "nota-app";
         tag = "body";
-    } else if (comp->type == "Text") {
+    } else if (actualComp->type == "Text") {
         tag = "span";
         className = "nota-text-" + std::to_string(++counter);
 
-        // Find text property
-        for (const auto& prop : comp->properties) {
+        for (const auto& prop : actualComp->properties) {
             if (prop->name == "text") {
-                 // Assuming text value is a string literal
                  if (auto lit = std::dynamic_pointer_cast<Literal>(prop->value)) {
                      if (std::holds_alternative<std::string>(lit->value)) {
                          textContent = std::get<std::string>(lit->value);
@@ -50,17 +105,16 @@ void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
             }
         }
     } else {
-        className = "nota-" + comp->type + "-" + std::to_string(++counter);
+        className = "nota-" + actualComp->type + "-" + std::to_string(++counter);
     }
 
     css << "." << className << " {\n";
-    css << generateStyles(comp, className);
+    css << generateStyles(actualComp, className);
     css << "}\n";
 
     html << "<" << tag << " class=\"" << className << "\"";
 
-    // Check for id property
-    for (const auto& prop : comp->properties) {
+    for (const auto& prop : actualComp->properties) {
         if (prop->name == "id") {
             if (auto lit = std::dynamic_pointer_cast<Literal>(prop->value)) {
                  if (std::holds_alternative<std::string>(lit->value)) {
@@ -78,9 +132,9 @@ void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
         html << textContent;
     }
 
-    if (!comp->children.empty()) {
+    if (!actualComp->children.empty()) {
         html << "\n";
-        for (const auto& child : comp->children) {
+        for (const auto& child : actualComp->children) {
             generateComponent(child);
         }
     }
@@ -91,7 +145,6 @@ void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
 std::string Generator::generateStyles(const std::shared_ptr<Component>& comp, const std::string& className) {
     std::stringstream ss;
 
-    // Default display
     if (comp->type == "Row") {
         ss << "display: flex;\nflex-direction: row;\n";
     } else if (comp->type == "Col") {
@@ -141,8 +194,6 @@ std::string Generator::getValue(const std::shared_ptr<Expression>& expr) {
     } else if (auto grp = std::dynamic_pointer_cast<GroupExpression>(expr)) {
         return "(" + getValue(grp->expression) + ")";
     } else if (auto mem = std::dynamic_pointer_cast<MemberExpression>(expr)) {
-        // Just return simple representation for now, e.g. box.width
-        // In real implementation this might map to var(--box-width)
         return getValue(mem->object) + "." + mem->member;
     }
     return "";

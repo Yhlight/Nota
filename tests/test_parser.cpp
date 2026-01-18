@@ -6,9 +6,12 @@ TEST(ParserTest, ParseApp) {
     nota::Lexer lexer("App { width: 100 }");
     auto tokens = lexer.tokenize();
     nota::Parser parser(tokens);
-    auto app = parser.parse();
+    auto program = parser.parse();
 
-    ASSERT_NE(app, nullptr);
+    ASSERT_NE(program, nullptr);
+    ASSERT_EQ(program->components.size(), 1);
+    auto app = program->components[0];
+
     EXPECT_EQ(app->type, "App");
     ASSERT_EQ(app->properties.size(), 1);
     EXPECT_EQ(app->properties[0]->name, "width");
@@ -18,7 +21,10 @@ TEST(ParserTest, ParseNested) {
     nota::Lexer lexer("App { Rect { width: 50% } }");
     auto tokens = lexer.tokenize();
     nota::Parser parser(tokens);
-    auto app = parser.parse();
+    auto program = parser.parse();
+
+    ASSERT_EQ(program->components.size(), 1);
+    auto app = program->components[0];
 
     ASSERT_EQ(app->children.size(), 1);
     auto rect = app->children[0];
@@ -34,7 +40,10 @@ TEST(ParserTest, ParseBinaryExpr) {
     nota::Lexer lexer("App { width: 100 + 50 * 2 }");
     auto tokens = lexer.tokenize();
     nota::Parser parser(tokens);
-    auto app = parser.parse();
+    auto program = parser.parse();
+
+    ASSERT_EQ(program->components.size(), 1);
+    auto app = program->components[0];
 
     // 100 + (50 * 2)
     auto prop = app->properties[0];
@@ -54,7 +63,10 @@ TEST(ParserTest, ParseMemberExpr) {
     nota::Lexer lexer("App { width: box.width }");
     auto tokens = lexer.tokenize();
     nota::Parser parser(tokens);
-    auto app = parser.parse();
+    auto program = parser.parse();
+
+    ASSERT_EQ(program->components.size(), 1);
+    auto app = program->components[0];
 
     auto prop = app->properties[0];
     auto mem = std::dynamic_pointer_cast<nota::MemberExpression>(prop->value);

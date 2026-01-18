@@ -25,20 +25,35 @@ void Parser::expect(TokenType type) {
     advance();
 }
 
-std::shared_ptr<Component> Parser::parse() {
-    return parseComponent();
+std::shared_ptr<Program> Parser::parse() {
+    auto program = std::make_shared<Program>();
+    while (current().type != TokenType::EndOfFile) {
+        program->addComponent(parseComponent());
+    }
+    return program;
 }
 
 std::shared_ptr<Component> Parser::parseComponent() {
-    if (current().type != TokenType::Identifier) {
-        throw std::runtime_error("Expected Component Type Identifier");
+    std::string type;
+    std::string name = "";
+
+    if (current().type == TokenType::Item) {
+        type = "Item";
+        advance();
+        if (current().type == TokenType::Identifier) {
+            name = current().text;
+            advance();
+        }
+    } else if (current().type == TokenType::Identifier) {
+        type = current().text;
+        advance();
+    } else {
+        throw std::runtime_error("Expected Component Type or Item keyword");
     }
-    std::string type = current().text;
-    advance();
 
     expect(TokenType::LBrace);
 
-    auto comp = std::make_shared<Component>(type);
+    auto comp = std::make_shared<Component>(type, name);
 
     while (current().type != TokenType::RBrace && current().type != TokenType::EndOfFile) {
         if (current().type == TokenType::Semicolon) {
@@ -147,6 +162,10 @@ std::shared_ptr<Expression> Parser::parsePrimary() {
         auto expr = parseExpression();
         expect(TokenType::RParen);
         return std::make_shared<GroupExpression>(expr);
+    } else if (t.type == TokenType::This) {
+        return std::make_shared<ThisExpression>();
+    } else if (t.type == TokenType::Parent) {
+        return std::make_shared<ParentExpression>();
     }
 
     throw std::runtime_error("Unexpected token in expression: " + t.text);

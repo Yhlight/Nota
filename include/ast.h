@@ -27,6 +27,9 @@ struct Identifier : Expression {
     Identifier(std::string n) : name(n) {}
 };
 
+struct ThisExpression : Expression {};
+struct ParentExpression : Expression {};
+
 struct BinaryExpression : Expression {
     std::shared_ptr<Expression> left;
     std::string op;
@@ -55,10 +58,11 @@ struct Property : Node {
 
 struct Component : Node {
     std::string type;
+    std::string name; // For definitions like "Item Box" -> type="Item", name="Box"
     std::vector<std::shared_ptr<Property>> properties;
     std::vector<std::shared_ptr<Component>> children;
 
-    Component(std::string t) : type(t) {}
+    Component(std::string t, std::string n = "") : type(t), name(n) {}
 
     void addProperty(std::shared_ptr<Property> p) {
         properties.push_back(p);
@@ -66,6 +70,14 @@ struct Component : Node {
 
     void addChild(std::shared_ptr<Component> c) {
         children.push_back(c);
+    }
+};
+
+struct Program : Node {
+    std::vector<std::shared_ptr<Component>> components; // List of top-level definitions/components
+
+    void addComponent(std::shared_ptr<Component> c) {
+        components.push_back(c);
     }
 };
 

@@ -26,10 +26,10 @@ int main(int argc, char** argv) {
 
     try {
         nota::Parser parser(tokens);
-        auto root = parser.parse();
+        auto program = parser.parse();
 
         nota::Generator generator;
-        std::string html = generator.generate(root);
+        std::string html = generator.generate(program);
 
         std::cout << html << std::endl;
     } catch (const std::exception& e) {

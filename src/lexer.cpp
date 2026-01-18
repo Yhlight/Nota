@@ -138,6 +138,11 @@ Token Lexer::readIdentifier() {
         text += current();
         advance();
     }
+
+    if (text == "Item") return {TokenType::Item, text, line, startCol};
+    if (text == "this") return {TokenType::This, text, line, startCol};
+    if (text == "parent") return {TokenType::Parent, text, line, startCol};
+
     return {TokenType::Identifier, text, line, startCol};
 }
 

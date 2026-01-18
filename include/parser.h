@@ -10,7 +10,7 @@ namespace nota {
 class Parser {
 public:
     Parser(std::vector<Token> tokens);
-    std::shared_ptr<Component> parse();
+    std::shared_ptr<Program> parse();
 
 private:
     std::vector<Token> tokens;

@@ -5,8 +5,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-add_executable(nota-tests test_basic.cpp)
-target_link_libraries(nota-tests GTest::gtest_main)
+add_executable(nota-tests
+  test_basic.cpp
+  test_lexer.cpp
+)
+target_link_libraries(nota-tests
+  GTest::gtest_main
+  nota-core
+)
 
 include(GoogleTest)
 gtest_discover_tests(nota-tests)

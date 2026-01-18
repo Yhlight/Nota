@@ -5,6 +5,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "codegen.h"
+#include "compiler.h"
 
 class PrintVisitor : public ASTVisitor {
     int indent = 0;
@@ -83,22 +84,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::ifstream file(inputPath);
-    if (!file.is_open()) {
-        std::cerr << "Could not open file: " << inputPath << "\n";
-        return 1;
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string source = buffer.str();
-
     try {
-        Lexer lexer(source);
-        auto tokens = lexer.tokenize();
-
-        Parser parser(tokens);
-        auto root = parser.parse();
+        auto root = Compiler::parseFile(inputPath);
 
         if (outputPath.empty()) {
             // Default behavior: print AST

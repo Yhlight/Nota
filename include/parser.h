@@ -28,4 +28,5 @@ private:
     std::shared_ptr<ExpressionNode> parseTerm();
     std::shared_ptr<ExpressionNode> parseFactor();
     std::shared_ptr<ExpressionNode> parsePrimary();
+    std::shared_ptr<ExpressionNode> parseBlock();
 };

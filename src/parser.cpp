@@ -1,6 +1,7 @@
 #include "parser.h"
 #include <stdexcept>
 #include <iostream>
+#include <memory>
 
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens), pos(0) {}
 
@@ -89,8 +90,13 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
         if (peek().type == TokenType::IDENTIFIER) {
             name = advance().value;
         }
-    } else if (first.type == TokenType::IDENTIFIER ||
-               (first.type >= TokenType::KEYWORD_APP && first.type <= TokenType::KEYWORD_TEXT)) {
+    } else if (first.type == TokenType::IDENTIFIER) {
+        type = first.value;
+        // Support dotted names (Module.Component)
+        while (match(TokenType::DOT)) {
+            type += "." + consume(TokenType::IDENTIFIER, "Expect identifier after '.'").value;
+        }
+    } else if (first.type >= TokenType::KEYWORD_APP && first.type <= TokenType::KEYWORD_TEXT) {
         type = first.value;
     } else {
         throw std::runtime_error("Unexpected token for Component start: " + first.value);
@@ -108,7 +114,25 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
             } else if (peek(1).type == TokenType::LBRACE) {
                 node->children.push_back(parseComponent());
             } else if (peek(1).type == TokenType::DOT) {
-                 node->children.push_back(parseProperty());
+                 // Look ahead to distinguish Prop (ID.ID:) vs Component (ID.ID {)
+                 int lookahead = 1;
+                 // We are at ID (t). peek(1) is DOT.
+                 while (peek(lookahead).type == TokenType::DOT) {
+                     lookahead++; // Consume DOT
+                     if (peek(lookahead).type == TokenType::IDENTIFIER) {
+                         lookahead++; // Consume ID
+                     } else {
+                         break;
+                     }
+                 }
+
+                 if (peek(lookahead).type == TokenType::COLON) {
+                     node->children.push_back(parseProperty());
+                 } else if (peek(lookahead).type == TokenType::LBRACE) {
+                     node->children.push_back(parseComponent());
+                 } else {
+                     throw std::runtime_error("Unexpected token sequence after dotted identifier");
+                 }
             } else {
                  throw std::runtime_error("Unexpected token after identifier " + t.value);
             }
@@ -147,11 +171,6 @@ std::shared_ptr<PropertyNode> Parser::parseProperty() {
     return std::make_shared<PropertyNode>(name, value);
 }
 
-// Expression Parsing (Recursive Descent)
-// Expression -> Term { (+|-) Term }
-// Term       -> Factor { (*|/) Factor }
-// Factor     -> Primary
-
 std::shared_ptr<ExpressionNode> Parser::parseExpression() {
     auto left = parseTerm();
 
@@ -175,8 +194,6 @@ std::shared_ptr<ExpressionNode> Parser::parseTerm() {
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseFactor() {
-    // Usually Factor handles unaries, grouping, but for now just Primary
-    // Add support for parentheses? ( Expression )
     if (peek().type == TokenType::LPAREN) {
         advance();
         auto expr = parseExpression();
@@ -199,7 +216,6 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
     if (t.type == TokenType::IDENTIFIER) {
         advance();
         std::string name = t.value;
-        // Check for dotted access (reference chain)
         while (match(TokenType::DOT)) {
             Token part = consume(TokenType::IDENTIFIER, "Expect identifier after '.'");
             name += "." + part.value;
@@ -207,5 +223,28 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
         return std::make_shared<ReferenceNode>(name);
     }
 
+    if (t.type == TokenType::LBRACE) {
+        return parseBlock();
+    }
+
     throw std::runtime_error("Unexpected expression token: " + t.value);
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseBlock() {
+    consume(TokenType::LBRACE, "Expect '{' start of block");
+    std::string code;
+    int braceDepth = 1;
+
+    while (braceDepth > 0 && peek().type != TokenType::EOF_TOKEN) {
+        Token t = advance();
+        if (t.type == TokenType::LBRACE) braceDepth++;
+        if (t.type == TokenType::RBRACE) {
+            braceDepth--;
+            if (braceDepth == 0) break;
+        }
+        code += t.value + " ";
+    }
+
+    Token codeToken{TokenType::STRING_LITERAL, code, 0, 0};
+    return std::make_shared<LiteralNode>(codeToken);
 }

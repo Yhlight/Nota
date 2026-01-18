@@ -3,6 +3,7 @@ add_library(nota_lib
     parser.cpp
     codegen.cpp
     sema.cpp
+    compiler.cpp
 )
 
 add_executable(nota

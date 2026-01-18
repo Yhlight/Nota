@@ -31,4 +31,5 @@ private:
     std::string mapComponentToTag(const std::string& type);
     std::string mapPropertyToCSS(const std::string& name);
     void generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties);
+    void generateEvents(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties);
 };

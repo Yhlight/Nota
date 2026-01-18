@@ -134,6 +134,7 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
         for (auto& child : props) {
             if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
                 if (prop->name == "text" || prop->name == "id") continue;
+                if (prop->name == "onClick" || prop->name == "onHover") continue; // Skip events in styles
 
                 std::string cssName = mapPropertyToCSS(prop->name);
 
@@ -174,6 +175,41 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
     }
 }
 
+void CodeGen::generateEvents(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties) {
+    std::unordered_map<std::string, std::string> eventMap;
+
+    auto processProps = [&](const std::vector<std::shared_ptr<ASTNode>>& props) {
+        for (auto& child : props) {
+            if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+                std::string attr;
+                if (prop->name == "onClick") attr = "onclick";
+                else if (prop->name == "onHover") attr = "onmouseenter";
+
+                if (!attr.empty()) {
+                     ExpressionStringVisitor eval;
+                     prop->value->accept(eval);
+                     std::string code = eval.ss.str();
+
+                     // Strip quotes for string literals
+                     if (code.size() >= 2 && code.front() == '"' && code.back() == '"') {
+                         code = code.substr(1, code.size()-2);
+                     }
+                     // For code blocks, Parser produces raw string in literal, likely no quotes.
+
+                     eventMap[attr] = code;
+                }
+            }
+        }
+    };
+
+    processProps(properties);
+    processProps(overrideProperties);
+
+    for (const auto& pair : eventMap) {
+        html << " " << pair.first << "=\"" << pair.second << "\"";
+    }
+}
+
 void CodeGen::visit(ComponentNode& node) {
     bool isCustom = registry.hasComponent(node.type);
     std::shared_ptr<ComponentNode> definition = nullptr;
@@ -203,10 +239,8 @@ void CodeGen::visit(ComponentNode& node) {
     std::vector<std::shared_ptr<ASTNode>> defProps;
     if (definition) defProps = definition->children;
 
-    std::vector<std::shared_ptr<ASTNode>> extraProps;
-    // Structural classes handle display, so we don't need manual injection anymore.
-
     generateStyleAttribute(defProps, node.children);
+    generateEvents(defProps, node.children);
 
     html << ">";
 

@@ -112,6 +112,12 @@ Token Lexer::nextToken() {
         return t;
     }
 
+    if (current() == ';') {
+        Token t = {TokenType::Semicolon, ";", line, column};
+        advance();
+        return t;
+    }
+
     Token t = {TokenType::Unknown, std::string(1, current()), line, column};
     advance();
     return t;

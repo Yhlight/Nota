@@ -12,6 +12,7 @@ enum class TokenType {
     LBrace,
     RBrace,
     Percent, // For 100%
+    Semicolon,
     EndOfFile,
     Unknown
 };

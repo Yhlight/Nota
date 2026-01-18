@@ -29,25 +29,45 @@ std::string Generator::generate(const std::shared_ptr<Component>& root) {
 void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
     std::string className;
     std::string tag = "div";
+    std::string textContent = "";
 
     if (comp->type == "App") {
         className = "nota-app";
         tag = "body";
+    } else if (comp->type == "Text") {
+        tag = "span";
+        className = "nota-text-" + std::to_string(++counter);
+
+        // Find text property
+        for (const auto& prop : comp->properties) {
+            if (prop->name == "text") {
+                 // Assuming text value is a string literal
+                 if (auto lit = std::dynamic_pointer_cast<Literal>(prop->value)) {
+                     if (std::holds_alternative<std::string>(lit->value)) {
+                         textContent = std::get<std::string>(lit->value);
+                     }
+                 }
+            }
+        }
     } else {
         className = "nota-" + comp->type + "-" + std::to_string(++counter);
-        // Normalize type to lower case for class name?
-        // Keeping it as is for now or simple transform
-        // For simplicity, just use the counter driven name or type
     }
 
     css << "." << className << " {\n";
     css << generateStyles(comp, className);
     css << "}\n";
 
-    html << "<" << tag << " class=\"" << className << "\">\n";
+    html << "<" << tag << " class=\"" << className << "\">";
 
-    for (const auto& child : comp->children) {
-        generateComponent(child);
+    if (!textContent.empty()) {
+        html << textContent;
+    }
+
+    if (!comp->children.empty()) {
+        html << "\n";
+        for (const auto& child : comp->children) {
+            generateComponent(child);
+        }
     }
 
     html << "</" << tag << ">\n";
@@ -55,11 +75,14 @@ void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
 
 std::string Generator::generateStyles(const std::shared_ptr<Component>& comp, const std::string& className) {
     std::stringstream ss;
-    ss << "display: block;\n";
-    if (comp->type == "App") {
-        // App typically fills the screen
-        // Nota.md says App => body class="nota-app"
-        // And "width: 100%, height: 100%" in example
+
+    // Default display
+    if (comp->type == "Row") {
+        ss << "display: flex;\nflex-direction: row;\n";
+    } else if (comp->type == "Col") {
+        ss << "display: flex;\nflex-direction: column;\n";
+    } else {
+        ss << "display: block;\n";
     }
 
     for (const auto& prop : comp->properties) {
@@ -70,6 +93,12 @@ std::string Generator::generateStyles(const std::shared_ptr<Component>& comp, co
             ss << "height: " << val << ";\n";
         } else if (prop->name == "color") {
             ss << "background-color: " << val << ";\n";
+        } else if (prop->name == "spacing") {
+            ss << "gap: " << val << ";\n";
+        } else if (prop->name == "padding") {
+            ss << "padding: " << val << ";\n";
+        } else if (prop->name == "radius") {
+            ss << "border-radius: " << val << ";\n";
         }
     }
     return ss.str();

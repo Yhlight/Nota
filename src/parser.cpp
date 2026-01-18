@@ -41,6 +41,11 @@ std::shared_ptr<Component> Parser::parseComponent() {
     auto comp = std::make_shared<Component>(type);
 
     while (current().type != TokenType::RBrace && current().type != TokenType::EndOfFile) {
+        if (current().type == TokenType::Semicolon) {
+            advance();
+            continue;
+        }
+
         if (current().type == TokenType::Identifier) {
             if (peek().type == TokenType::Colon) {
                 comp->addProperty(parseProperty());

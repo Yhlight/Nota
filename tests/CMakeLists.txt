@@ -11,6 +11,7 @@ enable_testing()
 add_executable(nota_tests
     test_lexer.cpp
     test_parser.cpp
+    test_generator.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE nota_lib GTest::gtest_main)

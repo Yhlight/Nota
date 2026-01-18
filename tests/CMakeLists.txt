@@ -9,6 +9,7 @@ add_executable(nota-tests
   test_basic.cpp
   test_lexer.cpp
   test_parser.cpp
+  test_generator.cpp
 )
 target_link_libraries(nota-tests
   GTest::gtest_main

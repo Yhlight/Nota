@@ -153,12 +153,40 @@ std::string Generator::generateStyles(const std::shared_ptr<Component>& comp, co
         ss << "display: block;\n";
     }
 
+    // Default relative positioning to support absolute children
+    ss << "position: relative;\n";
+
+    bool hasPosition = false;
+    for (const auto& prop : comp->properties) {
+        if (prop->name == "position") hasPosition = true;
+    }
+
     for (const auto& prop : comp->properties) {
         std::string val = getValue(prop->value);
         if (prop->name == "width") {
             ss << "width: " << val << ";\n";
         } else if (prop->name == "height") {
             ss << "height: " << val << ";\n";
+        } else if (prop->name == "x") {
+            ss << "left: " << val << ";\nposition: absolute;\n";
+        } else if (prop->name == "y") {
+            ss << "top: " << val << ";\nposition: absolute;\n";
+        } else if (prop->name == "index") {
+            // index (z-index) should not have px
+            ss << "z-index: " << getValue(prop->value, false) << ";\n";
+        } else if (prop->name == "position") {
+            // Nota "position" property logic
+            ss << "position: absolute;\n";
+            if (val.find("center") != std::string::npos) {
+                 if (val == "center") {
+                     ss << "left: 50%; top: 50%; transform: translate(-50%, -50%);\n";
+                 }
+                 // Handle mixed like "left center" if needed, but for MVP sticking to basics
+            }
+            if (val.find("left") != std::string::npos) ss << "left: 0;\n";
+            if (val.find("right") != std::string::npos) ss << "right: 0;\n";
+            if (val.find("top") != std::string::npos) ss << "top: 0;\n";
+            if (val.find("bottom") != std::string::npos) ss << "bottom: 0;\n";
         } else if (prop->name == "color") {
             if (comp->type == "Text") {
                 ss << "color: " << val << ";\n";
@@ -176,12 +204,12 @@ std::string Generator::generateStyles(const std::shared_ptr<Component>& comp, co
     return ss.str();
 }
 
-std::string Generator::getValue(const std::shared_ptr<Expression>& expr) {
+std::string Generator::getValue(const std::shared_ptr<Expression>& expr, bool addPx) {
     if (auto lit = std::dynamic_pointer_cast<Literal>(expr)) {
         if (std::holds_alternative<int>(lit->value)) {
-             return std::to_string(std::get<int>(lit->value)) + "px";
+             return std::to_string(std::get<int>(lit->value)) + (addPx ? "px" : "");
         } else if (std::holds_alternative<double>(lit->value)) {
-             return std::to_string(std::get<double>(lit->value)) + "px";
+             return std::to_string(std::get<double>(lit->value)) + (addPx ? "px" : "");
         } else if (std::holds_alternative<std::string>(lit->value)) {
              return std::get<std::string>(lit->value);
         } else if (std::holds_alternative<bool>(lit->value)) {

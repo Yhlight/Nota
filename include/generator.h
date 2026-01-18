@@ -21,7 +21,7 @@ private:
 
     void generateComponent(const std::shared_ptr<Component>& comp);
     std::string generateStyles(const std::shared_ptr<Component>& comp, const std::string& className);
-    std::string getValue(const std::shared_ptr<Expression>& expr);
+    std::string getValue(const std::shared_ptr<Expression>& expr, bool addPx = true);
 
     std::shared_ptr<Component> expandComponent(const std::shared_ptr<Component>& instance);
 };

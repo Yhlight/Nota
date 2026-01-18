@@ -156,6 +156,28 @@ std::shared_ptr<Expression> Parser::parsePrimary() {
         // I should probably check if it was just a single identifier and return Literal to avoid breaking Generator if it expects Literal for colors.
         // BUT, MemberExpression needs Identifier as object.
         // Let's update Generator to handle Identifier nodes and treat them as strings/values.
+
+        // Handle consecutive identifiers for values like "left top"
+        while (current().type == TokenType::Identifier) {
+            std::string nextText = current().text;
+            advance();
+            // This is a bit hacky: we merge them into a single string literal for simplicity
+            // or create a SequenceExpression?
+            // For MVP (Conductor 5), merging to string "val1 val2" is easiest for CSS generation.
+            // But 'expr' is currently an Identifier node or MemberExpression.
+            // Converting to Literal string "name next"
+
+            std::string baseName;
+            if (auto id = std::dynamic_pointer_cast<Identifier>(expr)) baseName = id->name;
+            else if (auto lit = std::dynamic_pointer_cast<Literal>(expr)) {
+                 if (std::holds_alternative<std::string>(lit->value)) baseName = std::get<std::string>(lit->value);
+            }
+
+            if (!baseName.empty()) {
+                expr = std::make_shared<Literal>(baseName + " " + nextText);
+            }
+        }
+
         return expr;
 
     } else if (t.type == TokenType::LParen) {

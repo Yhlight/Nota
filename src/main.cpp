@@ -27,12 +27,24 @@ int main(int argc, char* argv[]) {
         auto tokens = lexer.tokenize();
 
         Parser parser(tokens);
-        auto root = parser.parse();
+        auto nodes = parser.parseAll();
 
-        if (root) {
+        if (!nodes.empty()) {
             CodeGen codegen;
-            std::string htmlContent = codegen.generateHTML(*root);
-            std::string cssContent = codegen.generateCSS(*root);
+            std::string htmlContent;
+            std::string cssContent;
+
+            // Generate content for all top-level nodes (usually just App, but could be others)
+            // Note: Components defined but not used are filtered out or handled by registry.
+            // Nodes returned here are top-level instances.
+
+            for (const auto& node : nodes) {
+                htmlContent += codegen.generateHTML(*node) + "\n";
+                // Base CSS is static for now, so we just need it once.
+                // But if we had per-component CSS generation (not inline), we'd merge it.
+            }
+            // Just get base CSS from the first node or generic.
+            cssContent = codegen.generateCSS(*nodes[0]);
 
             std::ofstream outFile("index.html");
             outFile << "<!DOCTYPE html>\n<html>\n<head>\n";
@@ -43,8 +55,9 @@ int main(int argc, char* argv[]) {
 
             std::cout << "Successfully compiled to index.html" << std::endl;
         } else {
-            std::cerr << "Error: Parsing failed." << std::endl;
-            return 1;
+            // It's possible to have a valid file with only definitions and no App,
+            // but for now we consider it "Parsing failed" or "No output".
+            std::cout << "No top-level components to render." << std::endl;
         }
 
     } catch (const std::exception& e) {

@@ -3,6 +3,7 @@ add_executable(nota_tests
     test_parser.cpp
     test_codegen.cpp
     test_layout_codegen.cpp
+    test_components.cpp
 )
 
 target_link_libraries(nota_tests

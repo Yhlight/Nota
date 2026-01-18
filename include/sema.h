@@ -25,7 +25,10 @@ public:
     void visit(ImportNode& node) override;
     void visit(ComponentNode& node) override;
     void visit(PropertyNode& node) override;
-    void visit(ValueNode& node) override;
+    // Updated visitor methods for new AST
+    void visit(LiteralNode& node) override;
+    void visit(ReferenceNode& node) override;
+    void visit(BinaryExpressionNode& node) override;
 
 private:
     ComponentRegistry& registry;

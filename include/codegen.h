@@ -14,13 +14,18 @@ public:
     void visit(ImportNode& node) override;
     void visit(ComponentNode& node) override;
     void visit(PropertyNode& node) override;
-    void visit(ValueNode& node) override;
+    void visit(LiteralNode& node) override;
+    void visit(ReferenceNode& node) override;
+    void visit(BinaryExpressionNode& node) override;
 
 private:
     std::stringstream html;
     std::stringstream css;
     int indentLevel = 0;
     ComponentRegistry registry;
+
+    // Helper to capture expression output to a string
+    std::string evaluateExpression(ASTNode& node);
 
     void indent(std::stringstream& ss);
     std::string mapComponentToTag(const std::string& type);

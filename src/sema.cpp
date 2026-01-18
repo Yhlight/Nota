@@ -23,19 +23,16 @@ void SemanticAnalyzer::analyze(ProgramNode& root) {
 
 void SemanticAnalyzer::visit(ProgramNode& node) {
     for (auto& stmt : node.statements) {
-        // Check if it is a component definition (Item)
         if (auto comp = std::dynamic_pointer_cast<ComponentNode>(stmt)) {
             if (comp->type == "Item" && !comp->name.empty()) {
                 registry.registerComponent(comp->name, comp);
             }
-            // Also visit children if needed (e.g., nested definitions? Nota doesn't seem to support nested defs explicitly yet)
         }
         stmt->accept(*this);
     }
 }
 
 void SemanticAnalyzer::visit(ImportNode& node) {
-    // In future, this would load the module and register its exported components
 }
 
 void SemanticAnalyzer::visit(ComponentNode& node) {
@@ -46,6 +43,14 @@ void SemanticAnalyzer::visit(PropertyNode& node) {
     // No-op
 }
 
-void SemanticAnalyzer::visit(ValueNode& node) {
+void SemanticAnalyzer::visit(LiteralNode& node) {
+    // No-op
+}
+
+void SemanticAnalyzer::visit(ReferenceNode& node) {
+    // No-op
+}
+
+void SemanticAnalyzer::visit(BinaryExpressionNode& node) {
     // No-op
 }

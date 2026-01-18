@@ -22,5 +22,10 @@ private:
     std::shared_ptr<ImportNode> parseImport();
     std::shared_ptr<ComponentNode> parseComponent();
     std::shared_ptr<PropertyNode> parseProperty();
-    std::shared_ptr<ASTNode> parseValue();
+
+    // Expression Parsing
+    std::shared_ptr<ExpressionNode> parseExpression();
+    std::shared_ptr<ExpressionNode> parseTerm();
+    std::shared_ptr<ExpressionNode> parseFactor();
+    std::shared_ptr<ExpressionNode> parsePrimary();
 };

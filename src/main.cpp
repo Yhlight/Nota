@@ -51,8 +51,20 @@ public:
         std::cout << "\n";
     }
 
-    void visit(ValueNode& node) override {
+    void visit(LiteralNode& node) override {
         std::cout << node.token.value;
+    }
+
+    void visit(ReferenceNode& node) override {
+        std::cout << node.name;
+    }
+
+    void visit(BinaryExpressionNode& node) override {
+        std::cout << "(";
+        node.left->accept(*this);
+        std::cout << " " << node.op.value << " ";
+        node.right->accept(*this);
+        std::cout << ")";
     }
 };
 

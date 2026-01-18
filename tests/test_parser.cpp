@@ -46,7 +46,7 @@ TEST(ParserTest, Properties) {
     ASSERT_NE(prop, nullptr);
     EXPECT_EQ(prop->name, "width");
 
-    auto val = std::dynamic_pointer_cast<ValueNode>(prop->value);
+    auto val = std::dynamic_pointer_cast<LiteralNode>(prop->value);
     ASSERT_NE(val, nullptr);
     EXPECT_EQ(val->token.value, "100");
 }
@@ -95,4 +95,29 @@ TEST(ParserTest, ImportWithAlias) {
     ASSERT_NE(importNode, nullptr);
     EXPECT_EQ(importNode->path, "UI");
     EXPECT_EQ(importNode->alias, "ui");
+}
+
+TEST(ParserTest, BinaryExpression) {
+    // Rect { width: 100 + 20 }
+    std::vector<Token> tokens = {
+        {TokenType::KEYWORD_RECT, "Rect", 1, 1},
+        {TokenType::LBRACE, "{", 1, 6},
+        {TokenType::IDENTIFIER, "width", 1, 8},
+        {TokenType::COLON, ":", 1, 13},
+        {TokenType::NUMBER_LITERAL, "100", 1, 15},
+        {TokenType::PLUS, "+", 1, 19},
+        {TokenType::NUMBER_LITERAL, "20", 1, 21},
+        {TokenType::RBRACE, "}", 1, 23},
+        {TokenType::EOF_TOKEN, "", 1, 24}
+    };
+
+    Parser parser(tokens);
+    auto root = parser.parse();
+
+    auto comp = std::dynamic_pointer_cast<ComponentNode>(root->statements[0]);
+    auto prop = std::dynamic_pointer_cast<PropertyNode>(comp->children[0]);
+    auto expr = std::dynamic_pointer_cast<BinaryExpressionNode>(prop->value);
+
+    ASSERT_NE(expr, nullptr);
+    EXPECT_EQ(expr->op.type, TokenType::PLUS);
 }

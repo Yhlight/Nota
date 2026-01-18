@@ -8,7 +8,7 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
-add_executable(nota-tests TestLexer.cpp)
+add_executable(nota-tests TestLexer.cpp TestParser.cpp)
 
 target_link_libraries(
     nota-tests

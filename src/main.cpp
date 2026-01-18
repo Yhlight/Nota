@@ -2,69 +2,56 @@
 #include <vector>
 #include <string>
 #include "include/Lexer.hpp"
-#include "include/Token.hpp"
+#include "include/Parser.hpp"
+#include "include/AST/AstNodes.hpp"
 
-// Helper to convert TokenType to string for printing
-std::string tokenTypeToString(TokenType type) {
-    switch (type) {
-        case TokenType::LEFT_BRACE: return "LEFT_BRACE";
-        case TokenType::RIGHT_BRACE: return "RIGHT_BRACE";
-        case TokenType::LEFT_PAREN: return "LEFT_PAREN";
-        case TokenType::RIGHT_PAREN: return "RIGHT_PAREN";
-        case TokenType::COLON: return "COLON";
-        case TokenType::SEMICOLON: return "SEMICOLON";
-        case TokenType::IDENTIFIER: return "IDENTIFIER";
-        case TokenType::STRING: return "STRING";
-        case TokenType::NUMBER: return "NUMBER";
-        case TokenType::ITEM: return "ITEM";
-        case TokenType::APP: return "APP";
-        case TokenType::ROW: return "ROW";
-        case TokenType::COL: return "COL";
-        case TokenType::RECT: return "RECT";
-        case TokenType::TEXT: return "TEXT";
-        case TokenType::BUTTON: return "BUTTON";
-        case TokenType::IMPORT: return "IMPORT";
-        case TokenType::AS: return "AS";
-        case TokenType::PACKAGE: return "PACKAGE";
-        case TokenType::EXPORT: return "EXPORT";
-        case TokenType::PROPERTY: return "PROPERTY";
-        case TokenType::IF: return "IF";
-        case TokenType::ELSE: return "ELSE";
-        case TokenType::STATES: return "STATES";
-        case TokenType::STATE: return "STATE";
-        case TokenType::WHEN: return "WHEN";
-        case TokenType::DELEGATE: return "DELEGATE";
-        case TokenType::FOR: return "FOR";
-        case TokenType::STRUCT: return "STRUCT";
-        case TokenType::END_OF_FILE: return "END_OF_FILE";
-        case TokenType::UNKNOWN: return "UNKNOWN";
-        default: return "UNKNOWN";
+// Forward declaration for the recursive print function
+void printAst(const ComponentNode& node, int indent = 0);
+
+// Helper to print the AST
+void printAst(const ComponentNode& node, int indent) {
+    std::string indentation(indent * 2, ' ');
+    std::cout << indentation << "Component: " << node.type.lexeme << std::endl;
+
+    for (const auto& prop : node.properties) {
+        std::cout << indentation << "  Property: " << prop->key.lexeme << " = " << prop->value.lexeme << std::endl;
+    }
+
+    for (const auto& child : node.children) {
+        printAst(*child, indent + 1);
     }
 }
 
 int main(int argc, char* argv[]) {
     std::string source = R"(
-        // Nota Lexer Demonstration
+        // Nota Parser Demonstration
         App {
             width: 100
-            /* A simple rectangle */
+
             Rect {
                 color: "blue"
+                height: 50
             }
         }
     )";
 
-    std::cout << "--- Tokenizing Nota Source ---" << std::endl;
+    std::cout << "--- Parsing Nota Source ---" << std::endl;
     std::cout << source << std::endl;
-    std::cout << "-----------------------------" << std::endl;
+    std::cout << "--------------------------" << std::endl;
+    std::cout << "--- Abstract Syntax Tree ---" << std::endl;
 
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.scanTokens();
 
-    for (const auto& token : tokens) {
-        std::cout << "Type: " << tokenTypeToString(token.type)
-                  << ", Lexeme: '" << token.lexeme
-                  << "', Line: " << token.line << std::endl;
+    Parser parser(tokens);
+    try {
+        std::unique_ptr<ComponentNode> root = parser.parse();
+        if (root) {
+            printAst(*root);
+        }
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Parsing Error: " << e.what() << std::endl;
+        return 1;
     }
 
     return 0;

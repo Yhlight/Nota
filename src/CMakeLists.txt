@@ -1,4 +1,4 @@
-add_library(nota_core STATIC Lexer.cpp)
+add_library(nota_core STATIC Lexer.cpp Parser.cpp)
 
 target_include_directories(nota_core PUBLIC include)
 

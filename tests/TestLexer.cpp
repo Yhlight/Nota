@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Lexer.hpp"
+#include <Lexer.hpp>
 
 TEST(LexerTest, TestSingleCharTokens) {
     std::string source = "{}( ):;";

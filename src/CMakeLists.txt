@@ -1,5 +1,8 @@
 # Create a library for the compiler's core components
-add_library(nota-core Lexer.cpp)
+add_library(nota-core
+  Lexer.cpp
+  Parser.cpp
+)
 
 # Make the include directory public for any target that links against nota-core
 target_include_directories(nota-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

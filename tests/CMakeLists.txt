@@ -8,6 +8,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(nota-tests
   test_basic.cpp
   test_lexer.cpp
+  test_parser.cpp
 )
 target_link_libraries(nota-tests
   GTest::gtest_main

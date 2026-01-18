@@ -42,9 +42,28 @@ public:
     void accept(ASTVisitor& visitor) override;
 };
 
+class ImportNode : public ASTNode {
+public:
+    std::string path; // "file.nota" or ModuleName
+    std::string alias; // optional 'as' alias
+
+    ImportNode(const std::string& path, const std::string& alias = "")
+        : path(path), alias(alias) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
+class ProgramNode : public ASTNode {
+public:
+    std::vector<std::shared_ptr<ASTNode>> statements; // Imports, Components
+
+    void accept(ASTVisitor& visitor) override;
+};
+
 class ASTVisitor {
 public:
     virtual ~ASTVisitor() = default;
+    virtual void visit(ProgramNode& node) = 0;
+    virtual void visit(ImportNode& node) = 0;
     virtual void visit(ComponentNode& node) = 0;
     virtual void visit(PropertyNode& node) = 0;
     virtual void visit(ValueNode& node) = 0;
@@ -53,3 +72,5 @@ public:
 inline void ValueNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void PropertyNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ComponentNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void ImportNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void ProgramNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }

@@ -8,7 +8,7 @@
 class Parser {
 public:
     Parser(const std::vector<Token>& tokens);
-    std::shared_ptr<ComponentNode> parse();
+    std::shared_ptr<ProgramNode> parse();
 
 private:
     std::vector<Token> tokens;
@@ -19,7 +19,7 @@ private:
     bool match(TokenType type);
     Token consume(TokenType type, const std::string& message);
 
-    std::shared_ptr<ASTNode> parseStatement();
+    std::shared_ptr<ImportNode> parseImport();
     std::shared_ptr<ComponentNode> parseComponent();
     std::shared_ptr<PropertyNode> parseProperty();
     std::shared_ptr<ASTNode> parseValue();

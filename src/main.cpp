@@ -1,8 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstring>
 #include "lexer.h"
 #include "parser.h"
+#include "codegen.h"
 
 class PrintVisitor : public ASTVisitor {
     int indent = 0;
@@ -10,6 +12,23 @@ class PrintVisitor : public ASTVisitor {
         for(int i=0; i<indent; ++i) std::cout << "  ";
     }
 public:
+    void visit(ProgramNode& node) override {
+        std::cout << "Program {\n";
+        indent++;
+        for (auto& stmt : node.statements) {
+            stmt->accept(*this);
+        }
+        indent--;
+        std::cout << "}\n";
+    }
+
+    void visit(ImportNode& node) override {
+        printIndent();
+        std::cout << "Import: " << node.path;
+        if (!node.alias.empty()) std::cout << " as " << node.alias;
+        std::cout << "\n";
+    }
+
     void visit(ComponentNode& node) override {
         printIndent();
         std::cout << "Component: " << node.type;
@@ -39,13 +58,22 @@ public:
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: nota <file.nota>\n";
+        std::cerr << "Usage: nota <file.nota> [-o output.html]\n";
         return 1;
     }
 
-    std::ifstream file(argv[1]);
+    std::string inputPath = argv[1];
+    std::string outputPath;
+
+    for (int i = 2; i < argc; ++i) {
+        if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
+            outputPath = argv[++i];
+        }
+    }
+
+    std::ifstream file(inputPath);
     if (!file.is_open()) {
-        std::cerr << "Could not open file: " << argv[1] << "\n";
+        std::cerr << "Could not open file: " << inputPath << "\n";
         return 1;
     }
 
@@ -60,8 +88,23 @@ int main(int argc, char* argv[]) {
         Parser parser(tokens);
         auto root = parser.parse();
 
-        PrintVisitor printer;
-        root->accept(printer);
+        if (outputPath.empty()) {
+            // Default behavior: print AST
+            PrintVisitor printer;
+            root->accept(printer);
+        } else {
+            // Generate Code
+            CodeGen codegen;
+            std::string html = codegen.generate(*root);
+
+            std::ofstream outFile(outputPath);
+            if (!outFile.is_open()) {
+                std::cerr << "Could not open output file: " << outputPath << "\n";
+                return 1;
+            }
+            outFile << html;
+            std::cout << "Generated " << outputPath << "\n";
+        }
 
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";

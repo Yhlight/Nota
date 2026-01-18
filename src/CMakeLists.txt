@@ -1,6 +1,7 @@
 add_library(nota_lib
     lexer.cpp
     parser.cpp
+    codegen.cpp
 )
 
 add_executable(nota

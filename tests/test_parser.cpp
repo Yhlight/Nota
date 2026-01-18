@@ -13,8 +13,11 @@ TEST(ParserTest, BasicComponent) {
     Parser parser(tokens);
     auto root = parser.parse();
 
-    EXPECT_EQ(root->type, "App");
-    EXPECT_EQ(root->children.size(), 0);
+    ASSERT_EQ(root->statements.size(), 1);
+    auto comp = std::dynamic_pointer_cast<ComponentNode>(root->statements[0]);
+    ASSERT_NE(comp, nullptr);
+    EXPECT_EQ(comp->type, "App");
+    EXPECT_EQ(comp->children.size(), 0);
 }
 
 TEST(ParserTest, Properties) {
@@ -32,10 +35,14 @@ TEST(ParserTest, Properties) {
     Parser parser(tokens);
     auto root = parser.parse();
 
-    EXPECT_EQ(root->type, "Rect");
-    ASSERT_EQ(root->children.size(), 1);
+    ASSERT_EQ(root->statements.size(), 1);
+    auto comp = std::dynamic_pointer_cast<ComponentNode>(root->statements[0]);
+    ASSERT_NE(comp, nullptr);
 
-    auto prop = std::dynamic_pointer_cast<PropertyNode>(root->children[0]);
+    EXPECT_EQ(comp->type, "Rect");
+    ASSERT_EQ(comp->children.size(), 1);
+
+    auto prop = std::dynamic_pointer_cast<PropertyNode>(comp->children[0]);
     ASSERT_NE(prop, nullptr);
     EXPECT_EQ(prop->name, "width");
 
@@ -44,42 +51,48 @@ TEST(ParserTest, Properties) {
     EXPECT_EQ(val->token.value, "100");
 }
 
-TEST(ParserTest, NestedComponents) {
-    // App { Row { } }
+TEST(ParserTest, Imports) {
+    // import "ui.nota"; App {}
     std::vector<Token> tokens = {
-        {TokenType::KEYWORD_APP, "App", 1, 1},
-        {TokenType::LBRACE, "{", 1, 5},
-            {TokenType::KEYWORD_ROW, "Row", 2, 5},
-            {TokenType::LBRACE, "{", 2, 9},
-            {TokenType::RBRACE, "}", 2, 11},
-        {TokenType::RBRACE, "}", 3, 1},
-        {TokenType::EOF_TOKEN, "", 3, 2}
+        {TokenType::KEYWORD_IMPORT, "import", 1, 1},
+        {TokenType::STRING_LITERAL, "ui.nota", 1, 8},
+        {TokenType::SEMICOLON, ";", 1, 17},
+        {TokenType::KEYWORD_APP, "App", 1, 19},
+        {TokenType::LBRACE, "{", 1, 23},
+        {TokenType::RBRACE, "}", 1, 25},
+        {TokenType::EOF_TOKEN, "", 1, 26}
     };
 
     Parser parser(tokens);
     auto root = parser.parse();
 
-    EXPECT_EQ(root->type, "App");
-    ASSERT_EQ(root->children.size(), 1);
+    ASSERT_EQ(root->statements.size(), 2);
 
-    auto child = std::dynamic_pointer_cast<ComponentNode>(root->children[0]);
-    ASSERT_NE(child, nullptr);
-    EXPECT_EQ(child->type, "Row");
+    auto importNode = std::dynamic_pointer_cast<ImportNode>(root->statements[0]);
+    ASSERT_NE(importNode, nullptr);
+    EXPECT_EQ(importNode->path, "ui.nota");
+
+    auto appNode = std::dynamic_pointer_cast<ComponentNode>(root->statements[1]);
+    ASSERT_NE(appNode, nullptr);
+    EXPECT_EQ(appNode->type, "App");
 }
 
-TEST(ParserTest, ItemDefinition) {
-    // Item Box { }
+TEST(ParserTest, ImportWithAlias) {
+    // import UI as ui
     std::vector<Token> tokens = {
-        {TokenType::KEYWORD_ITEM, "Item", 1, 1},
-        {TokenType::IDENTIFIER, "Box", 1, 6},
-        {TokenType::LBRACE, "{", 1, 10},
-        {TokenType::RBRACE, "}", 1, 12},
-        {TokenType::EOF_TOKEN, "", 1, 13}
+        {TokenType::KEYWORD_IMPORT, "import", 1, 1},
+        {TokenType::IDENTIFIER, "UI", 1, 8},
+        {TokenType::IDENTIFIER, "as", 1, 11},
+        {TokenType::IDENTIFIER, "ui", 1, 14},
+        {TokenType::EOF_TOKEN, "", 1, 16}
     };
 
     Parser parser(tokens);
     auto root = parser.parse();
 
-    EXPECT_EQ(root->type, "Item");
-    EXPECT_EQ(root->name, "Box");
+    ASSERT_EQ(root->statements.size(), 1);
+    auto importNode = std::dynamic_pointer_cast<ImportNode>(root->statements[0]);
+    ASSERT_NE(importNode, nullptr);
+    EXPECT_EQ(importNode->path, "UI");
+    EXPECT_EQ(importNode->alias, "ui");
 }

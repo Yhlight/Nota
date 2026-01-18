@@ -27,9 +27,66 @@ Token Parser::consume(TokenType type, const std::string& message) {
     throw std::runtime_error("Parse Error at " + std::to_string(peek().line) + ":" + std::to_string(peek().column) + " - " + message + ". Got " + peek().value);
 }
 
-std::shared_ptr<ComponentNode> Parser::parse() {
-    // Top level should be a Component (e.g., App or Item)
-    return parseComponent();
+std::shared_ptr<ProgramNode> Parser::parse() {
+    auto program = std::make_shared<ProgramNode>();
+
+    while (peek().type != TokenType::EOF_TOKEN) {
+        Token t = peek();
+        if (t.type == TokenType::KEYWORD_IMPORT) {
+            program->statements.push_back(parseImport());
+        } else if (t.type == TokenType::KEYWORD_EXPORT) {
+            // Treat export as a modifier, for now consume and then expect component
+            advance();
+            program->statements.push_back(parseComponent());
+        } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
+            program->statements.push_back(parseComponent());
+        } else if (t.type == TokenType::IDENTIFIER) {
+            // Could be Component Identifier { ... } (Custom component)
+            // or maybe a property if we allowed properties at top level? (No, standard says no)
+            // Assume it's a component type.
+             program->statements.push_back(parseComponent());
+        } else if (t.type == TokenType::SEMICOLON) {
+            advance(); // Ignore top-level semicolons
+        } else {
+             throw std::runtime_error("Unexpected token at top level: " + t.value);
+        }
+    }
+    return program;
+}
+
+std::shared_ptr<ImportNode> Parser::parseImport() {
+    consume(TokenType::KEYWORD_IMPORT, "Expect 'import'");
+    std::string path;
+    std::string alias;
+
+    Token t = peek();
+    if (t.type == TokenType::STRING_LITERAL) {
+        path = advance().value;
+    } else if (t.type == TokenType::IDENTIFIER) {
+        path = advance().value;
+        // Handle dotted module names: import Std.UI.Button;
+        while (match(TokenType::DOT)) {
+            path += "." + consume(TokenType::IDENTIFIER, "Expect identifier after '.'").value;
+        }
+    } else {
+        throw std::runtime_error("Expect string literal or identifier after import");
+    }
+
+    // Check for 'as' (which would need a keyword or just identifier?)
+    // Nota.md example: import "ui.nota" as ui;
+    // We don't have KEYWORD_AS. Check if next token is identifier "as"?
+    // Or maybe just look for identifier if we decide 'as' is not a reserved keyword.
+    // For now, let's look for identifier "as".
+    if (peek().type == TokenType::IDENTIFIER && peek().value == "as") {
+        advance(); // consume "as"
+        alias = consume(TokenType::IDENTIFIER, "Expect alias identifier").value;
+    }
+
+    if (peek().type == TokenType::SEMICOLON) {
+        advance();
+    }
+
+    return std::make_shared<ImportNode>(path, alias);
 }
 
 std::shared_ptr<ComponentNode> Parser::parseComponent() {
@@ -56,13 +113,6 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
     consume(TokenType::LBRACE, "Expect '{' after component name");
 
     while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
-        // Decide if Property or Nested Component
-        // Lookahead:
-        // IDENTIFIER : ... -> Property
-        // IDENTIFIER { ... -> Component
-        // KEYWORD ... -> Component (usually)
-        // KEYWORD_PROPERTY ... -> Property definition (custom prop)
-
         Token t = peek();
         if (t.type == TokenType::IDENTIFIER) {
             if (peek(1).type == TokenType::COLON) {
@@ -73,32 +123,22 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
                  // id.prop: val
                  node->children.push_back(parseProperty());
             } else {
-                 // Maybe "Identifier Identifier" (custom type property definition?)
-                 // For now assume Syntax Error if not : or {
                  throw std::runtime_error("Unexpected token after identifier " + t.value);
             }
         } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
             // Built-in component or Item
             node->children.push_back(parseComponent());
         } else if (t.type == TokenType::KEYWORD_PROPERTY) {
-            // property type name: value
-            // We treat this as a PropertyNode but maybe specialized?
-            // For now, let's just parse it as a generic property line or ignore custom prop defs in MVP
-            // Let's implement basic "property type name: value" parsing
             advance(); // consume property
-            // type
             Token typeTok = advance();
-            // name
             Token nameTok = consume(TokenType::IDENTIFIER, "Expect property name");
             consume(TokenType::COLON, "Expect ':'");
             auto val = parseValue();
-            // We might store this differently, but for now reuse PropertyNode
             auto prop = std::make_shared<PropertyNode>("property " + typeTok.value + " " + nameTok.value, val);
              node->children.push_back(prop);
         } else if (t.type == TokenType::SEMICOLON) {
             advance(); // Ignore semicolons
         } else {
-             // Unknown, maybe comment or error
              throw std::runtime_error("Unexpected token in component body: " + t.value);
         }
     }
@@ -108,7 +148,6 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
 }
 
 std::shared_ptr<PropertyNode> Parser::parseProperty() {
-    // Name can be ID or ID.ID
     Token nameTok = advance();
     std::string name = nameTok.value;
 
@@ -131,11 +170,8 @@ std::shared_ptr<ASTNode> Parser::parseValue() {
         return std::make_shared<ValueNode>(t);
     }
 
-    // Identifiers (references)
     if (t.type == TokenType::IDENTIFIER) {
         advance();
-        // Check for math or dots?
-        // For MVP, just return the identifier as a value
         return std::make_shared<ValueNode>(t);
     }
 

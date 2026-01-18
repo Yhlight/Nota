@@ -8,11 +8,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
-add_executable(nota-tests Placeholder.cpp)
+add_executable(nota-tests TestLexer.cpp)
 
 target_link_libraries(
     nota-tests
     GTest::gtest_main
+    nota_core
 )
 
 add_test(NAME nota-tests COMMAND nota-tests)

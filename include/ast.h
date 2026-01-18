@@ -1,0 +1,52 @@
+#pragma once
+#include <string>
+#include <vector>
+#include <memory>
+#include <variant>
+
+namespace nota {
+
+struct Node {
+    virtual ~Node() = default;
+};
+
+struct Expression : Node {
+};
+
+struct Literal : Expression {
+    std::variant<int, double, std::string, bool> value;
+    Literal(int v) : value(v) {}
+    Literal(double v) : value(v) {}
+    Literal(std::string v) : value(v) {}
+    Literal(bool v) : value(v) {}
+    Literal(const char* v) : value(std::string(v)) {}
+};
+
+struct Identifier : Expression {
+    std::string name;
+    Identifier(std::string n) : name(n) {}
+};
+
+struct Property : Node {
+    std::string name;
+    std::shared_ptr<Expression> value;
+    Property(std::string n, std::shared_ptr<Expression> v) : name(n), value(v) {}
+};
+
+struct Component : Node {
+    std::string type;
+    std::vector<std::shared_ptr<Property>> properties;
+    std::vector<std::shared_ptr<Component>> children;
+
+    Component(std::string t) : type(t) {}
+
+    void addProperty(std::shared_ptr<Property> p) {
+        properties.push_back(p);
+    }
+
+    void addChild(std::shared_ptr<Component> c) {
+        children.push_back(c);
+    }
+};
+
+}

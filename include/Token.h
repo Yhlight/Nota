@@ -38,6 +38,7 @@ enum class TokenType {
     // Keywords
     If, Else, True, False,
     Import, Package, Export, As,
+    Property,
 
     EndOfFile,
     Unknown

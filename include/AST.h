@@ -11,6 +11,12 @@ struct PropertyNode {
     std::unique_ptr<Expr> value;
 };
 
+struct PropertyDefNode {
+    std::string type;
+    std::string name;
+    std::unique_ptr<Expr> defaultValue;
+};
+
 // Base class for nodes in the component tree
 class Node {
 public:
@@ -21,7 +27,8 @@ public:
 class ComponentNode : public Node {
 public:
     std::string type;
-    std::vector<PropertyNode> properties;
+    std::vector<PropertyNode> properties; // Assigned properties
+    std::vector<PropertyDefNode> propertyDefs; // Custom property definitions
     std::vector<std::unique_ptr<Node>> children;
 
     // Helper to deep copy
@@ -31,6 +38,14 @@ public:
 
         for (const auto& prop : properties) {
              newNode->properties.push_back(PropertyNode{prop.name, prop.value->clone()});
+        }
+
+        for (const auto& def : propertyDefs) {
+             newNode->propertyDefs.push_back(PropertyDefNode{
+                 def.type,
+                 def.name,
+                 def.defaultValue ? def.defaultValue->clone() : nullptr
+             });
         }
 
         for (const auto& child : children) {

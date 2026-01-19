@@ -174,7 +174,38 @@ std::unique_ptr<Node> Parser::parseComponent() {
         consume(TokenType::LBrace, "Expect '{' after component type.");
 
         while (!isAtEnd() && peek().type != TokenType::RBrace) {
-             if (peek().type == TokenType::Identifier) {
+             if (peek().type == TokenType::Property) {
+                 // property <type> <name>: <value>
+                 consume(TokenType::Property, "Expect 'property' keyword.");
+                 Token typeToken = consume(TokenType::Identifier, "Expect type after 'property'."); // Assuming type is identifier for now (int, bool, etc)
+                 // Or we might need check for keywords if int/bool become keywords? Currently identifiers.
+
+                 Token nameToken = consume(TokenType::Identifier, "Expect property name.");
+
+                 std::unique_ptr<Expr> defaultVal = nullptr;
+                 if (match(TokenType::Colon)) {
+                     defaultVal = parseExpression();
+                 }
+
+                 compNode->propertyDefs.push_back(PropertyDefNode{typeToken.value, nameToken.value, std::move(defaultVal)});
+
+                 // If there's a default value, also set it as current property value if not overridden?
+                 // Usually definition sets default.
+                 // For now, let's just store definition.
+                 // If we want it to be usable, we might also push to properties if it has default.
+                 if (!compNode->propertyDefs.back().defaultValue) {
+                      // No default
+                 } else {
+                      // Add to properties so it can be evaluated?
+                      // But properties vector is for assigned values.
+                      // CodeGen should look up defaults if not in properties.
+                      // For simplicity in MVP, let's push to properties too if it has value.
+                      compNode->properties.push_back(PropertyNode{nameToken.value, compNode->propertyDefs.back().defaultValue->clone()});
+                 }
+
+                 match(TokenType::Semicolon);
+
+             } else if (peek().type == TokenType::Identifier) {
                  if (current + 1 < tokens.size() && tokens[current + 1].type == TokenType::Colon) {
                     Token propName = consume(TokenType::Identifier, "Expect property name.");
                     consume(TokenType::Colon, "Expect ':' after property name.");

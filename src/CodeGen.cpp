@@ -13,9 +13,6 @@ std::string Evaluator::visitBinaryExpr(BinaryExpr& expr) {
     std::string left = evaluate(*expr.left);
     std::string right = evaluate(*expr.right);
 
-    // Check if either side is already a calc() or complex string?
-    // For now, let's try to parse as number+unit.
-
     try {
         size_t idxL = 0, idxR = 0;
         double l = 0, r = 0;
@@ -25,30 +22,45 @@ std::string Evaluator::visitBinaryExpr(BinaryExpr& expr) {
         try { l = std::stod(left, &idxL); leftIsNum = true; } catch(...) {}
         try { r = std::stod(right, &idxR); rightIsNum = true; } catch(...) {}
 
+        // If one is boolean string "true"/"false", convert to 1/0 for logic?
+        // Or if logic operators (&& ||) handle them.
+        // Current parser supports binary ops. Lexer has && ||.
+        // Parser creates BinaryExpr. Evaluator visits BinaryExpr.
+        // We need to handle &&, || here or inside try/catch?
+        // Let's handle logic operators specifically.
+
+        if (expr.op.type == TokenType::AmpAmp) {
+             bool lTrue = (left == "true" || (left != "false" && left != "" && left != "0"));
+             bool rTrue = (right == "true" || (right != "false" && right != "" && right != "0"));
+             return (lTrue && rTrue) ? "true" : "false";
+        }
+        if (expr.op.type == TokenType::PipePipe) {
+             bool lTrue = (left == "true" || (left != "false" && left != "" && left != "0"));
+             bool rTrue = (right == "true" || (right != "false" && right != "" && right != "0"));
+             return (lTrue || rTrue) ? "true" : "false";
+        }
+
         if (!leftIsNum || !rightIsNum) throw std::runtime_error("Not numbers");
 
         std::string unitL = left.substr(idxL);
         std::string unitR = right.substr(idxR);
 
-        // Handle multiplication/division (usually one scalar)
         if (expr.op.type == TokenType::Star) {
-            if (!unitL.empty() && !unitR.empty()) throw std::runtime_error("Complex unit math"); // px * px
+            if (!unitL.empty() && !unitR.empty()) throw std::runtime_error("Complex unit math");
             double res = l * r;
-            return std::to_string(res) + (unitL.empty() ? unitR : unitL); // Remove trailing zeros? std::to_string keeps them.
+            return std::to_string(res) + (unitL.empty() ? unitR : unitL);
         }
         if (expr.op.type == TokenType::Slash) {
-            if (!unitR.empty()) throw std::runtime_error("Div by unit"); // px / px is scalar, but px / % is hard.
+            if (!unitR.empty()) throw std::runtime_error("Div by unit");
             double res = (r != 0) ? l / r : 0;
             return std::to_string(res) + unitL;
         }
 
-        // Addition/Subtraction
         if (unitL == unitR || (unitL.empty() && unitR.empty())) {
              double res = 0;
              if (expr.op.type == TokenType::Plus) res = l + r;
              else if (expr.op.type == TokenType::Minus) res = l - r;
 
-             // Remove trailing zeros for cleanliness
              std::string resStr = std::to_string(res);
              resStr.erase(resStr.find_last_not_of('0') + 1, std::string::npos);
              if (resStr.back() == '.') resStr.pop_back();
@@ -56,41 +68,11 @@ std::string Evaluator::visitBinaryExpr(BinaryExpr& expr) {
              return resStr + unitL;
         }
 
-        // Mixed units (e.g. 100% - 20px)
         throw std::runtime_error("Mixed units");
 
     } catch (...) {
-        // Fallback to calc() or string concatenation
         if (expr.op.type == TokenType::Plus || expr.op.type == TokenType::Minus ||
             expr.op.type == TokenType::Star || expr.op.type == TokenType::Slash) {
-
-            // Check if it's string concatenation (strings)
-            // If strictly logic, we might want calc.
-            // But if one is "solid", it's probably CSS value concat.
-            // Heuristic: if contains units (px, %, em, etc) or calc, use calc.
-            // If contains alpha chars that are not units, use concat (except calc).
-
-            // Simple heuristic: If operator is + and it looks like string concat?
-            // "1px" + "solid" -> "1px solid" (Evaluator currently does this via exception catch block below?)
-            // Actually, my previous code did: `if (expr.op.type == TokenType::Plus) return left + right;`
-            // That merged "1px" and "solid" into "1pxsolid" (no space).
-            // But parser handles space for "1px solid".
-            // So if we are here, it's explicit `+` in source. `width: 10 + 20`.
-            // If `width: 100% - 20px`, we want `calc(100% - 20px)`.
-
-            // If op is Plus, and it looks like strings (no digits?), concat.
-            // But `100%` has digits.
-
-            // Let's assume arithmetic operators +, -, *, / implies CALC if not simple math.
-            // UNLESS it is string literal?
-            // Parse strings.
-            bool isStrL = left.size() >= 2 && left.front() == '"' && left.back() == '"'; // LiteralExpr stores raw value? No, strips quotes usually?
-            // Lexer `readString` strips quotes?
-            // Lexer: `advance(); // Skip "` ... `value += advance();` ... `advance(); // Skip closing "`
-            // So LiteralExpr value does NOT have quotes.
-
-            // If it's not a number, it's a string/identifier.
-            // If we have `calc(100% - 20px)`, we return it.
 
             std::string opStr;
             if (expr.op.type == TokenType::Plus) opStr = "+";
@@ -115,7 +97,11 @@ std::string Evaluator::visitLiteralExpr(LiteralExpr& expr) {
 }
 
 std::string Evaluator::visitVariableExpr(VariableExpr& expr) {
-    return expr.name.value;
+    auto it = context.find(expr.name.value);
+    if (it != context.end()) {
+        return it->second;
+    }
+    return expr.name.value; // Fallback to name (for CSS keywords like 'red')
 }
 
 // Helper to convert Nota type to CSS class
@@ -131,13 +117,13 @@ struct PropOutput {
     std::string content;
 };
 
-static PropOutput processProperties(const ComponentNode& node) {
+static PropOutput processProperties(const ComponentNode& node, const Context& ctx) {
     PropOutput out;
     std::stringstream cssSS;
     std::stringstream attrSS;
-    Evaluator evaluator;
+    Evaluator evaluator(ctx);
 
-    // Check for explicit position property first to determine default behavior
+    // Check for explicit position property first
     bool hasExplicitPosition = false;
     for (const auto& prop : node.properties) {
         if (prop.name == "position") {
@@ -146,7 +132,6 @@ static PropOutput processProperties(const ComponentNode& node) {
         }
     }
 
-    // Default absolute positioning for x/y/position handling
     bool needsAbsPos = false;
 
     for (const auto& prop : node.properties) {
@@ -164,7 +149,6 @@ static PropOutput processProperties(const ComponentNode& node) {
         }
 
         if (name == "onClick") {
-            // Simple JS injection. In real world, escape quotes!
             attrSS << " onclick=\"" << value << "\"";
             continue;
         }
@@ -175,8 +159,6 @@ static PropOutput processProperties(const ComponentNode& node) {
         }
 
         // CSS Properties
-
-        // Positioning sugar
         if (name == "x") {
             name = "left";
             needsAbsPos = true;
@@ -184,7 +166,6 @@ static PropOutput processProperties(const ComponentNode& node) {
             name = "top";
             needsAbsPos = true;
         } else if (name == "position") {
-            // Handle "left top", "center"
              if (value == "center") {
                 cssSS << "left: 50%; top: 50%; transform: translate(-50%, -50%); position: absolute; ";
                 continue;
@@ -192,17 +173,14 @@ static PropOutput processProperties(const ComponentNode& node) {
                 cssSS << "left: 0; top: 0; position: absolute; ";
                 continue;
             }
-            // If just "absolute" or "relative", pass through
-            if (value == "absolute") needsAbsPos = false; // Already set
+            if (value == "absolute") needsAbsPos = false;
         }
 
-        // Mappings
         if (name == "color") name = "background-color";
         if (name == "radius") name = "border-radius";
         if (name == "spacing") name = "gap";
+        if (name == "index") name = "z-index";
 
-        // Units
-        // Check if value is just number
         bool isNumber = !value.empty() && std::all_of(value.begin(), value.end(), [](char c){
             return isdigit(c) || c == '.';
         });
@@ -215,8 +193,6 @@ static PropOutput processProperties(const ComponentNode& node) {
     }
 
     if (needsAbsPos && !hasExplicitPosition) {
-        // Only add if not already present?
-        // Simple check
         if (cssSS.str().find("position:") == std::string::npos) {
              cssSS << "position: absolute; ";
         }
@@ -227,7 +203,43 @@ static PropOutput processProperties(const ComponentNode& node) {
     return out;
 }
 
-std::string CodeGen::generateHTML(const Node& root) {
+// Build context for a component (properties including overrides and definitions)
+// Note: In a real system, scope might be inherited or specific.
+// For now, we mix defined properties and assigned properties.
+static Context buildContext(const ComponentNode& node, const Context& parentCtx) {
+    Context ctx = parentCtx; // Inherit parent scope? Usually variables are local or explicitly passed.
+    // Nota.md: "property bool isFlag: false". used in "if (isFlag)".
+    // So it's local scope.
+    // But what about "width: parent.width"? That's different (parent access).
+    // Let's start with local scope + simple inheritance for now (or just local).
+
+    // First, add property definitions (defaults)
+    Evaluator eval(parentCtx); // Defaults evaluated in parent context? Or empty?
+    for (const auto& def : node.propertyDefs) {
+        if (def.defaultValue) {
+             ctx[def.name] = eval.evaluate(*def.defaultValue);
+        }
+    }
+
+    // Then add assigned properties (overrides)
+    // We need to evaluate them.
+    // NOTE: Self-reference? "width: 100; height: width".
+    // This requires multipass or lazy eval.
+    // For MVP, simplistic order-dependent evaluation or just basic values.
+    for (const auto& prop : node.properties) {
+        // Evaluate value in parent context? Or current?
+        // Usually properties are expressions evaluated in context where they are defined?
+        // But "width: 100" -> 100.
+        // If "width: isFlag ? 100 : 200", isFlag is local.
+        // So we need local context.
+        // But we are building it.
+        // Let's assume for now properties are evaluated with currently known context.
+        ctx[prop.name] = eval.evaluate(*prop.value);
+    }
+    return ctx;
+}
+
+std::string CodeGen::generateHTML(const Node& root, const Context& parentContext) {
     std::stringstream ss;
 
     if (auto* comp = dynamic_cast<const ComponentNode*>(&root)) {
@@ -240,7 +252,8 @@ std::string CodeGen::generateHTML(const Node& root) {
             tag = "span";
         }
 
-        auto props = processProperties(*comp);
+        Context ctx = buildContext(*comp, parentContext);
+        auto props = processProperties(*comp, ctx);
 
         ss << "<" << tag << " class=\"" << cssClass << "\"" << props.attr;
 
@@ -255,23 +268,23 @@ std::string CodeGen::generateHTML(const Node& root) {
         }
 
         for (const auto& child : comp->children) {
-            ss << generateHTML(*child);
+            ss << generateHTML(*child, ctx); // Pass context to children
         }
 
         ss << "</" << tag << ">";
     } else if (auto* ifNode = dynamic_cast<const IfNode*>(&root)) {
-        Evaluator eval;
+        Evaluator eval(parentContext); // Evaluate condition in current scope
         std::string cond = eval.evaluate(*ifNode->condition);
 
         bool isTrue = (cond == "true" || (cond != "false" && cond != "" && cond != "0"));
 
         if (isTrue) {
             for (const auto& child : ifNode->thenBranch) {
-                ss << generateHTML(*child);
+                ss << generateHTML(*child, parentContext);
             }
         } else {
             for (const auto& child : ifNode->elseBranch) {
-                ss << generateHTML(*child);
+                ss << generateHTML(*child, parentContext);
             }
         }
     }

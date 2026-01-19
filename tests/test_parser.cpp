@@ -54,3 +54,20 @@ TEST_F(ParserTest, PropertyAccess) {
     Parser parser(lexer.tokenize());
     ASSERT_NO_THROW(parser.parseAll());
 }
+
+TEST_F(ParserTest, CustomPropertyDefinition) {
+    std::string input = "Rect { property bool isFlag: true }";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    ASSERT_EQ(nodes.size(), 1);
+    auto* rect = dynamic_cast<ComponentNode*>(nodes[0].get());
+
+    EXPECT_EQ(rect->propertyDefs.size(), 1);
+    EXPECT_EQ(rect->propertyDefs[0].type, "bool");
+    EXPECT_EQ(rect->propertyDefs[0].name, "isFlag");
+    // Should also be in properties due to our logic
+    EXPECT_EQ(rect->properties.size(), 1);
+    EXPECT_EQ(rect->properties[0].name, "isFlag");
+}

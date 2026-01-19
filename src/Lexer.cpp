@@ -82,7 +82,8 @@ Token Lexer::readIdentifier() {
         {"import", TokenType::Import},
         {"package", TokenType::Package},
         {"export", TokenType::Export},
-        {"as", TokenType::As}
+        {"as", TokenType::As},
+        {"property", TokenType::Property}
     };
 
     auto it = keywords.find(value);

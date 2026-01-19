@@ -153,3 +153,57 @@ TEST(CodeGenTest, EventHandling) {
         EXPECT_EQ(styleContent.find("onHover"), std::string::npos);
     }
 }
+
+TEST(CodeGenTest, IndexMapping) {
+    std::string input = "Rect { index: 10 }";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    CodeGen codegen;
+    std::string html = codegen.generateHTML(*nodes[0]);
+
+    EXPECT_NE(html.find("z-index: 10"), std::string::npos);
+}
+
+TEST(CodeGenTest, CustomPropertyLogic) {
+    std::string input =
+        "App { \n"
+        "  property bool showRect: true \n"
+        "  if (showRect) { \n"
+        "    Rect { color: red } \n"
+        "  } else { \n"
+        "    Rect { color: blue } \n"
+        "  } \n"
+        "}";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    CodeGen codegen;
+    std::string html = codegen.generateHTML(*nodes[0]);
+
+    EXPECT_NE(html.find("background-color: red"), std::string::npos);
+    EXPECT_EQ(html.find("background-color: blue"), std::string::npos);
+}
+
+TEST(CodeGenTest, CustomPropertyLogicFalse) {
+    std::string input =
+        "App { \n"
+        "  property bool showRect: false \n"
+        "  if (showRect) { \n"
+        "    Rect { color: red } \n"
+        "  } else { \n"
+        "    Rect { color: blue } \n"
+        "  } \n"
+        "}";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    CodeGen codegen;
+    std::string html = codegen.generateHTML(*nodes[0]);
+
+    EXPECT_EQ(html.find("background-color: red"), std::string::npos);
+    EXPECT_NE(html.find("background-color: blue"), std::string::npos);
+}

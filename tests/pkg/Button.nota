@@ -1,0 +1,7 @@
+package UI;
+
+export Item Button {
+    width: 50
+    height: 20
+    color: blue
+}

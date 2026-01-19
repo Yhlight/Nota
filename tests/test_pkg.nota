@@ -1,0 +1,9 @@
+import "tests/pkg/Button.nota";
+
+App {
+    // Should be accessible via UI.Button due to 'package UI;' in Button.nota
+    UI.Button {
+        x: 10
+        y: 10
+    }
+}

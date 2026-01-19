@@ -42,6 +42,25 @@ void SemanticAnalyzer::visit(ImportNode& node) {
         std::string prefix = "";
         if (!node.alias.empty()) {
             prefix = node.alias + ".";
+        } else {
+            // Check for Package declaration
+            for (auto& stmt : importedRoot->statements) {
+                if (auto pkg = std::dynamic_pointer_cast<PackageNode>(stmt)) {
+                    prefix = pkg->name + ".";
+                    break;
+                }
+            }
+
+            // Fallback to filename if no package (and no alias)
+            // if (prefix.empty()) {
+            //    std::string filename = resolvedPath.substr(resolvedPath.find_last_of("/\\") + 1);
+            //    size_t lastDot = filename.find_last_of('.');
+            //    if (lastDot != std::string::npos) filename = filename.substr(0, lastDot);
+            //    prefix = filename + ".";
+            // }
+            // Nota.md says file import -> filename is namespace.
+            // But if package is present, package is namespace.
+            // The logic above implements package priority.
         }
 
         for (auto& stmt : importedRoot->statements) {

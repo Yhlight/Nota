@@ -1,4 +1,37 @@
+#pragma once
+#include "ast.h"
+#include "sema.h"
+#include <string>
+#include <sstream>
+#include <vector>
+#include <unordered_map>
+
+class CodeGen : public ASTVisitor {
+public:
+    std::stringstream html;
+    std::stringstream css;
+    int indentLevel = 0;
+    ComponentRegistry registry;
+
+    std::string generate(ProgramNode& root);
+
+    void visit(ProgramNode& node) override;
+    void visit(ImportNode& node) override;
+    void visit(ComponentNode& node) override;
+    void visit(PropertyNode& node) override;
+    void visit(LiteralNode& node) override;
+    void visit(ReferenceNode& node) override;
+    void visit(BinaryExpressionNode& node) override;
+    void visit(ConditionalNode& node) override;
+
+private:
+    void indent(std::stringstream& ss);
+    std::string mapComponentToTag(const std::string& type);
+    std::string mapPropertyToCSS(const std::string& name, bool isTextComponent);
+    void generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties, bool isTextComponent);
+    void generateEvents(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties);
+    std::string evaluateExpression(ASTNode& node);
+
     // For deep property overrides
     void visitComponent(ComponentNode& node, const std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>>& pendingOverrides);
-    void visit(ConditionalNode& node) override;
 };

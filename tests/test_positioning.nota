@@ -1,0 +1,39 @@
+Item Box {
+    width: 200
+    height: 200
+
+    Rect {
+        id: tl
+        width: 50
+        height: 50
+        position: left top
+        x: 10
+        y: 10
+        color: red
+    }
+
+    Rect {
+        id: br
+        width: 50px
+        height: 50
+        position: right bottom
+        x: 10
+        y: 10
+        color: blue
+        index: 2
+    }
+
+    Rect {
+        id: ctr
+        width: 50
+        height: 50
+        position: center
+        x: 0
+        y: 0
+        color: green
+    }
+}
+
+App {
+    Box {}
+}

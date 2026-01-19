@@ -59,7 +59,9 @@ std::string CodeGen::mapComponentToTag(const std::string& type) {
 
 std::string CodeGen::mapPropertyToCSS(const std::string& name, bool isTextComponent) {
     if (name == "spacing") return "gap";
+    if (name == "padding") return "padding";
     if (name == "radius") return "border-radius";
+    if (name == "index") return "z-index";
     if (name == "color") {
         if (isTextComponent) return "color";
         return "background-color";
@@ -85,7 +87,19 @@ public:
 
     void visit(LiteralNode& node) override {
         std::string v = node.token.value;
-        if (node.token.type == TokenType::NUMBER_LITERAL) {
+        bool isNumber = (node.token.type == TokenType::NUMBER_LITERAL);
+
+        // Parser creates STRING_LITERAL even for numbers if they are single tokens in parsePrimary
+        if (!isNumber && node.token.type == TokenType::STRING_LITERAL) {
+            // Check if pure number
+            if (!v.empty() && v.find_first_not_of("0123456789.-") == std::string::npos) {
+                 // Check for negative number or just dots?
+                 // Simple check: digit or dot or minus
+                 isNumber = true;
+            }
+        }
+
+        if (isNumber) {
             if (allowUnits && v.find('%') == std::string::npos) {
                  if (propertyName == "width" || propertyName == "height" ||
                      propertyName == "padding" || propertyName == "spacing" ||
@@ -107,12 +121,6 @@ public:
         node.left->accept(*this); // Left operand keeps current unit mode
 
         ss << " " << node.op.value << " ";
-
-        // If operation is * or /, right operand usually scalar (no units)
-        // e.g. 100px * 2. 100px / 2.
-        // But 2 * 100px is also valid? My heuristic assumes left is dimension.
-        // For simplicity: if * or /, disable units for right side.
-        // This fixes `calc(100px * 2px)` -> `calc(100px * 2)`.
 
         bool prevUnits = allowUnits;
         if (node.op.type == TokenType::STAR || node.op.type == TokenType::SLASH) {
@@ -154,17 +162,57 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
     processProps(properties);
     processProps(overrideProperties);
 
-    for (const auto& pair : styleMap) {
-        styleStream << pair.first << ": " << pair.second << "; ";
-    }
-
     // Positioning Logic (Conductor 4)
     if (styleMap.count("left") || styleMap.count("top")) {
+        // If position anchor is set, adjust mapping?
+        bool hasPosition = styleMap.count("position");
+        if (hasPosition) {
+            std::string posVal = styleMap["position"];
+            bool isRight = (posVal.find("right") != std::string::npos);
+            bool isBottom = (posVal.find("bottom") != std::string::npos);
+            bool isCenter = (posVal.find("center") != std::string::npos);
+
+            if (isRight) {
+                if (styleMap.count("left")) {
+                    styleMap["right"] = styleMap["left"];
+                    styleMap.erase("left");
+                }
+            }
+
+            if (isBottom) {
+                if (styleMap.count("top")) {
+                    styleMap["bottom"] = styleMap["top"];
+                    styleMap.erase("top");
+                }
+            }
+
+            if (isCenter) {
+                if (styleMap.count("left")) {
+                    styleMap["left"] = "calc(50% + " + styleMap["left"] + ")";
+                } else {
+                    styleMap["left"] = "50%";
+                }
+
+                if (styleMap.count("top")) {
+                    styleMap["top"] = "calc(50% + " + styleMap["top"] + ")";
+                } else {
+                    styleMap["top"] = "50%";
+                }
+                styleMap["transform"] = "translate(-50%, -50%)";
+            }
+
+            styleMap.erase("position");
+        }
+
         if (styleMap.find("position") == styleMap.end()) {
              styleStream << "position: absolute; ";
         }
     } else {
         styleStream << "position: relative; ";
+    }
+
+    for (const auto& pair : styleMap) {
+        styleStream << pair.first << ": " << pair.second << "; ";
     }
 
     if (styleStream.str().length() > 0) {
@@ -330,10 +378,10 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         html << "\n";
         indentLevel++;
         for (auto& child : definition->children) {
-            if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
-                visitComponent(*comp, childOverrides); // Pass down
-            } else if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
+            if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
                 visit(*cond);
+            } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
+                visitComponent(*comp, childOverrides); // Pass down
             }
         }
         indentLevel--;
@@ -352,10 +400,10 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         if (!definition) html << "\n";
         indentLevel++;
         for (auto& child : node.children) {
-            if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
-                visitComponent(*comp, childOverrides);
-            } else if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
+            if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
                 visit(*cond);
+            } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
+                visitComponent(*comp, childOverrides);
             }
         }
         indentLevel--;

@@ -3,11 +3,75 @@
 #include <iostream>
 #include <memory>
 
+std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
+    Token t = peek();
+
+    if (t.type == TokenType::NUMBER_LITERAL ||
+        t.type == TokenType::STRING_LITERAL ||
+        t.type == TokenType::HEX_COLOR_LITERAL) {
+        advance();
+        std::string val = t.value;
+
+        while (peek().type == TokenType::IDENTIFIER || peek().type == TokenType::NUMBER_LITERAL) {
+             if (peek().line != t.line) break;
+
+             Token next = peek();
+             if (t.type == TokenType::NUMBER_LITERAL && next.type == TokenType::IDENTIFIER) {
+             } else {
+                 val += " ";
+             }
+             val += next.value;
+             t = advance();
+        }
+
+        Token combined{TokenType::STRING_LITERAL, val, 0, 0};
+        return std::make_shared<LiteralNode>(combined);
+    }
+
+    if (t.type == TokenType::IDENTIFIER) {
+        advance();
+        std::string name = t.value;
+        bool isDotted = false;
+        while (match(TokenType::DOT)) {
+            isDotted = true;
+            Token part = consume(TokenType::IDENTIFIER, "Expect identifier after '.'");
+            name += "." + part.value;
+        }
+
+        if (isDotted) {
+             return std::make_shared<ReferenceNode>(name);
+        }
+
+        std::string val = name;
+        bool merged = false;
+        Token last = t;
+
+        while (peek().type == TokenType::IDENTIFIER || peek().type == TokenType::NUMBER_LITERAL) {
+             if (peek().line != last.line) break;
+
+             Token next = peek();
+             val += " " + next.value;
+             last = advance();
+             merged = true;
+        }
+
+        if (merged) {
+             Token combined{TokenType::STRING_LITERAL, val, 0, 0};
+             return std::make_shared<LiteralNode>(combined);
+        } else {
+             return std::make_shared<ReferenceNode>(name);
+        }
+    }
+
+    if (t.type == TokenType::LBRACE) {
+        return parseBlock();
+    }
+
+    throw std::runtime_error("Unexpected expression token: " + t.value);
+}
+
 std::shared_ptr<ComponentNode> Parser::parseIf() {
     consume(TokenType::KEYWORD_IF, "Expect 'if'");
-    // Parentheses around condition are optional in Nota.md example: "if (isFlag)"
-    // But lexer might see LPAREN.
-    // If we support optional parens, check peek().
     bool hasParen = match(TokenType::LPAREN);
     auto condition = parseExpression();
     if (hasParen) consume(TokenType::RPAREN, "Expect ')' after condition");
@@ -16,28 +80,13 @@ std::shared_ptr<ComponentNode> Parser::parseIf() {
 
     consume(TokenType::LBRACE, "Expect '{' start of if-block");
     while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
-        // We only expect Components inside for now (or nested ifs)
-        // Nota.md example: "if (isFlag) { Rect { } } else { Button { } }"
-        // It doesn't explicitly allow properties here, but it's consistent if we allow them?
-        // But ComponentNode structure usually implies children are mixed.
-        // Let's reuse parseComponent body logic? Or manual loop?
-        // Reusing logic is hard without refactoring.
-        // Let's do manual loop similar to parseComponent but push to thenBranch.
-        // Wait, ConditionalNode needs to store ASTNodes.
         Token t = peek();
         if (t.type == TokenType::IDENTIFIER) {
-             // Check if it's a component or property?
-             // Usually just components in conditional render blocks.
-             // If property, where does it apply? To the parent?
-             // "Rect { if(x) { color: red } }" -> Conditional Property Application.
-             // Yes, Nota likely supports this.
-             // For simplicity, let's allow what parseComponent allows.
              if (peek(1).type == TokenType::COLON) {
                  node->thenBranch.push_back(parseProperty());
              } else if (peek(1).type == TokenType::LBRACE) {
                  node->thenBranch.push_back(parseComponent());
              } else if (peek(1).type == TokenType::DOT) {
-                 // Dotted logic
                  int lookahead = 1;
                  while (peek(lookahead).type == TokenType::DOT) {
                      lookahead++;
@@ -64,7 +113,6 @@ std::shared_ptr<ComponentNode> Parser::parseIf() {
     if (match(TokenType::KEYWORD_ELSE)) {
         consume(TokenType::LBRACE, "Expect '{' start of else-block");
         while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
-            // Copy paste logic for else branch (refactor later)
             Token t = peek();
             if (t.type == TokenType::IDENTIFIER) {
                  if (peek(1).type == TokenType::COLON) {
@@ -299,33 +347,6 @@ std::shared_ptr<ExpressionNode> Parser::parseFactor() {
         return expr;
     }
     return parsePrimary();
-}
-
-std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
-    Token t = peek();
-
-    if (t.type == TokenType::NUMBER_LITERAL ||
-        t.type == TokenType::STRING_LITERAL ||
-        t.type == TokenType::HEX_COLOR_LITERAL) {
-        advance();
-        return std::make_shared<LiteralNode>(t);
-    }
-
-    if (t.type == TokenType::IDENTIFIER) {
-        advance();
-        std::string name = t.value;
-        while (match(TokenType::DOT)) {
-            Token part = consume(TokenType::IDENTIFIER, "Expect identifier after '.'");
-            name += "." + part.value;
-        }
-        return std::make_shared<ReferenceNode>(name);
-    }
-
-    if (t.type == TokenType::LBRACE) {
-        return parseBlock();
-    }
-
-    throw std::runtime_error("Unexpected expression token: " + t.value);
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseBlock() {

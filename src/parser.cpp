@@ -93,7 +93,7 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
                      consume(TokenType::COLON, ":");
                      auto val = parseExpression();
                      node->children.push_back(std::make_shared<PropertyNode>("property " + typeTok.value + " " + nameTok.value, val));
-                } else if (t.type == TokenType::SEMICOLON) {
+                } else if (t.type == TokenType::SEMICOLON || t.type == TokenType::COMMA) {
                     advance();
                 } else {
                      throw std::runtime_error("Unexpected token in component expression body: " + t.value);

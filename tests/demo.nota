@@ -1,0 +1,171 @@
+// Demo App showing all features
+
+package Demo;
+
+Struct Theme {
+    string primary;
+    string secondary;
+    int spacing;
+}
+
+Item Button {
+    property string label: "Button"
+    property string bg: "#eee"
+
+    width: 100
+    height: 40
+    color: bg
+    radius: 4
+
+    Text {
+        text: parent.label
+        color: black
+        // Center text using basic layout props
+        // Note: Flex centering is cleaner but we test relative layout here
+        x: (parent.width - 50) / 2 // Approximate centering
+        y: 10
+    }
+
+    states: [
+        State { name: "hover"; when: "mouseenter"; bg: "#ddd" },
+        State { name: "normal"; when: "mouseleave"; bg: "#eee" }
+    ]
+}
+
+Item Card {
+    width: 200
+    height: 150
+    color: white
+    radius: 8
+    padding: 10
+
+    // Custom property for data binding
+    property string title: "Card Title"
+
+    Col {
+        width: 100%
+        height: 100%
+        spacing: 10
+
+        Text {
+            text: title
+            color: #333
+        }
+
+        Rect {
+            width: 100%
+            height: 2
+            color: #eee
+        }
+
+        // Slot for content? Nota doesn't strictly have slots yet,
+        // but children are appended.
+    }
+}
+
+App {
+    width: 100%
+    height: 100%
+    color: #f5f5f5
+
+    property Theme theme: Theme {
+        primary: "blue",
+        secondary: "gray",
+        spacing: 20
+    }
+
+    property list<string> menuItems: ["Home", "Settings", "Profile"]
+
+    Col {
+        width: 100%
+        height: 100%
+        padding: theme.spacing
+        spacing: theme.spacing
+
+        // Header
+        Row {
+            width: 100%
+            height: 60
+            color: white
+            radius: 8
+            padding: 10
+            spacing: 20
+
+            Text {
+                text: "Nota Demo"
+                color: theme.primary
+            }
+
+            // Loop for menu
+            for (item in menuItems) {
+                Button {
+                    label: item
+                    bg: "transparent"
+                }
+            }
+        }
+
+        // Content Area
+        Row {
+            width: 100%
+            height: 400
+            spacing: 20
+
+            // Sidebar
+            Col {
+                width: 200
+                height: 100%
+                color: white
+                radius: 8
+                padding: 10
+
+                Button {
+                    label: "Action 1"
+                    onClick: "alert('Action 1')"
+                }
+            }
+
+            // Main Grid
+            Row {
+                width: 500
+                spacing: 20
+
+                Card {
+                    title: "Analytics"
+                    Rect { width: 50; height: 50; color: "red"; }
+                }
+
+                Card {
+                    title: "Users"
+                    Rect { width: 50; height: 50; color: "green"; }
+                }
+            }
+        }
+
+        // Delegate Example
+        Item Toggle {
+            id: toggle
+            width: 50
+            height: 30
+            color: "gray"
+            radius: 15
+
+            Rect {
+                id: knob
+                width: 26
+                height: 26
+                radius: 13
+                color: "white"
+                x: 2
+                y: 2
+
+                // Forward click from knob to toggle
+                delegate [onClick] for toggle
+            }
+
+            onClick: "alert('Toggled!')"
+        }
+
+        Toggle {}
+    }
+}

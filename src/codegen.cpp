@@ -241,6 +241,11 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
                     }
                 }
 
+                // Handle 'this.' prefix
+                if (propName.rfind("this.", 0) == 0) {
+                    propName = propName.substr(5);
+                }
+
                 if (propName == "text" || propName == "id" || propName == "states") continue;
                 if (propName == "onClick" || propName == "onHover") continue; // Skip events in styles
 

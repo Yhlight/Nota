@@ -1,0 +1,14 @@
+Item Box {
+    Rect {
+        color: red
+        width: 50
+        height: 50
+    }
+}
+
+App {
+    Box {
+        // According to Nota.md, this should override the first child's color
+        this.children[0].color: blue
+    }
+}

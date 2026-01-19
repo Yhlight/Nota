@@ -4,25 +4,30 @@
 #include <vector>
 #include <memory>
 
+class ComponentNode; // Forward declaration
+
 struct PropertyNode {
     std::string name;
     std::unique_ptr<Expr> value;
 };
 
-struct ComponentNode {
+// Base class for nodes in the component tree
+class Node {
+public:
+    virtual ~Node() = default;
+    virtual std::unique_ptr<Node> clone() const = 0;
+};
+
+class ComponentNode : public Node {
+public:
     std::string type;
     std::vector<PropertyNode> properties;
-    std::vector<std::unique_ptr<ComponentNode>> children;
+    std::vector<std::unique_ptr<Node>> children;
 
     // Helper to deep copy
-    std::unique_ptr<ComponentNode> clone() const {
+    std::unique_ptr<Node> clone() const override {
         auto newNode = std::make_unique<ComponentNode>();
         newNode->type = type;
-        // Properties need deep copy of Expr.
-        // Since Expr is polymorphic, we need a clone method on Expr or re-parse.
-        // For simplicity now, we might need to implement clone() in Expr.
-        // Or, for this Conductor, assume templates are static or parsed again?
-        // Actually, Parser instantiates by cloning. We MUST implement clone for Expr.
 
         for (const auto& prop : properties) {
              newNode->properties.push_back(PropertyNode{prop.name, prop.value->clone()});
@@ -30,6 +35,25 @@ struct ComponentNode {
 
         for (const auto& child : children) {
             newNode->children.push_back(child->clone());
+        }
+        return newNode;
+    }
+};
+
+class IfNode : public Node {
+public:
+    std::unique_ptr<Expr> condition;
+    std::vector<std::unique_ptr<Node>> thenBranch;
+    std::vector<std::unique_ptr<Node>> elseBranch;
+
+    std::unique_ptr<Node> clone() const override {
+        auto newNode = std::make_unique<IfNode>();
+        newNode->condition = condition->clone();
+        for (const auto& child : thenBranch) {
+            newNode->thenBranch.push_back(child->clone());
+        }
+        for (const auto& child : elseBranch) {
+            newNode->elseBranch.push_back(child->clone());
         }
         return newNode;
     }

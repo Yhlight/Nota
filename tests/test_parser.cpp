@@ -2,6 +2,7 @@
 #include "Lexer.h"
 #include "Parser.h"
 #include "ComponentRegistry.h"
+#include "AST.h"
 
 class ParserTest : public ::testing::Test {
 protected:
@@ -17,16 +18,16 @@ TEST_F(ParserTest, BasicComponent) {
     auto nodes = parser.parseAll();
 
     ASSERT_EQ(nodes.size(), 1);
-    EXPECT_EQ(nodes[0]->type, "App");
-    EXPECT_EQ(nodes[0]->properties.size(), 1);
-    EXPECT_EQ(nodes[0]->properties[0].name, "width");
-    // Value is Expr, hard to check string directly without visitor or cast.
-    // We assume it parsed correctly if no error.
+
+    auto* app = dynamic_cast<ComponentNode*>(nodes[0].get());
+    ASSERT_NE(app, nullptr);
+
+    EXPECT_EQ(app->type, "App");
+    EXPECT_EQ(app->properties.size(), 1);
+    EXPECT_EQ(app->properties[0].name, "width");
 }
 
 TEST_F(ParserTest, ExpressionArithmetic) {
-    // We can't easily inspect the AST without casting, so we rely on CodeGen tests for value verification
-    // or just checking no throw here.
     std::string input = "Rect { width: 10 + 20 }";
     Lexer lexer(input);
     Parser parser(lexer.tokenize());

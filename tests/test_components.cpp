@@ -3,6 +3,7 @@
 #include "Parser.h"
 #include "ComponentRegistry.h"
 #include "CodeGen.h"
+#include "AST.h"
 
 class ComponentTest : public ::testing::Test {
 protected:
@@ -21,11 +22,13 @@ TEST_F(ComponentTest, DefineAndInstantiate) {
     auto nodes = parser.parseAll();
 
     ASSERT_EQ(nodes.size(), 1);
-    auto& app = nodes[0];
+    auto* app = dynamic_cast<ComponentNode*>(nodes[0].get());
+    ASSERT_NE(app, nullptr);
     EXPECT_EQ(app->type, "App");
 
     ASSERT_EQ(app->children.size(), 1);
-    auto& box = app->children[0];
+    auto* box = dynamic_cast<ComponentNode*>(app->children[0].get());
+    ASSERT_NE(box, nullptr);
 
     // Box should have properties from definition + override
     // From definition: width, height
@@ -58,8 +61,11 @@ TEST_F(ComponentTest, PropertyOverride) {
     auto nodes = parser.parseAll();
 
     ASSERT_EQ(nodes.size(), 1);
-    auto& app = nodes[0];
-    auto& box = app->children[0];
+    auto* app = dynamic_cast<ComponentNode*>(nodes[0].get());
+    ASSERT_NE(app, nullptr);
+
+    auto* box = dynamic_cast<ComponentNode*>(app->children[0].get());
+    ASSERT_NE(box, nullptr);
 
     // Should have only 1 color property, value blue
     int colorCount = 0;
@@ -87,8 +93,11 @@ TEST_F(ComponentTest, ChildAppend) {
     auto nodes = parser.parseAll();
 
     ASSERT_EQ(nodes.size(), 1);
-    auto& app = nodes[0];
-    auto& box = app->children[0];
+    auto* app = dynamic_cast<ComponentNode*>(nodes[0].get());
+    ASSERT_NE(app, nullptr);
+
+    auto* box = dynamic_cast<ComponentNode*>(app->children[0].get());
+    ASSERT_NE(box, nullptr);
 
     // Should have 2 children: r1 (from def) and r2 (appended)
     EXPECT_EQ(box->children.size(), 2);

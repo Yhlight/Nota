@@ -27,6 +27,28 @@ TEST(LexerTest, Comments) {
     EXPECT_EQ(tokens[0].value, "App");
 }
 
+TEST(LexerTest, MultilineCommentLineCounting) {
+    std::string input = "App /* line 1 \n line 2 \n line 3 */ {";
+    Lexer lexer(input);
+    auto tokens = lexer.tokenize();
+
+    // App (Line 1)
+    // \n 1 (line 2)
+    // \n 2 (line 3)
+    // line 3... */ { (Line 3)
+
+    // Wait, if input is "App /* line 1 \n line 2 \n line 3 */ {"
+    // Line 1: App /* line 1
+    // Line 2:  line 2
+    // Line 3:  line 3 */ {
+
+    EXPECT_EQ(tokens[0].value, "App");
+    EXPECT_EQ(tokens[0].line, 1);
+
+    EXPECT_EQ(tokens[1].type, TokenType::LBrace);
+    EXPECT_EQ(tokens[1].line, 3);
+}
+
 TEST(LexerTest, Colors) {
     std::string input = "color: #ff0000";
     Lexer lexer(input);

@@ -6,8 +6,8 @@
 class Parser {
 public:
     explicit Parser(std::vector<Token> tokens);
-    std::unique_ptr<ComponentNode> parse();
-    std::vector<std::unique_ptr<ComponentNode>> parseAll();
+    std::unique_ptr<Node> parse();
+    std::vector<std::unique_ptr<Node>> parseAll();
 
 private:
     std::vector<Token> tokens;
@@ -20,7 +20,7 @@ private:
     bool match(TokenType type);
     Token consume(TokenType type, const std::string& message);
 
-    std::unique_ptr<ComponentNode> parseComponent();
+    std::unique_ptr<Node> parseComponent();
 
     // Expressions
     std::unique_ptr<Expr> parseExpression();

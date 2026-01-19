@@ -34,50 +34,15 @@ std::string Evaluator::visitBinaryExpr(BinaryExpr& expr) {
         return ss.str();
 
     } catch (...) {
-        // Fallback for non-numeric operations (like CSS value merging)
-        // If we have "1px" + "solid", we might want "1px solid".
-        // But our Parser merges these into a single LiteralExpr string.
-        // So we shouldn't see + here for "1px solid black".
-
-        // Fallback: If we have multiple values joined by space (implicit in expression?),
-        // we might not see it here if it's a single LiteralExpr string.
-        // If expr is BinaryExpr, we are here.
         if (expr.op.type == TokenType::Plus) {
             return left + right;
-        } else {
-            // For other operators if not numbers, return empty or what?
-            // "1px solid" is a single string literal now.
-            // "border: 1px solid" -> Literal("1px solid").
-            // CodeGen evaluates Literal("1px solid") -> "1px solid".
-            // So `BorderMapping` test failure means `evaluate` failed to return "1px solid black".
-            // Why? `html.find` failed.
-            // Let's print out what `evaluate` returns in debug or assume it works if not exception.
-            // The issue might be `1px solid black` being parsed.
-            // The Parser loop consumes Identifier/Number.
-            // "1px" (Number/Ident merged), "solid" (Ident), "black" (Ident).
-            // It creates one LiteralExpr with "1px solid black".
-            // `visitLiteralExpr` returns `expr.value`.
-            // So it should work.
-            // UNLESS `1px` is handled weirdly by Lexer?
-            // Lexer: `readNumber` consumes `.` and digits. `1` is Number.
-            // `px` is Identifier.
-            // Parser `parsePrimary`: `match(Number)` -> consumes `1`.
-            // Then loop: `peek()` is `Identifier` (`px`).
-            // `value += " " + advance().value` -> "1 px".
-            // Space added!
-            // "1 px solid black".
-            // CSS expects "1px". Space breaks it? "border: 1 px solid black" might be invalid CSS or treated differently.
-            // "1px" vs "1 px".
-            // In CSS, "1 px" is invalid length.
-            // The Parser loop adds a space.
-            // We need to NOT add space if previous token was Number and next is Identifier/Percent?
-            // Or if they are adjacent in source?
-            // The tokens track line/column. We can check adjacency.
-            return "";
+        } else if (expr.op.type == TokenType::EqualEqual) {
+             return (left == right) ? "true" : "false";
+        } else if (expr.op.type == TokenType::BangEqual) {
+             return (left != right) ? "true" : "false";
         }
+        return "";
     }
-
-    return "";
 }
 
 std::string Evaluator::visitLiteralExpr(LiteralExpr& expr) {
@@ -162,48 +127,65 @@ static std::string generateInlineStyle(const ComponentNode& node) {
     return ss.str();
 }
 
-std::string CodeGen::generateHTML(const ComponentNode& root) {
+std::string CodeGen::generateHTML(const Node& root) {
     std::stringstream ss;
 
-    std::string tag = "div";
-    std::string cssClass = toCssClass(root.type);
+    if (auto* comp = dynamic_cast<const ComponentNode*>(&root)) {
+        std::string tag = "div";
+        std::string cssClass = toCssClass(comp->type);
 
-    if (root.type == "App") {
-        tag = "body";
-    } else if (root.type == "Text") {
-        tag = "span";
-    }
+        if (comp->type == "App") {
+            tag = "body";
+        } else if (comp->type == "Text") {
+            tag = "span";
+        }
 
-    ss << "<" << tag << " class=\"" << cssClass << "\"";
+        ss << "<" << tag << " class=\"" << cssClass << "\"";
 
-    std::string style = generateInlineStyle(root);
-    if (!style.empty()) {
-        ss << " " << style;
-    }
+        std::string style = generateInlineStyle(*comp);
+        if (!style.empty()) {
+            ss << " " << style;
+        }
 
-    ss << ">";
+        ss << ">";
 
-    // For Text component
-    if (root.type == "Text") {
-        for (const auto& prop : root.properties) {
-            if (prop.name == "text") {
-                // Evaluate and output
-                Evaluator eval;
-                ss << eval.evaluate(*prop.value);
+        // For Text component
+        if (comp->type == "Text") {
+            for (const auto& prop : comp->properties) {
+                if (prop.name == "text") {
+                    // Evaluate and output
+                    Evaluator eval;
+                    ss << eval.evaluate(*prop.value);
+                }
+            }
+        }
+
+        for (const auto& child : comp->children) {
+            ss << generateHTML(*child);
+        }
+
+        ss << "</" << tag << ">";
+    } else if (auto* ifNode = dynamic_cast<const IfNode*>(&root)) {
+        Evaluator eval;
+        std::string cond = eval.evaluate(*ifNode->condition);
+
+        bool isTrue = (cond == "true" || (cond != "false" && cond != "" && cond != "0"));
+
+        if (isTrue) {
+            for (const auto& child : ifNode->thenBranch) {
+                ss << generateHTML(*child);
+            }
+        } else {
+            for (const auto& child : ifNode->elseBranch) {
+                ss << generateHTML(*child);
             }
         }
     }
 
-    for (const auto& child : root.children) {
-        ss << generateHTML(*child);
-    }
-
-    ss << "</" << tag << ">";
-
     return ss.str();
 }
 
-std::string CodeGen::generateCSS(const ComponentNode& root) {
+std::string CodeGen::generateCSS(const Node& root) {
     return R"(
 .nota-app { margin: 0; padding: 0; width: 100%; height: 100%; }
 .nota-rect { display: block; position: relative; }

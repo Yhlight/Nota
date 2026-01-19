@@ -1,6 +1,7 @@
 #include "Parser.h"
 #include "ComponentRegistry.h"
 #include <iostream>
+#include <stdexcept>
 
 Parser::Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
 
@@ -41,17 +42,23 @@ Token Parser::consume(TokenType type, const std::string& message) {
     throw std::runtime_error(message);
 }
 
-std::unique_ptr<ComponentNode> Parser::parse() {
+std::unique_ptr<Node> Parser::parse() {
     if (isAtEnd()) return nullptr;
     return parseComponent();
 }
 
-std::vector<std::unique_ptr<ComponentNode>> Parser::parseAll() {
-    std::vector<std::unique_ptr<ComponentNode>> nodes;
+std::vector<std::unique_ptr<Node>> Parser::parseAll() {
+    std::vector<std::unique_ptr<Node>> nodes;
     while (!isAtEnd()) {
         auto node = parseComponent();
         if (node) {
-            if (node->type != "__DEFINITION__") {
+            // Check if it's a definition placeholder
+            if (auto* comp = dynamic_cast<ComponentNode*>(node.get())) {
+                if (comp->type != "__DEFINITION__") {
+                    nodes.push_back(std::move(node));
+                }
+            } else {
+                // IfNode or other non-definition nodes are added
                 nodes.push_back(std::move(node));
             }
         } else {
@@ -63,7 +70,43 @@ std::vector<std::unique_ptr<ComponentNode>> Parser::parseAll() {
     return nodes;
 }
 
-std::unique_ptr<ComponentNode> Parser::parseComponent() {
+std::unique_ptr<Node> Parser::parseComponent() {
+    // Handle If statement
+    if (match(TokenType::If)) {
+        consume(TokenType::LParen, "Expect '(' after 'if'.");
+        auto condition = parseExpression();
+        consume(TokenType::RParen, "Expect ')' after condition.");
+
+        auto ifNode = std::make_unique<IfNode>();
+        ifNode->condition = std::move(condition);
+
+        consume(TokenType::LBrace, "Expect '{' before then branch.");
+        while (!isAtEnd() && peek().type != TokenType::RBrace) {
+            auto child = parseComponent();
+            if (child) {
+                ifNode->thenBranch.push_back(std::move(child));
+            } else {
+                throw std::runtime_error("Unexpected token in if branch: " + peek().value);
+            }
+        }
+        consume(TokenType::RBrace, "Expect '}' after then branch.");
+
+        if (match(TokenType::Else)) {
+            consume(TokenType::LBrace, "Expect '{' before else branch.");
+            while (!isAtEnd() && peek().type != TokenType::RBrace) {
+                auto child = parseComponent();
+                if (child) {
+                    ifNode->elseBranch.push_back(std::move(child));
+                } else {
+                    throw std::runtime_error("Unexpected token in else branch: " + peek().value);
+                }
+            }
+            consume(TokenType::RBrace, "Expect '}' after else branch.");
+        }
+
+        return ifNode;
+    }
+
     if (match(TokenType::Identifier)) {
         std::string identifier = previous().value;
 
@@ -80,11 +123,11 @@ std::unique_ptr<ComponentNode> Parser::parseComponent() {
                  if (peek().type == TokenType::Identifier) {
                      // Check for property vs child
                      if (current + 1 < tokens.size() && tokens[current + 1].type == TokenType::Colon) {
-                        Token name = consume(TokenType::Identifier, "Expect property name.");
+                        Token propName = consume(TokenType::Identifier, "Expect property name.");
                         consume(TokenType::Colon, "Expect ':' after property name.");
 
                         auto value = parseExpression();
-                        templateNode->properties.push_back(PropertyNode{name.value, std::move(value)});
+                        templateNode->properties.push_back(PropertyNode{propName.value, std::move(value)});
                         match(TokenType::Semicolon);
 
                      } else if (current + 1 < tokens.size() && tokens[current + 1].type == TokenType::LBrace) {
@@ -95,7 +138,13 @@ std::unique_ptr<ComponentNode> Parser::parseComponent() {
                          if (child) templateNode->children.push_back(std::move(child));
                      }
                  } else {
-                     throw std::runtime_error("Expect property or child component.");
+                     // Could be If statement inside definition
+                     if (peek().type == TokenType::If) {
+                         auto child = parseComponent();
+                         if (child) templateNode->children.push_back(std::move(child));
+                     } else {
+                        throw std::runtime_error("Expect property or child component.");
+                     }
                  }
              }
 
@@ -108,14 +157,18 @@ std::unique_ptr<ComponentNode> Parser::parseComponent() {
              return placeholder;
         }
 
-        std::unique_ptr<ComponentNode> node;
+        std::unique_ptr<ComponentNode> compNode;
 
         if (ComponentRegistry::instance().hasComponent(identifier)) {
-            const ComponentNode* templateNode = ComponentRegistry::instance().getComponent(identifier);
-            node = templateNode->clone();
+            // Retrieve template as generic Node
+            auto templateNode = ComponentRegistry::instance().getComponent(identifier); // returns const ComponentNode*
+
+            // Clone and cast back to ComponentNode since we know the template is one
+            auto cloned = templateNode->clone();
+            compNode.reset(dynamic_cast<ComponentNode*>(cloned.release()));
         } else {
-            node = std::make_unique<ComponentNode>();
-            node->type = identifier;
+            compNode = std::make_unique<ComponentNode>();
+            compNode->type = identifier;
         }
 
         consume(TokenType::LBrace, "Expect '{' after component type.");
@@ -123,36 +176,39 @@ std::unique_ptr<ComponentNode> Parser::parseComponent() {
         while (!isAtEnd() && peek().type != TokenType::RBrace) {
              if (peek().type == TokenType::Identifier) {
                  if (current + 1 < tokens.size() && tokens[current + 1].type == TokenType::Colon) {
-                    Token name = consume(TokenType::Identifier, "Expect property name.");
+                    Token propName = consume(TokenType::Identifier, "Expect property name.");
                     consume(TokenType::Colon, "Expect ':' after property name.");
 
                     auto value = parseExpression();
 
                     bool found = false;
-                    for (auto& prop : node->properties) {
-                        if (prop.name == name.value) {
+                    for (auto& prop : compNode->properties) {
+                        if (prop.name == propName.value) {
                             prop.value = value->clone();
                             found = true;
                             break;
                         }
                     }
                     if (!found) {
-                        node->properties.push_back(PropertyNode{name.value, std::move(value)});
+                        compNode->properties.push_back(PropertyNode{propName.value, std::move(value)});
                     }
 
                     match(TokenType::Semicolon);
 
                  } else {
                     auto child = parseComponent();
-                    if (child) node->children.push_back(std::move(child));
+                    if (child) compNode->children.push_back(std::move(child));
                  }
+             } else if (peek().type == TokenType::If) {
+                 auto child = parseComponent();
+                 if (child) compNode->children.push_back(std::move(child));
              } else {
                  throw std::runtime_error("Expect property or child component.");
              }
         }
 
         consume(TokenType::RBrace, "Expect '}' after component body.");
-        return node;
+        return compNode;
     }
     return nullptr;
 }
@@ -216,23 +272,6 @@ std::unique_ptr<Expr> Parser::parseUnary() {
     if (match(TokenType::Bang) || match(TokenType::Minus)) {
         Token op = previous();
         auto right = parseUnary();
-        // UnaryExpr not defined yet?
-        // For now, let's treat -5 as 0-5 or just literals.
-        // Or implement UnaryExpr.
-        // Let's implement UnaryExpr or fallback.
-        // CodeGen doesn't support Unary yet.
-        // Let's implement it properly.
-        // Wait, I defined UnaryExpr in AST plan but maybe not in code?
-        // Let's just consume it and treat as "Value" in Literal? No, that's bad.
-        // I should have defined UnaryExpr.
-        // Let's stick to what I have. Literal, Binary, Variable.
-        // If I encounter -5, Lexer gives Minus, Number(5).
-        // I need UnaryExpr.
-        // For MVP logic, maybe I skip Unary for now or just parse it but throw/hack.
-        // Actually -5 is common.
-        // Let's assume for now negative numbers are handled by Lexer?
-        // No, Lexer `readNumber` doesn't handle negative.
-        // Let's hack it: -5 becomes 0 - 5.
         auto zero = std::make_unique<LiteralExpr>("0", TokenType::Number);
         return std::make_unique<BinaryExpr>(std::move(zero), op, std::move(right));
     }
@@ -246,32 +285,11 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     if (match(TokenType::Number) || match(TokenType::String)) {
         Token token = previous();
         std::string value = token.value;
-        // Merge subsequent identifiers/numbers for CSS values
+
         while (peek().type == TokenType::Identifier || peek().type == TokenType::Number) {
-             // Heuristic: if current token is Number and next is Identifier (unit), don't add space?
-             // Or if tokens are adjacent (col + len == next col).
-             // Token stores line/column.
-             // But Token doesn't store length. We can approximate length from value.
-
              Token nextTok = peek();
-             // bool adjacent = (token.line == nextTok.line && token.column + token.value.length() == nextTok.column);
-             // We need to track the 'last consumed token' to check adjacency with 'nextTok'.
-
-             // Simplification: if previous was Number and next is Identifier starting with 'p' (px, pt, pc) or 'e' (em, ex) or 'r' (rem) or '%' etc?
-             // CSS units: px, em, rem, %, vw, vh, s, ms, deg, rad...
-             // Usually start with letter or %.
-             // If we just parsed a Number, and next is Identifier, we should probably attach it without space if it looks like a unit.
-             // But "1 solid" -> space. "1px" -> no space.
-
              bool noSpace = false;
              if (token.type == TokenType::Number && nextTok.type == TokenType::Identifier) {
-                 // Check if it looks like a unit?
-                 // Let's just assume Number+Identifier = Unit?
-                 // "1px" -> yes. "1 solid" -> maybe? No, solid is not unit usually.
-                 // But "1em", "100vh".
-                 // If we merge "1 solid", it becomes "1solid", which is invalid. "1 solid" is valid shorthand.
-                 // So we need to distinguish "unit" from "keyword".
-                 // Common units: px, em, rem, %, vw, vh, cm, mm, in, pt, pc.
                  static const std::vector<std::string> units = {"px", "em", "rem", "vw", "vh", "%", "s", "ms", "deg", "rad"};
                  for (const auto& u : units) {
                      if (nextTok.value == u) {
@@ -282,41 +300,16 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
              }
 
              value += (noSpace ? "" : " ") + advance().value;
-             // Update 'token' to be the one we just consumed for next iteration
              token = previous();
         }
         return std::make_unique<LiteralExpr>(value, token.type);
     }
 
     if (match(TokenType::Identifier)) {
-        // Variable or Multi-token value (like "left top")
-        // This is where "position: left top" hits.
-        // Lexer gives Identifier(left), Identifier(top).
-        // Parser calls parseExpression -> parsePrimary -> consumes "left".
-        // It returns VariableExpr("left").
-        // But what about "top"?
-        // The loop in parseComponent checks `match(Semicolon)`.
-        // If "top" follows, `parseExpression` didn't consume it.
-        // We need a way to consume sequence of identifiers as a single string literal if valid?
-        // OR, `left top` is implicitly a list or space-separated value?
-        // Nota.md says "position: left top".
-        // Maybe we parse it as: Variable(left) Variable(top)? No.
-        // If `parseExpression` returns one Expr, and we have more tokens before semicolon...
-        // We probably need to support Space separated values in `parseExpression` or `parseProperty`.
-
-        // Let's handle the "multi-token value" logic inside parseExpression?
-        // Or maybe parseExpression returns the first one, and we check if there are more?
-        // Standard expressions don't usually concatenate with space unless it's function call arguments.
-        // CSS values often use spaces.
-        // Let's modify parseExpression or parsePrimary to handle this CSS-ism.
-        // If we see Identifier, we look ahead. If next is Identifier/Number, we consume it and append?
-
         Token name = previous();
         std::string value = name.value;
 
         while (peek().type == TokenType::Identifier || peek().type == TokenType::Number) {
-             // Be careful not to consume newlines implicitly via skipWhitespace in Lexer?
-             // Tokens are already lexed.
              value += " " + advance().value;
         }
 
@@ -341,7 +334,7 @@ std::unique_ptr<Expr> Parser::parsePrimary() {
     if (match(TokenType::LParen)) {
         auto expr = parseExpression();
         consume(TokenType::RParen, "Expect ')' after expression.");
-        return expr; // GroupingExpr not strictly needed for logic unless we want to preserve structure
+        return expr;
     }
 
     throw std::runtime_error("Expect expression.");

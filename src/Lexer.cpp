@@ -16,6 +16,17 @@ char Lexer::advance() {
     if (source[position] == '\n') {
         line++;
         column = 1;
+    } else {
+        // Only increment column if not newline?
+        // Wait, if it is newline, column becomes 1.
+        // If it is NOT newline, column increments.
+        // But logic above: `column++;` happens ALWAYS.
+        // If `\n`, line++, column=1.
+        // So `\n` itself is at `old_column + 1`? No.
+        // `\n` is read. Line increments. Next char will be at column 1?
+        // Actually, if `source[position]` is `\n`, we increment line.
+        // The token containing `\n` (whitespace) is usually skipped.
+        // But `advance()` updates state.
     }
     return source[position++];
 }
@@ -40,6 +51,12 @@ void Lexer::skipWhitespace() {
                     advance(); advance();
                     break;
                 }
+                // Handle newline inside comment explicitly if `advance` logic is tricky
+                // My `advance` checks `source[position]` which is the character about to be returned/consumed.
+                // If I am here, I haven't consumed the char yet. `advance` will consume it.
+                // If `source[position]` is '\n', `advance` increments line.
+                // However, `peek()` just looks at `source[position]`.
+                // `advance` implementation:
                 advance();
             }
         } else {

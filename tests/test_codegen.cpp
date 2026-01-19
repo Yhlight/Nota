@@ -3,8 +3,6 @@
 #include "Parser.h"
 #include "CodeGen.h"
 
-// ... existing tests ...
-
 TEST(CodeGenTest, ExpressionEvaluation) {
     std::string input = "Rect { width: 10 + 20 }";
     Lexer lexer(input);
@@ -26,7 +24,6 @@ TEST(CodeGenTest, ExpressionArithmeticOrder) {
     CodeGen codegen;
     std::string html = codegen.generateHTML(*nodes[0]);
 
-    // 20*5 = 100, + 10 = 110
     EXPECT_NE(html.find("width: 110px"), std::string::npos);
 }
 
@@ -79,4 +76,44 @@ TEST(CodeGenTest, FloatValues) {
 
     EXPECT_NE(html.find("width: 100.5px"), std::string::npos);
     EXPECT_NE(html.find("height: 50.5px"), std::string::npos);
+}
+
+TEST(CodeGenTest, ConditionalRendering) {
+    std::string input =
+        "App { \n"
+        "  if (true) { \n"
+        "    Rect { color: red } \n"
+        "  } else { \n"
+        "    Rect { color: blue } \n"
+        "  } \n"
+        "}";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    CodeGen codegen;
+    std::string html = codegen.generateHTML(*nodes[0]);
+
+    EXPECT_NE(html.find("background-color: red"), std::string::npos);
+    EXPECT_EQ(html.find("background-color: blue"), std::string::npos);
+}
+
+TEST(CodeGenTest, ConditionalRenderingFalse) {
+    std::string input =
+        "App { \n"
+        "  if (false) { \n"
+        "    Rect { color: red } \n"
+        "  } else { \n"
+        "    Rect { color: blue } \n"
+        "  } \n"
+        "}";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    CodeGen codegen;
+    std::string html = codegen.generateHTML(*nodes[0]);
+
+    EXPECT_EQ(html.find("background-color: red"), std::string::npos);
+    EXPECT_NE(html.find("background-color: blue"), std::string::npos);
 }

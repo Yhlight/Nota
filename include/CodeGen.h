@@ -4,13 +4,9 @@
 
 class CodeGen {
 public:
-    std::string generateHTML(const ComponentNode& root);
-    std::string generateCSS(const ComponentNode& root);
+    std::string generateHTML(const Node& root);
+    std::string generateCSS(const Node& root);
 };
-
-// Expose Evaluator for testing if needed, or make it part of CodeGen public interface
-// For now, let's just make it a standalone class in header or export it.
-// The tests need it to verify property values.
 
 class Evaluator : public ExprVisitor {
 public:

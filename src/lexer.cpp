@@ -125,6 +125,9 @@ Token Lexer::nextToken() {
     if (current() == '.') { Token t = {TokenType::Dot, ".", line, column}; advance(); return t; }
     if (current() == '(') { Token t = {TokenType::LParen, "(", line, column}; advance(); return t; }
     if (current() == ')') { Token t = {TokenType::RParen, ")", line, column}; advance(); return t; }
+    if (current() == '[') { Token t = {TokenType::LBracket, "[", line, column}; advance(); return t; }
+    if (current() == ']') { Token t = {TokenType::RBracket, "]", line, column}; advance(); return t; }
+    if (current() == ',') { Token t = {TokenType::Comma, ",", line, column}; advance(); return t; }
 
     Token t = {TokenType::Unknown, std::string(1, current()), line, column};
     advance();
@@ -142,6 +145,8 @@ Token Lexer::readIdentifier() {
     if (text == "Item") return {TokenType::Item, text, line, startCol};
     if (text == "this") return {TokenType::This, text, line, startCol};
     if (text == "parent") return {TokenType::Parent, text, line, startCol};
+    if (text == "delegate") return {TokenType::Delegate, text, line, startCol};
+    if (text == "for") return {TokenType::For, text, line, startCol};
 
     return {TokenType::Identifier, text, line, startCol};
 }

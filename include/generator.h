@@ -16,6 +16,7 @@ public:
 private:
     std::stringstream html;
     std::stringstream css;
+    std::stringstream js;
     int counter = 0;
     std::map<std::string, std::shared_ptr<Component>> definitions;
 

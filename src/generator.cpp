@@ -29,6 +29,7 @@ std::string Generator::generate(const std::shared_ptr<Program>& program) {
 std::string Generator::generate(const std::shared_ptr<Component>& root) {
     html.str("");
     css.str("");
+    js.str("");
     counter = 0;
 
     std::stringstream head;
@@ -37,14 +38,18 @@ std::string Generator::generate(const std::shared_ptr<Component>& root) {
 
     css << "* { box-sizing: border-box; overflow: hidden; margin: 0; padding: 0; }\n";
 
-    // Generate body and collect css
+    // Generate body and collect css/js
     generateComponent(root);
 
     head << css.str();
     head << "</style>\n</head>\n";
 
     std::stringstream finalDoc;
-    finalDoc << head.str() << html.str() << "</html>";
+    finalDoc << head.str() << html.str();
+    if (js.tellp() > 0) {
+        finalDoc << "\n<script>\n" << js.str() << "</script>\n";
+    }
+    finalDoc << "</html>";
 
     return finalDoc.str();
 }
@@ -88,6 +93,24 @@ void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
     std::string tag = "div";
     std::string textContent = "";
 
+    std::string elementId;
+    bool explicitId = false;
+
+    // First pass to find ID or generate one if events needed
+    for (const auto& prop : actualComp->properties) {
+        if (prop->name == "id") {
+            if (auto lit = std::dynamic_pointer_cast<Literal>(prop->value)) {
+                 if (std::holds_alternative<std::string>(lit->value)) {
+                     elementId = std::get<std::string>(lit->value);
+                     explicitId = true;
+                 }
+            } else if (auto id = std::dynamic_pointer_cast<Identifier>(prop->value)) {
+                 elementId = id->name;
+                 explicitId = true;
+            }
+        }
+    }
+
     if (actualComp->type == "App") {
         className = "nota-app";
         tag = "body";
@@ -108,25 +131,58 @@ void Generator::generateComponent(const std::shared_ptr<Component>& comp) {
         className = "nota-" + actualComp->type + "-" + std::to_string(++counter);
     }
 
+    // Check for events to ensure ID
+    bool hasEvents = false;
+    for (const auto& prop : actualComp->properties) {
+        if (prop->name.rfind("on", 0) == 0) { // Starts with "on"
+            hasEvents = true;
+            break;
+        }
+    }
+
+    if (hasEvents && elementId.empty()) {
+        elementId = "nota-id-" + std::to_string(counter);
+    }
+
     css << "." << className << " {\n";
     css << generateStyles(actualComp, className);
     css << "}\n";
 
     html << "<" << tag << " class=\"" << className << "\"";
 
-    for (const auto& prop : actualComp->properties) {
-        if (prop->name == "id") {
-            if (auto lit = std::dynamic_pointer_cast<Literal>(prop->value)) {
-                 if (std::holds_alternative<std::string>(lit->value)) {
-                     html << " id=\"" << std::get<std::string>(lit->value) << "\"";
-                 }
-            } else if (auto id = std::dynamic_pointer_cast<Identifier>(prop->value)) {
-                 html << " id=\"" << id->name << "\"";
-            }
-        }
+    if (!elementId.empty()) {
+        html << " id=\"" << elementId << "\"";
     }
 
     html << ">";
+
+    // Generate JS for events
+    if (hasEvents && !elementId.empty()) {
+        for (const auto& prop : actualComp->properties) {
+            if (prop->name.rfind("on", 0) == 0) {
+                std::string eventName = prop->name; // onClick
+                // Map event name: onClick -> onclick, onHover -> onmouseenter
+                std::string jsEvent;
+                if (eventName == "onClick") jsEvent = "onclick";
+                else if (eventName == "onHover") jsEvent = "onmouseenter"; // Simple mapping for now
+                else jsEvent = "on" + eventName.substr(2); // generic fallback
+
+                // Get code content
+                std::string code;
+                if (auto lit = std::dynamic_pointer_cast<Literal>(prop->value)) {
+                    if (std::holds_alternative<std::string>(lit->value)) {
+                        code = std::get<std::string>(lit->value);
+                    }
+                } else if (auto block = std::dynamic_pointer_cast<BlockExpression>(prop->value)) {
+                    code = block->code;
+                }
+
+                if (!code.empty()) {
+                    js << "document.getElementById('" << elementId << "')." << jsEvent << " = function(event) { " << code << " };\n";
+                }
+            }
+        }
+    }
 
     if (!textContent.empty()) {
         html << textContent;

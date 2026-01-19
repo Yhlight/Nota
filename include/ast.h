@@ -50,6 +50,22 @@ struct GroupExpression : Expression {
     GroupExpression(std::shared_ptr<Expression> e) : expression(e) {}
 };
 
+struct BlockExpression : Expression {
+    std::string code;
+    BlockExpression(std::string c) : code(c) {}
+};
+
+struct ListExpression : Expression {
+    std::vector<std::shared_ptr<Expression>> elements;
+    void addElement(std::shared_ptr<Expression> e) { elements.push_back(e); }
+};
+
+struct DelegateStatement : Node {
+    std::shared_ptr<ListExpression> events;
+    std::shared_ptr<Expression> target;
+    DelegateStatement(std::shared_ptr<ListExpression> e, std::shared_ptr<Expression> t) : events(e), target(t) {}
+};
+
 struct Property : Node {
     std::string name;
     std::shared_ptr<Expression> value;
@@ -61,6 +77,7 @@ struct Component : Node {
     std::string name; // For definitions like "Item Box" -> type="Item", name="Box"
     std::vector<std::shared_ptr<Property>> properties;
     std::vector<std::shared_ptr<Component>> children;
+    std::vector<std::shared_ptr<DelegateStatement>> delegates;
 
     Component(std::string t, std::string n = "") : type(t), name(n) {}
 
@@ -70,6 +87,10 @@ struct Component : Node {
 
     void addChild(std::shared_ptr<Component> c) {
         children.push_back(c);
+    }
+
+    void addDelegate(std::shared_ptr<DelegateStatement> d) {
+        delegates.push_back(d);
     }
 };
 

@@ -14,6 +14,7 @@ add_executable(nota_tests
     test_generator.cpp
     test_components.cpp
     test_positioning.cpp
+    test_events.cpp
 )
 
 target_link_libraries(nota_tests PRIVATE nota_lib GTest::gtest_main)

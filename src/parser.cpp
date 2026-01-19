@@ -69,6 +69,16 @@ std::shared_ptr<Component> Parser::parseComponent() {
             } else {
                  throw std::runtime_error("Unexpected token after identifier in component body: " + peek().text);
             }
+        } else if (current().type == TokenType::Delegate) {
+            advance(); // consume delegate
+            auto listExpr = parsePrimary();
+            // Expect list expression [ ... ]
+            auto list = std::dynamic_pointer_cast<ListExpression>(listExpr);
+            if (!list) throw std::runtime_error("Expected list after delegate");
+
+            expect(TokenType::For);
+            auto target = parsePrimary();
+            comp->addDelegate(std::make_shared<DelegateStatement>(list, target));
         } else {
              throw std::runtime_error("Unexpected token in component body: " + current().text);
         }
@@ -188,6 +198,32 @@ std::shared_ptr<Expression> Parser::parsePrimary() {
         return std::make_shared<ThisExpression>();
     } else if (t.type == TokenType::Parent) {
         return std::make_shared<ParentExpression>();
+    } else if (t.type == TokenType::LBracket) {
+        auto list = std::make_shared<ListExpression>();
+        while (current().type != TokenType::RBracket && current().type != TokenType::EndOfFile) {
+            list->addElement(parseExpression());
+            if (current().type == TokenType::Comma) {
+                advance();
+            }
+        }
+        expect(TokenType::RBracket);
+        return list;
+    } else if (t.type == TokenType::LBrace) {
+        // Block Expression: capture raw JS code until matching RBrace
+        std::string code;
+        int depth = 1;
+        while (depth > 0 && current().type != TokenType::EndOfFile) {
+            if (current().type == TokenType::LBrace) depth++;
+            else if (current().type == TokenType::RBrace) depth--;
+
+            if (depth == 0) break; // Don't consume the last RBrace yet
+
+            if (!code.empty()) code += " ";
+            code += current().text; // Simple token concatenation
+            advance();
+        }
+        expect(TokenType::RBrace);
+        return std::make_shared<BlockExpression>(code);
     }
 
     throw std::runtime_error("Unexpected token in expression: " + t.text);

@@ -23,6 +23,11 @@ enum class TokenType {
     Item,
     This,
     Parent,
+    Delegate,
+    For,
+    LBracket,
+    RBracket,
+    Comma,
     EndOfFile,
     Unknown
 };

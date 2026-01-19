@@ -28,8 +28,8 @@ check_grep "nota-Button"
 check_grep "nota-Card"
 
 # Check Theme usage
-# In demo.html, it was "padding: theme.spacing" (invalid CSS but compiled)
-check_grep "padding: theme.spacing"
+# In demo.html, it was "padding: theme.spacing". Now it should be "var(--theme-spacing)"
+check_grep "padding: var(--theme-spacing)"
 
 # Check Loop
 # Since loop is dynamic JS, we check for the script

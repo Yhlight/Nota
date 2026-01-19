@@ -1,0 +1,17 @@
+Item Box {
+    width: 100
+    height: 100
+
+    property int intVal: 123
+    property double doubleVal: 1.23
+    property string strVal: "hello"
+    property bool boolVal: true
+    property list<string> listVal: ["a", "b"]
+
+    // Z-Index
+    index: 5
+}
+
+App {
+    Box {}
+}

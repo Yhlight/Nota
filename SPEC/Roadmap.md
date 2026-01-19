@@ -33,7 +33,7 @@
   - Runtime JS binding
   - Property updates
 
-- [ ] **Conductor 8: Advanced Features** (Current)
+- [x] **Conductor 8: Advanced Features** (Completed)
   - `Delegate`
   - `For` loops
   - Package namespaces

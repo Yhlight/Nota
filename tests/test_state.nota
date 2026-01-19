@@ -1,0 +1,22 @@
+Item Box {
+    id: mainBox
+    width: 100
+    height: 100
+    color: blue
+
+    // Test List and State Object Literal
+    states: [
+        State {
+            name: "down"
+            color: red
+        },
+        State {
+            name: "hov"
+            color: green
+        }
+    ]
+}
+
+App {
+    Box {}
+}

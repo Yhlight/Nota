@@ -33,4 +33,5 @@ private:
     std::shared_ptr<ExpressionNode> parseFactor();
     std::shared_ptr<ExpressionNode> parsePrimary();
     std::shared_ptr<ExpressionNode> parseBlock();
+    std::shared_ptr<ListNode> parseList();
 };

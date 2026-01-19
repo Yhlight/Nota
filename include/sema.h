@@ -32,6 +32,7 @@ public:
     void visit(ConditionalNode& node) override;
     void visit(StructDefinitionNode& node) override;
     void visit(StructInstantiationNode& node) override;
+    void visit(ListNode& node) override;
 
 private:
     ComponentRegistry& registry;

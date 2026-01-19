@@ -81,7 +81,6 @@ public:
 
     void visit(ProgramNode&) override {}
     void visit(ImportNode&) override {}
-    void visit(ComponentNode&) override {}
     void visit(ConditionalNode&) override {}
     void visit(PropertyNode&) override {}
 
@@ -142,6 +141,36 @@ public:
             node.arguments[i]->accept(*this);
         }
         ss << ")";
+    }
+
+    void visit(ListNode& node) override {
+        ss << "[";
+        for (size_t i = 0; i < node.elements.size(); ++i) {
+            if (i > 0) ss << ", ";
+            node.elements[i]->accept(*this);
+        }
+        ss << "]";
+    }
+
+    void visit(ComponentNode& node) override {
+        // Generates JS Object Literal: { type: "Name", prop: val, ... }
+        ss << "{ type: \"" << node.type << "\"";
+        if (!node.name.empty()) {
+            ss << ", name: \"" << node.name << "\"";
+        }
+
+        for (auto& child : node.children) {
+            if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+                ss << ", " << prop->name << ": ";
+                prop->value->accept(*this);
+            }
+            // Nested components in expressions? e.g. State { State { ... } }
+            // If child is component, it's likely not a property but a child?
+            // For Object Literals, usually everything is a property.
+            // But if we support children in State, we need a children array?
+            // Nota.md doesn't specify. Assuming properties for now.
+        }
+        ss << " }";
     }
 };
 
@@ -480,6 +509,7 @@ void CodeGen::visit(StructDefinitionNode& node) {
 }
 
 void CodeGen::visit(StructInstantiationNode& node) { }
+void CodeGen::visit(ListNode& node) { }
 void CodeGen::visit(PropertyNode& node) { }
 void CodeGen::visit(LiteralNode& node) { }
 void CodeGen::visit(ReferenceNode& node) { }

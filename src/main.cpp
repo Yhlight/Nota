@@ -119,6 +119,15 @@ public:
         }
         std::cout << ")";
     }
+
+    void visit(ListNode& node) override {
+        std::cout << "[";
+        for (size_t i = 0; i < node.elements.size(); ++i) {
+            if (i > 0) std::cout << ", ";
+            node.elements[i]->accept(*this);
+        }
+        std::cout << "]";
+    }
 };
 
 int main(int argc, char* argv[]) {

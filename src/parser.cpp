@@ -50,6 +50,49 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
             return node;
         }
 
+        // Object Literal / Component in Expression: "State { ... }"
+        if (peek().type == TokenType::LBRACE) {
+            auto node = std::make_shared<ComponentNode>(name); // 'name' is the Type
+            consume(TokenType::LBRACE, "Expect '{'");
+
+            while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
+                Token t = peek();
+                if (t.type == TokenType::IDENTIFIER) {
+                    if (peek(1).type == TokenType::COLON) {
+                        node->children.push_back(parseProperty());
+                    } else if (peek(1).type == TokenType::LBRACE) {
+                        node->children.push_back(parseComponent());
+                    } else if (peek(1).type == TokenType::DOT) {
+                        int lookahead = 1;
+                        while (peek(lookahead).type == TokenType::DOT) {
+                             lookahead++;
+                             if (peek(lookahead).type == TokenType::IDENTIFIER) lookahead++; else break;
+                        }
+                        if (peek(lookahead).type == TokenType::COLON) node->children.push_back(parseProperty());
+                        else if (peek(lookahead).type == TokenType::LBRACE) node->children.push_back(parseComponent());
+                        else throw std::runtime_error("Unexpected token after dotted identifier");
+                    } else {
+                        throw std::runtime_error("Unexpected token after identifier " + t.value);
+                    }
+                } else if (t.type == TokenType::KEYWORD_IF) {
+                    node->children.push_back(parseIf());
+                } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
+                    node->children.push_back(parseComponent());
+                } else if (t.type == TokenType::KEYWORD_PROPERTY) {
+                     advance(); Token typeTok = advance(); Token nameTok = consume(TokenType::IDENTIFIER, "Prop name");
+                     consume(TokenType::COLON, ":");
+                     auto val = parseExpression();
+                     node->children.push_back(std::make_shared<PropertyNode>("property " + typeTok.value + " " + nameTok.value, val));
+                } else if (t.type == TokenType::SEMICOLON) {
+                    advance();
+                } else {
+                     throw std::runtime_error("Unexpected token in component expression body: " + t.value);
+                }
+            }
+            consume(TokenType::RBRACE, "Expect '}'");
+            return node;
+        }
+
         if (isDotted) {
              return std::make_shared<ReferenceNode>(name);
         }
@@ -79,7 +122,31 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
         return parseBlock();
     }
 
+    if (t.type == TokenType::LBRACKET) {
+        return parseList();
+    }
+
+    if (t.type == TokenType::KEYWORD_STATE ||
+        t.type == TokenType::KEYWORD_ITEM ||
+        (t.type >= TokenType::KEYWORD_APP && t.type <= TokenType::KEYWORD_TEXT)) {
+        return parseComponent();
+    }
+
     throw std::runtime_error("Unexpected expression token: " + t.value);
+}
+
+std::shared_ptr<ListNode> Parser::parseList() {
+    consume(TokenType::LBRACKET, "Expect '['");
+    auto node = std::make_shared<ListNode>();
+
+    if (peek().type != TokenType::RBRACKET) {
+        do {
+            node->elements.push_back(parseExpression());
+        } while (match(TokenType::COMMA));
+    }
+
+    consume(TokenType::RBRACKET, "Expect ']'");
+    return node;
 }
 
 std::shared_ptr<ComponentNode> Parser::parseIf() {
@@ -258,7 +325,8 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
         while (match(TokenType::DOT)) {
             type += "." + consume(TokenType::IDENTIFIER, "Expect identifier after '.'").value;
         }
-    } else if (first.type >= TokenType::KEYWORD_APP && first.type <= TokenType::KEYWORD_TEXT) {
+    } else if ((first.type >= TokenType::KEYWORD_APP && first.type <= TokenType::KEYWORD_TEXT) ||
+                first.type == TokenType::KEYWORD_STATE) {
         type = first.value;
     } else {
         throw std::runtime_error("Unexpected token for Component start: " + first.value);

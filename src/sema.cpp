@@ -81,3 +81,9 @@ void SemanticAnalyzer::visit(StructInstantiationNode& node) {
         arg->accept(*this);
     }
 }
+
+void SemanticAnalyzer::visit(ListNode& node) {
+    for (auto& element : node.elements) {
+        element->accept(*this);
+    }
+}

@@ -1,0 +1,1 @@
+package tests.modules.pkg; Item Internal { width: 10; height: 10; color: gray; }

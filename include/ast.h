@@ -74,6 +74,7 @@ class ComponentNode : public ExpressionNode {
 public:
     std::string type;
     std::string name; // Optional, for "Item Name"
+    bool isExported = false;
     std::vector<std::shared_ptr<ASTNode>> children; // Properties and nested Components
 
     ComponentNode(const std::string& type, const std::string& name = "")
@@ -118,6 +119,7 @@ public:
 class StructDefinitionNode : public ASTNode {
 public:
     std::string name;
+    bool isExported = false;
     struct Field {
         std::string type;
         std::string name;

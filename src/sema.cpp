@@ -46,7 +46,7 @@ void SemanticAnalyzer::visit(ImportNode& node) {
 
         for (auto& stmt : importedRoot->statements) {
              if (auto comp = std::dynamic_pointer_cast<ComponentNode>(stmt)) {
-                if (comp->type == "Item" && !comp->name.empty()) {
+                if (comp->type == "Item" && !comp->name.empty() && comp->isExported) {
                     registry.registerComponent(prefix + comp->name, comp);
                 }
             }

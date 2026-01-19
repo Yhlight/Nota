@@ -1,0 +1,14 @@
+import tests.modules.pkg.Internal as P1;
+import tests.modules.pkg.Public as P2;
+
+App {
+    // Should NOT be registered (not exported)
+    P1.Internal {
+        id: internal
+    }
+
+    // Should be registered
+    P2.Public {
+        id: public
+    }
+}

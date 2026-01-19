@@ -1,0 +1,15 @@
+Item Box {
+    width: 100
+    height: 100
+
+    // Custom property
+    property bool isFlag: true
+    property string customStr: "Hello"
+
+    // Standard property
+    color: red
+}
+
+App {
+    Box {}
+}

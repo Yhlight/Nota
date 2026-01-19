@@ -275,9 +275,13 @@ std::shared_ptr<ProgramNode> Parser::parse() {
         } else if (t.type == TokenType::KEYWORD_EXPORT) {
             advance();
             if (peek().type == TokenType::KEYWORD_STRUCT) {
-                program->statements.push_back(parseStruct());
+                auto structNode = parseStruct();
+                structNode->isExported = true;
+                program->statements.push_back(structNode);
             } else {
-                program->statements.push_back(parseComponent());
+                auto compNode = parseComponent();
+                compNode->isExported = true;
+                program->statements.push_back(compNode);
             }
         } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
             program->statements.push_back(parseComponent());

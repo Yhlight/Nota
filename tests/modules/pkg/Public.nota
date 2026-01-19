@@ -1,0 +1,1 @@
+package tests.modules.pkg; export Item Public { width: 20; height: 20; color: green; }

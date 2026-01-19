@@ -33,6 +33,8 @@ public:
     void visit(StructDefinitionNode& node) override;
     void visit(StructInstantiationNode& node) override;
     void visit(ListNode& node) override;
+    void visit(DelegateNode& node) override;
+    void visit(ForNode& node) override;
 
 private:
     ComponentRegistry& registry;

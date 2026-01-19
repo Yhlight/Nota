@@ -128,6 +128,28 @@ public:
         }
         std::cout << "]";
     }
+
+    void visit(DelegateNode& node) override {
+        printIndent();
+        std::cout << "Delegate [";
+        for (size_t i = 0; i < node.events.size(); ++i) {
+            if (i > 0) std::cout << ", ";
+            std::cout << node.events[i];
+        }
+        std::cout << "] for " << node.target << "\n";
+    }
+
+    void visit(ForNode& node) override {
+        printIndent();
+        std::cout << "For (" << node.iterator << " in " << node.listName << ") {\n";
+        indent++;
+        for (auto& child : node.body) {
+            child->accept(*this);
+        }
+        indent--;
+        printIndent();
+        std::cout << "}\n";
+    }
 };
 
 int main(int argc, char* argv[]) {

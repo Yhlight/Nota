@@ -87,3 +87,12 @@ void SemanticAnalyzer::visit(ListNode& node) {
         element->accept(*this);
     }
 }
+
+void SemanticAnalyzer::visit(DelegateNode& node) {
+}
+
+void SemanticAnalyzer::visit(ForNode& node) {
+    for (auto& child : node.body) {
+        child->accept(*this);
+    }
+}

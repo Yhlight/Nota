@@ -94,6 +94,27 @@ public:
     void accept(ASTVisitor& visitor) override;
 };
 
+class DelegateNode : public ASTNode {
+public:
+    std::vector<std::string> events; // [onClick, onHover]
+    std::string target; // "parent" or "id"
+
+    DelegateNode(const std::vector<std::string>& events, const std::string& target)
+        : events(events), target(target) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
+class ForNode : public ComponentNode {
+public:
+    std::string iterator; // "item"
+    std::string listName; // "list"
+    std::vector<std::shared_ptr<ASTNode>> body;
+
+    ForNode(const std::string& iterator, const std::string& listName)
+        : ComponentNode("For"), iterator(iterator), listName(listName) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 class StructDefinitionNode : public ASTNode {
 public:
     std::string name;
@@ -139,6 +160,8 @@ public:
     virtual void visit(StructDefinitionNode& node) = 0;
     virtual void visit(StructInstantiationNode& node) = 0;
     virtual void visit(ListNode& node) = 0;
+    virtual void visit(DelegateNode& node) = 0;
+    virtual void visit(ForNode& node) = 0;
 };
 
 inline void LiteralNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
@@ -152,3 +175,5 @@ inline void ConditionalNode::accept(ASTVisitor& visitor) { visitor.visit(*this);
 inline void StructDefinitionNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ImportNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ProgramNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void DelegateNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void ForNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }

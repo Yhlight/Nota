@@ -23,17 +23,17 @@
   - `if/else` logic
   - Events (`onClick`)
 
-- [ ] **Conductor 6: Structs & Types** (Current)
+- [x] **Conductor 6: Structs & Types**
   - `Struct` definition
   - `Struct` instantiation
   - Property Typing
 
-- [ ] **Conductor 7: State & Reactivity**
+- [x] **Conductor 7: State & Reactivity**
   - `State` nodes
   - Runtime JS binding
   - Property updates
 
-- [ ] **Conductor 8: Advanced Features**
+- [ ] **Conductor 8: Advanced Features** (Current)
   - `Delegate`
   - `For` loops
   - Package namespaces

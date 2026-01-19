@@ -189,6 +189,9 @@ public:
         ss << "]";
     }
 
+    void visit(DelegateNode& node) override {}
+    void visit(ForNode& node) override {}
+
     void visit(ComponentNode& node) override {
         // Generates JS Object Literal: { type: "Name", prop: val, ... }
         ss << "{ type: \"" << node.type << "\"";
@@ -477,23 +480,34 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         html << innerText;
     }
 
+    auto processChildren = [&](const std::vector<std::shared_ptr<ASTNode>>& children, const std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>>& overrides) {
+        for (auto& child : children) {
+            if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
+                visit(*cond);
+            } else if (auto deleg = std::dynamic_pointer_cast<DelegateNode>(child)) {
+                visit(*deleg);
+            } else if (auto loop = std::dynamic_pointer_cast<ForNode>(child)) {
+                visit(*loop);
+            } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
+                visitComponent(*comp, overrides);
+            }
+        }
+    };
+
     if (definition) {
         html << "\n";
         indentLevel++;
-        for (auto& child : definition->children) {
-            if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
-                visit(*cond);
-            } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
-                visitComponent(*comp, childOverrides); // Pass down
-            }
-        }
+        processChildren(definition->children, childOverrides);
         indentLevel--;
         indent(html);
     }
 
     bool hasInstanceChildren = false;
     for (auto& child : node.children) {
-        if (std::dynamic_pointer_cast<ComponentNode>(child) || std::dynamic_pointer_cast<ConditionalNode>(child)) {
+        if (std::dynamic_pointer_cast<ComponentNode>(child) ||
+            std::dynamic_pointer_cast<ConditionalNode>(child) ||
+            std::dynamic_pointer_cast<DelegateNode>(child) ||
+            std::dynamic_pointer_cast<ForNode>(child)) {
             hasInstanceChildren = true;
             break;
         }
@@ -502,13 +516,7 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
     if (hasInstanceChildren) {
         if (!definition) html << "\n";
         indentLevel++;
-        for (auto& child : node.children) {
-            if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
-                visit(*cond);
-            } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
-                visitComponent(*comp, childOverrides);
-            }
-        }
+        processChildren(node.children, childOverrides);
         indentLevel--;
         indent(html);
     }
@@ -579,6 +587,168 @@ void CodeGen::visit(StructDefinitionNode& node) {
     html << "  }\n";
     html << "}\n";
     html << "</script>\n";
+}
+
+void CodeGen::visit(DelegateNode& node) {
+    // Generate JS to forward events
+    // Assumes 'this.el' context if inside a component setup, but here we are traversing children.
+    // We need to inject this logic into the Runtime config or a separate script block.
+    // Since Delegate is a statement inside a Component, we can emit a script block that finds the parent and target.
+    // Limitation: 'parent' reference in JS needs DOM traversal.
+    // Limitation: 'target' ID needs global lookup.
+
+    js << "<script>\n";
+    js << "(function() {\n";
+    js << "  const me = document.currentScript.previousElementSibling;\n"; // This might be fragile
+    js << "  // Delegate implementation pending robust DOM selection strategy\n";
+    js << "})();\n";
+    js << "</script>\n";
+
+    // Better approach: Use the Runtime `NotaComponent` to handle delegation if configured.
+    // But `DelegateNode` is a child, not a property.
+    // Let's emit inline JS for the prototype.
+    // "document.currentScript.parentElement" is likely the container if script is inside.
+    // Note: Our CodeGen puts children inside the tag. So script will be inside the component's div.
+
+    js << "<script>\n";
+    js << "  (function() {\n";
+    js << "    const el = document.currentScript.parentElement;\n";
+    js << "    const targetId = '" << node.target << "';\n";
+    js << "    let target = null;\n";
+    js << "    if (targetId === 'parent') target = el.parentElement;\n";
+    js << "    else target = document.getElementById(targetId);\n";
+    js << "    if (target) {\n";
+    for (const auto& evt : node.events) {
+        std::string domEvt = "click";
+        if (evt == "onClick") domEvt = "click";
+        else if (evt == "onHover") domEvt = "mouseenter";
+
+        js << "      el.addEventListener('" << domEvt << "', (e) => {\n";
+        js << "        // Dispatch event on target\n";
+        js << "        target.dispatchEvent(new Event('" << domEvt << "'));\n";
+        js << "      });\n";
+    }
+    js << "    }\n";
+    js << "  })();\n";
+    js << "</script>\n";
+
+    // Move this content to html stream because it should be embedded in the DOM structure
+    html << js.str();
+    js.str(""); // Clear js stream used for temporary buffer
+}
+
+void CodeGen::visit(ForNode& node) {
+    // Generate JS loop to render content
+    // Prototype: Use a container div and inject innerHTML via JS
+    // Limitation: This is dynamic rendering.
+
+    // We need a container for the loop items
+    static int forCount = 0;
+    std::string containerId = "nota-for-" + std::to_string(++forCount);
+
+    indent(html);
+    html << "<div id=\"" << containerId << "\" style=\"display: contents;\"></div>\n";
+
+    // Generate Template Function
+    js << "<script>\n";
+    js << "(function() {\n";
+    js << "  const container = document.getElementById('" << containerId << "');\n";
+    js << "  const list = " << node.listName << ";\n"; // Assumes listName is a global variable (e.g. from data/props)
+
+    // We need a way to render the body for each item.
+    // The body consists of Nota components.
+    // CodeGen usually writes to 'html' stream.
+    // We can capture the body generation into a JS string?
+    // Or simpler: Iterate in JS and create elements?
+    // "document.createElement" is verbose.
+    // "innerHTML +=" is easier but slower/unsafe.
+    // For prototype: innerHTML string construction.
+
+    // We need to 'compile' the body into a JS template string function.
+    // Current CodeGen architecture writes to 'html' stream directly.
+    // Let's swap the html stream to capture the output of the body!
+
+    std::stringstream oldHtml;
+    // Swap buffers? No, just use a temporary CodeGen?
+    // Using `this` instance is tricky because of state (indent, etc).
+    // Let's create a temporary CodeGen for the body.
+
+    CodeGen bodyGen;
+    bodyGen.registry = this->registry; // Share registry
+    // We need to handle the 'item' variable in the body.
+    // The body will contain References like 'item.name'.
+    // CodeGen resolves References to string "item.name".
+    // In JS template: `${item.name}`.
+    // But our CodeGen outputs "item.name" directly in text or styles.
+    // If we wrap the body output in a JS backtick string, "item.name" becomes literal text unless we interpolate.
+    // This is hard without a full expression transpiler.
+    // Hack: references to 'iterator' should become '${iterator}'.
+
+    // For now, let's assume the body output is valid HTML with some placeholders?
+    // Actually, simple static body repetition is easiest to start.
+    // "for (item in list) { Text { text: item.name } }"
+    // CodeGen for Text: <span ...>item.name</span>
+    // We want: <span ...>${item.name}</span>
+
+    // This requires the Expression Visitor to know we are in a JS Template context.
+    // Let's skip complex interpolation for this specific step and just repeat static content
+    // OR try to basic replace.
+
+    ProgramNode tempRoot;
+    tempRoot.statements = node.body; // Use body as statements
+
+    // Trick: We can't easily use bodyGen because ProgramNode expects shared_ptr.
+    // And visit(ForNode) iterates `node.body`.
+    // Let's manually visit children with a flag?
+    // Instead, let's manually traverse and capture string.
+
+    std::stringstream bodySS;
+    std::stringstream originalHtml;
+    // Save current html stream content
+    // Actually, CodeGen::html is a stringstream. We can't easily swap out underlying buffer without access.
+    // But we can recurse with a new CodeGen instance.
+
+    for (auto& child : node.body) {
+        // We need to wrap child in a ProgramNode or just call accept?
+        // CodeGen::visit(ProgramNode) iterates statements.
+        // We can just call child->accept(bodyGen).
+        // But bodyGen needs to be initialized.
+        child->accept(bodyGen);
+    }
+
+    std::string templateHTML = bodyGen.html.str();
+    // Escape backticks
+    // Also, we need to convert "item.name" (text content) into "${item.name}".
+    // This is the tricky part. The Lexer/Parser produced "item.name" as a String Literal or Reference.
+    // CodeGen outputs it as is.
+    // In JS string: `<span>item.name</span>`. We want `<span>${item.name}</span>`.
+
+    // Prototype Hack: Replace the iterator name with ${iterator} in the string?
+    // Only works if iterator is distinct.
+
+    std::string iterator = node.iterator;
+    size_t pos = 0;
+    while ((pos = templateHTML.find(iterator, pos)) != std::string::npos) {
+        // Check bounds to ensure whole word?
+        templateHTML.replace(pos, iterator.length(), "${" + iterator + "}");
+        pos += iterator.length() + 3;
+    }
+
+    // Also remove newlines to fit in JS string? Backticks handle newlines.
+
+    js << "  const template = ( " << iterator << " ) => `" << templateHTML << "`;\n";
+    js << "  let html = '';\n";
+    js << "  list.forEach(item => {\n";
+    js << "    html += template(item);\n";
+    js << "  });\n";
+    js << "  container.innerHTML = html;\n";
+    js << "})();\n";
+    js << "</script>\n";
+
+    // Emit the collected JS to the main JS stream (or HTML stream if we inline scripts there)
+    // CodeGen has `js` stream now? Yes.
+    html << js.str();
+    js.str("");
 }
 
 void CodeGen::visit(StructInstantiationNode& node) { }

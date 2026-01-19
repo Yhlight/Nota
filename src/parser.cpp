@@ -368,6 +368,10 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
             }
         } else if (t.type == TokenType::KEYWORD_IF) {
             node->children.push_back(parseIf());
+        } else if (t.type == TokenType::KEYWORD_DELEGATE) {
+            node->children.push_back(parseDelegate());
+        } else if (t.type == TokenType::KEYWORD_FOR) {
+            node->children.push_back(parseFor());
         } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
             node->children.push_back(parseComponent());
         } else if (t.type == TokenType::KEYWORD_PROPERTY) {
@@ -414,6 +418,78 @@ std::shared_ptr<StructDefinitionNode> Parser::parseStruct() {
     }
 
     consume(TokenType::RBRACE, "Expect '}'");
+    return node;
+}
+
+std::shared_ptr<DelegateNode> Parser::parseDelegate() {
+    consume(TokenType::KEYWORD_DELEGATE, "Expect 'delegate'");
+    consume(TokenType::LBRACKET, "Expect '[' for events");
+
+    std::vector<std::string> events;
+    do {
+        events.push_back(consume(TokenType::IDENTIFIER, "Expect event name").value);
+    } while (match(TokenType::COMMA));
+
+    consume(TokenType::RBRACKET, "Expect ']'");
+
+    // Expect "for" keyword. Wait, "for" is a keyword.
+    // Lexer parses "for" as KEYWORD_FOR.
+    // parseDelegate should consume it.
+    consume(TokenType::KEYWORD_FOR, "Expect 'for'");
+
+    std::string target = consume(TokenType::IDENTIFIER, "Expect target identifier").value;
+
+    if (peek().type == TokenType::SEMICOLON) advance();
+
+    return std::make_shared<DelegateNode>(events, target);
+}
+
+std::shared_ptr<ForNode> Parser::parseFor() {
+    consume(TokenType::KEYWORD_FOR, "Expect 'for'");
+    consume(TokenType::LPAREN, "Expect '('");
+    std::string iterator = consume(TokenType::IDENTIFIER, "Expect iterator name").value;
+
+    // Check for "in". Lexer might treat it as identifier or if we add keyword?
+    // Current lexer doesn't have "in". So it's IDENTIFIER "in".
+    if (peek().type == TokenType::IDENTIFIER && peek().value == "in") {
+        advance();
+    } else {
+        throw std::runtime_error("Expect 'in' after iterator");
+    }
+
+    std::string listName = consume(TokenType::IDENTIFIER, "Expect list name").value;
+    // Support dotted list name? e.g. parent.list
+    while (match(TokenType::DOT)) {
+        listName += "." + consume(TokenType::IDENTIFIER, "Expect identifier").value;
+    }
+
+    consume(TokenType::RPAREN, "Expect ')'");
+
+    auto node = std::make_shared<ForNode>(iterator, listName);
+
+    consume(TokenType::LBRACE, "Expect '{'");
+    while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
+        Token t = peek();
+        if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
+            node->body.push_back(parseComponent());
+        } else if (t.type == TokenType::IDENTIFIER) {
+             // Maybe component or property?
+             // Inside 'for', we expect components usually.
+             // But if someone does "property..."?
+             if (peek(1).type == TokenType::LBRACE) {
+                 node->body.push_back(parseComponent());
+             } else {
+                 // For now only support components in for loop body
+                 // Skip or error?
+                 // Let's assume Component
+                 node->body.push_back(parseComponent());
+             }
+        } else {
+             throw std::runtime_error("Unexpected token in for loop body: " + t.value);
+        }
+    }
+    consume(TokenType::RBRACE, "Expect '}'");
+
     return node;
 }
 

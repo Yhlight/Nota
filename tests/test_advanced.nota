@@ -1,0 +1,39 @@
+Item Box {
+    id: container
+    width: 200
+    height: 200
+    color: white
+
+    // Test Delegate
+    Rect {
+        width: 50
+        height: 50
+        color: blue
+
+        delegate [onClick] for container
+
+        onClick: "alert('Delegated Click')"
+    }
+}
+
+// Test For Loop
+Item ListContainer {
+    width: 300
+    height: 300
+
+    // We need to define 'myData' in JS runtime for this to work
+    // In prototype, we can't easily define data unless we have a Script node.
+    // Assuming the test runner or a global script defines it.
+
+    for (item in myData) {
+        Text {
+            text: item.name
+            color: black
+        }
+    }
+}
+
+App {
+    Box {}
+    ListContainer {}
+}

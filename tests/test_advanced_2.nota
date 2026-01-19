@@ -1,0 +1,26 @@
+// Test Generic Property Types
+Item GenericBox {
+    property list<string> items: ["A", "B"]
+    property list<Rect> rects
+
+    // Test For Loop with similar prefix variable (regression check for interpolation hack fix)
+    for (item in items) {
+        Text {
+            text: item
+        }
+    }
+
+    // Another loop with variable prefix collision
+    for (it in items) {
+        Text { text: it }
+    }
+
+    // Variable 'iter' vs 'iterator'
+    for (iter in items) {
+        Text { text: iter }
+    }
+}
+
+App {
+    GenericBox {}
+}

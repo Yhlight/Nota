@@ -51,6 +51,8 @@ enum class TokenType {
     STAR,       // *
     SLASH,      // /
     EQUAL,      // =
+    LESS,       // <
+    GREATER,    // >
 };
 
 struct Token {

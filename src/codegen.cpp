@@ -83,6 +83,7 @@ public:
     std::stringstream ss;
     std::string propertyName; // Context for adding units
     bool allowUnits = true;   // State to control unit appending
+    const std::set<std::string>* activeIterators = nullptr;
 
     void visit(ProgramNode&) override {}
     void visit(ImportNode&) override {}
@@ -118,6 +119,25 @@ public:
     }
 
     void visit(ReferenceNode& node) override {
+        // Check if reference is an active iterator or property of one (item or item.prop)
+        if (activeIterators) {
+            std::string root = node.name;
+            size_t dotPos = root.find('.');
+            if (dotPos != std::string::npos) {
+                root = root.substr(0, dotPos);
+            }
+
+            if (activeIterators->count(root)) {
+                // Interpolate: item.name -> ${item}.name or ${item.name}?
+                // JS template literal expects ${expression}.
+                // CodeGen previously replaced "item" with "${item}".
+                // If node.name is "item.name", replacing "item" gives "${item}.name".
+                // In JS: `${item}.name`. 'item' is the object. '${item}' stringifies object.
+                // We want `${item.name}`.
+                ss << "${" << node.name << "}";
+                return;
+            }
+        }
         ss << node.name;
     }
 
@@ -202,9 +222,11 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
                 // Evaluate value expression
                 ExpressionStringVisitor eval;
                 eval.propertyName = prop->name;
-                prop->value->accept(eval);
-
-                styleMap[cssName] = eval.ss.str();
+                eval.activeIterators = &activeIterators;
+                if (prop->value) {
+                    prop->value->accept(eval);
+                    styleMap[cssName] = eval.ss.str();
+                }
             }
         }
     };
@@ -282,6 +304,7 @@ void CodeGen::generateEvents(const std::vector<std::shared_ptr<ASTNode>>& proper
 
                 if (!attr.empty()) {
                      ExpressionStringVisitor eval;
+                     eval.activeIterators = &activeIterators;
                      prop->value->accept(eval);
                      std::string code = eval.ss.str();
 
@@ -428,6 +451,7 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
             if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
                  if (node.type == "Text" && prop->name == "text") {
                      ExpressionStringVisitor eval;
+                     eval.activeIterators = &activeIterators;
                      prop->value->accept(eval);
                      std::string s = eval.ss.str();
                      if (s.size() >= 2 && s.front() == '"' && s.back() == '"') s = s.substr(1, s.size()-2);
@@ -642,8 +666,13 @@ void CodeGen::visit(ForNode& node) {
     // Using `this` instance is tricky because of state (indent, etc).
     // Let's create a temporary CodeGen for the body.
 
+    std::set<std::string> oldIterators = this->activeIterators; // Save state
+
     CodeGen bodyGen;
     bodyGen.registry = this->registry; // Share registry
+    bodyGen.activeIterators = this->activeIterators; // Inherit iterators
+    bodyGen.activeIterators.insert(node.iterator);   // Add current iterator
+
     // We need to handle the 'item' variable in the body.
     // The body will contain References like 'item.name'.
     // CodeGen resolves References to string "item.name".
@@ -695,17 +724,9 @@ void CodeGen::visit(ForNode& node) {
     // Prototype Hack: Replace the iterator name with ${iterator} in the string?
     // Only works if iterator is distinct.
 
-    std::string iterator = node.iterator;
-    size_t pos = 0;
-    while ((pos = templateHTML.find(iterator, pos)) != std::string::npos) {
-        // Check bounds to ensure whole word?
-        templateHTML.replace(pos, iterator.length(), "${" + iterator + "}");
-        pos += iterator.length() + 3;
-    }
+    // Clean up newlines for JS string (optional, backticks handle them but cleaner output)
 
-    // Also remove newlines to fit in JS string? Backticks handle newlines.
-
-    js << "  const template = ( " << iterator << " ) => `" << templateHTML << "`;\n";
+    js << "  const template = ( " << node.iterator << " ) => `" << templateHTML << "`;\n";
     js << "  let html = '';\n";
     js << "  list.forEach(item => {\n";
     js << "    html += template(item);\n";
@@ -718,6 +739,9 @@ void CodeGen::visit(ForNode& node) {
     // CodeGen has `js` stream now? Yes.
     html << js.str();
     js.str("");
+
+    // Restore iterators
+    this->activeIterators = oldIterators;
 }
 
 void CodeGen::visit(StructInstantiationNode& node) { }

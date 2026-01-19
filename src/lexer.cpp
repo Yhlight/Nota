@@ -190,6 +190,8 @@ std::vector<Token> Lexer::tokenize() {
                 case '*': tokens.push_back(makeToken(TokenType::STAR, "*")); break;
                 case '/': tokens.push_back(makeToken(TokenType::SLASH, "/")); break;
                 case '=': tokens.push_back(makeToken(TokenType::EQUAL, "=")); break;
+                case '<': tokens.push_back(makeToken(TokenType::LESS, "<")); break;
+                case '>': tokens.push_back(makeToken(TokenType::GREATER, ">")); break;
                 default:
                     // Unknown char
                     // For now, ignore or throw?

@@ -389,10 +389,41 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
         } else if (t.type == TokenType::KEYWORD_PROPERTY) {
             advance();
             Token typeTok = advance();
+            std::string typeName = typeTok.value;
+
+            // Handle generic type: list<Rect>
+            // Note: Our lexer might produce multiple tokens for "list < Rect >"
+            // Actually, we expect IDENTIFIER "list", then check for LESS.
+            // But we already advanced `typeTok`.
+
+            if (typeName == "list" && peek().type == TokenType::IDENTIFIER) {
+                 // Check if it's actually a generic list? Nota syntax: "list<Rect>" or just "list"?
+                 // Nota.md says: "list<Rect> list_value"
+                 // Lexer splits list < Rect >.
+                 // So we need to check for LESS.
+                 // Wait, parser loop has advanced `typeTok`. Next is `nameTok` usually.
+                 // If next is LESS, then consume generic args.
+            }
+
+            if (match(TokenType::LESS)) {
+                typeName += "<";
+                // Consume generics
+                while (peek().type != TokenType::GREATER && peek().type != TokenType::EOF_TOKEN) {
+                    Token part = advance();
+                    typeName += part.value;
+                }
+                consume(TokenType::GREATER, "Expect '>' after generic type");
+                typeName += ">";
+            }
+
             Token nameTok = consume(TokenType::IDENTIFIER, "Expect property name");
-            consume(TokenType::COLON, "Expect ':'");
-            auto val = parseExpression();
-            auto prop = std::make_shared<PropertyNode>("property " + typeTok.value + " " + nameTok.value, val);
+
+            std::shared_ptr<ExpressionNode> val = nullptr;
+            if (match(TokenType::COLON)) {
+                val = parseExpression();
+            }
+
+            auto prop = std::make_shared<PropertyNode>("property " + typeName + " " + nameTok.value, val);
              node->children.push_back(prop);
         } else if (t.type == TokenType::SEMICOLON) {
             advance();

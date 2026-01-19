@@ -14,6 +14,7 @@ public:
     std::stringstream js; // For Runtime JS
     int indentLevel = 0;
     ComponentRegistry registry;
+    std::set<std::string> activeIterators; // Track loop iterators for interpolation
 
     std::string generate(ProgramNode& root);
 

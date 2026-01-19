@@ -1,0 +1,32 @@
+// Test position property logic
+Item Box {
+    width: 100
+    height: 100
+
+    // 1. Center positioning
+    Rect {
+        width: 10
+        height: 10
+        position: center
+    }
+
+    // 2. Right Bottom positioning
+    Rect {
+        width: 10
+        height: 10
+        position: right bottom
+    }
+
+    // 3. Combined x/y with position
+    Rect {
+        width: 10
+        height: 10
+        position: left top
+        x: 10
+        y: 10
+    }
+}
+
+App {
+    Box {}
+}

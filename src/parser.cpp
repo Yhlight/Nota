@@ -369,14 +369,30 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
                 node->children.push_back(parseProperty());
             } else if (peek(1).type == TokenType::LBRACE) {
                 node->children.push_back(parseComponent());
-            } else if (peek(1).type == TokenType::DOT) {
-                 // Look ahead to distinguish Prop (ID.ID:) vs Component (ID.ID {)
+            } else if (peek(1).type == TokenType::DOT || peek(1).type == TokenType::LBRACKET) {
+                 // Look ahead to distinguish Prop (ID.ID: or ID[0]:) vs Component
                  int lookahead = 1;
-                 // We are at ID (t). peek(1) is DOT.
-                 while (peek(lookahead).type == TokenType::DOT) {
-                     lookahead++; // Consume DOT
-                     if (peek(lookahead).type == TokenType::IDENTIFIER) {
-                         lookahead++; // Consume ID
+
+                 while (true) {
+                     if (peek(lookahead).type == TokenType::DOT) {
+                         lookahead++; // Consume DOT
+                         if (peek(lookahead).type == TokenType::IDENTIFIER) {
+                             lookahead++; // Consume ID
+                         } else {
+                             break;
+                         }
+                     } else if (peek(lookahead).type == TokenType::LBRACKET) {
+                         lookahead++; // Consume [
+                         if (peek(lookahead).type == TokenType::NUMBER_LITERAL) {
+                             lookahead++; // Consume NUMBER
+                             if (peek(lookahead).type == TokenType::RBRACKET) {
+                                 lookahead++; // Consume ]
+                             } else {
+                                 break;
+                             }
+                         } else {
+                             break;
+                         }
                      } else {
                          break;
                      }

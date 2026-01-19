@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "runtime.h"
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <memory>
 
@@ -272,7 +273,7 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
     processProps(overrideProperties);
 
     // Positioning Logic (Conductor 4)
-    if (styleMap.count("left") || styleMap.count("top")) {
+    if (styleMap.count("left") || styleMap.count("top") || styleMap.count("position")) {
         // If position anchor is set, adjust mapping?
         bool hasPosition = styleMap.count("position");
         if (hasPosition) {
@@ -285,6 +286,8 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
                 if (styleMap.count("left")) {
                     styleMap["right"] = styleMap["left"];
                     styleMap.erase("left");
+                } else {
+                    styleMap["right"] = "0px";
                 }
             }
 
@@ -292,6 +295,8 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
                 if (styleMap.count("top")) {
                     styleMap["bottom"] = styleMap["top"];
                     styleMap.erase("top");
+                } else {
+                    styleMap["bottom"] = "0px";
                 }
             }
 
@@ -377,6 +382,11 @@ void CodeGen::visit(ComponentNode& node) {
 }
 
 void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>>& pendingOverrides) {
+    std::vector<std::shared_ptr<ASTNode>> empty;
+    visitComponentWithDirectOverrides(node, pendingOverrides, empty);
+}
+
+void CodeGen::visitComponentWithDirectOverrides(ComponentNode& node, const std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>>& pendingOverrides, const std::vector<std::shared_ptr<ASTNode>>& directOverrides) {
     bool isCustom = registry.hasComponent(node.type);
     std::shared_ptr<ComponentNode> definition = nullptr;
     if (isCustom) {
@@ -387,11 +397,6 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
     if (isCustom) tag = "div";
 
     // 1. Resolve Overrides & Properties first
-
-    // Check if we have overrides for THIS component (via ID) passed from parent
-    // Problem: We need ID to find overrides. But ID might be IN overrides (chicken-egg).
-    // Assumption: ID is usually defined in the component or definition, not injected via override (though possible).
-    // For now, we resolve ID from definition/instance first.
 
     std::string myId = "";
     // Handle ID (Instance wins)
@@ -428,15 +433,35 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
     }
 
     std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>> childOverrides;
+    std::map<int, std::vector<std::shared_ptr<ASTNode>>> indexOverrides;
     std::vector<std::shared_ptr<ASTNode>> instanceProps;
 
     for (auto& child : node.children) {
         if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+            // Handle 'this.' prefix for overrides too
+            std::string rawName = prop->name;
+            if (rawName.rfind("this.", 0) == 0) rawName = rawName.substr(5);
+
+            if (rawName.rfind("children[", 0) == 0) {
+                size_t endBracket = rawName.find(']');
+                if (endBracket != std::string::npos) {
+                     try {
+                         int idx = std::stoi(rawName.substr(9, endBracket - 9));
+                         if (rawName.length() > endBracket + 1 && rawName[endBracket + 1] == '.') {
+                             std::string subProp = rawName.substr(endBracket + 2);
+                             auto newProp = std::make_shared<PropertyNode>(subProp, prop->value);
+                             indexOverrides[idx].push_back(newProp);
+                         }
+                     } catch (...) {}
+                }
+                continue; // Don't treat as instance prop
+            }
+
             // Check for dot notation (deep override)
-            size_t dotPos = prop->name.find('.');
+            size_t dotPos = rawName.find('.');
             if (dotPos != std::string::npos) {
-                std::string targetId = prop->name.substr(0, dotPos);
-                std::string targetProp = prop->name.substr(dotPos + 1);
+                std::string targetId = rawName.substr(0, dotPos);
+                std::string targetProp = rawName.substr(dotPos + 1);
                 auto newProp = std::make_shared<PropertyNode>(targetProp, prop->value);
                 childOverrides[targetId].push_back(newProp);
             } else {
@@ -445,6 +470,8 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         }
     }
     instanceProps.insert(instanceProps.end(), parentOverrides.begin(), parentOverrides.end());
+    // Merge direct overrides (from children[N])
+    instanceProps.insert(instanceProps.end(), directOverrides.begin(), directOverrides.end());
 
     // 2. Detect States
     bool hasStates = false;
@@ -515,6 +542,7 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         html << innerText;
     }
 
+    int currentChildIndex = 0;
     auto processChildren = [&](const std::vector<std::shared_ptr<ASTNode>>& children, const std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>>& overrides) {
         for (auto& child : children) {
             if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
@@ -524,7 +552,56 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
             } else if (auto loop = std::dynamic_pointer_cast<ForNode>(child)) {
                 visit(*loop);
             } else if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
-                visitComponent(*comp, overrides);
+                // Merge index overrides
+                auto effectiveOverrides = overrides;
+                if (indexOverrides.count(currentChildIndex)) {
+                     // Check ID. If ID exists, merge into ID. If not, we have a problem?
+                     // Actually, visitComponent checks 'pendingOverrides' for its ID.
+                     // But we can't easily inject into pendingOverrides if we don't know the ID yet.
+                     // However, visitComponent iterates 'node.children' to find ID.
+                     // But here 'comp' is the node. We can inspect it.
+
+                     std::string compId = "";
+                     for (auto& c : comp->children) {
+                         if (auto p = std::dynamic_pointer_cast<PropertyNode>(c)) {
+                             if (p->name == "id") {
+                                 // Simple extract
+                                 // We need a visitor/helper to extract ID value string easily?
+                                 // ExpressionStringVisitor...
+                                 ExpressionStringVisitor eval;
+                                 p->value->accept(eval);
+                                 compId = eval.ss.str();
+                                 break;
+                             }
+                         }
+                     }
+                     // If defined in definition? We don't have access to definition of child here easily.
+
+                     // Alternative: visitComponent signature update?
+                     // Or force inject properties into the component node itself?
+                     // Modifying 'comp' is dangerous (shared_ptr might be shared from definition).
+                     // We should clone it? Or pass "anonymous overrides".
+
+                     // For now, let's try to inject into overrides if we can find ID,
+                     // or if we can't, we might need to pass "extraProps" to visitComponent.
+                     // Let's overload visitComponent to accept "directOverrides".
+                }
+
+                // Hack: Pass index overrides via a special key in the map?
+                // Or just modify visitComponent to take 'std::vector<shared_ptr<ASTNode>> directOverrides'.
+                std::vector<std::shared_ptr<ASTNode>> direct;
+                if (indexOverrides.count(currentChildIndex)) {
+                    direct = indexOverrides[currentChildIndex];
+                }
+
+                // We need to modify visitComponent signature.
+                // Since I can't easily change signature in this diff block (it's recursive),
+                // I will use a member variable or helper?
+                // No, I can call a specialized internal method.
+                // visitComponent(ComponentNode&, map) -> I can add visitComponent(ComponentNode&, map, vector).
+
+                visitComponentWithDirectOverrides(*comp, overrides, direct);
+                currentChildIndex++;
             }
         }
     };

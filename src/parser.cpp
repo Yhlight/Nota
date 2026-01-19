@@ -32,10 +32,20 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
         advance();
         std::string name = t.value;
         bool isDotted = false;
-        while (match(TokenType::DOT)) {
-            isDotted = true;
-            Token part = consume(TokenType::IDENTIFIER, "Expect identifier after '.'");
-            name += "." + part.value;
+
+        while (true) {
+            if (match(TokenType::DOT)) {
+                isDotted = true;
+                Token part = consume(TokenType::IDENTIFIER, "Expect identifier after '.'");
+                name += "." + part.value;
+            } else if (match(TokenType::LBRACKET)) {
+                Token idx = consume(TokenType::NUMBER_LITERAL, "Expect number for array index");
+                consume(TokenType::RBRACKET, "Expect ']'");
+                name += "[" + idx.value + "]";
+                isDotted = true; // Treated same as dotted access for stringification
+            } else {
+                break;
+            }
         }
 
         if (peek().type == TokenType::LPAREN) {
@@ -540,9 +550,17 @@ std::shared_ptr<PropertyNode> Parser::parseProperty() {
     Token nameTok = advance();
     std::string name = nameTok.value;
 
-    while (match(TokenType::DOT)) {
-        Token part = consume(TokenType::IDENTIFIER, "Expect identifier after '.'");
-        name += "." + part.value;
+    while (true) {
+        if (match(TokenType::DOT)) {
+            Token part = consume(TokenType::IDENTIFIER, "Expect identifier after '.'");
+            name += "." + part.value;
+        } else if (match(TokenType::LBRACKET)) {
+            Token idx = consume(TokenType::NUMBER_LITERAL, "Expect number for array index");
+            consume(TokenType::RBRACKET, "Expect ']'");
+            name += "[" + idx.value + "]";
+        } else {
+            break;
+        }
     }
 
     consume(TokenType::COLON, "Expect ':' after property name");

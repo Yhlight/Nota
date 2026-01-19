@@ -119,21 +119,29 @@ public:
     }
 
     void visit(ReferenceNode& node) override {
+        // Check Layout Parent References: parent.width / parent.height -> 100%
+        if (node.name == "parent.width" || node.name == "parent.height") {
+            ss << "100%";
+            return;
+        }
+
         // Check if reference is an active iterator or property of one (item or item.prop)
         if (activeIterators) {
             std::string root = node.name;
             size_t dotPos = root.find('.');
-            if (dotPos != std::string::npos) {
-                root = root.substr(0, dotPos);
+            size_t bracketPos = root.find('[');
+
+            size_t endPos = std::string::npos;
+            if (dotPos != std::string::npos) endPos = dotPos;
+            if (bracketPos != std::string::npos && bracketPos < endPos) endPos = bracketPos;
+
+            if (endPos != std::string::npos) {
+                root = root.substr(0, endPos);
             }
 
             if (activeIterators->count(root)) {
-                // Interpolate: item.name -> ${item}.name or ${item.name}?
-                // JS template literal expects ${expression}.
-                // CodeGen previously replaced "item" with "${item}".
-                // If node.name is "item.name", replacing "item" gives "${item}.name".
-                // In JS: `${item}.name`. 'item' is the object. '${item}' stringifies object.
-                // We want `${item.name}`.
+                // Interpolate: item.name -> ${item.name}
+                // item[0] -> ${item[0]}
                 ss << "${" << node.name << "}";
                 return;
             }

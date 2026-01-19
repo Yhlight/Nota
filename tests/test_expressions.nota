@@ -1,0 +1,33 @@
+Item ExpressionTest {
+    width: 200
+    height: 200
+    property list<string> items: ["A", "B", "C"]
+
+    // Test Array Access in Text
+    Text {
+        text: items[0]
+        color: black
+    }
+
+    // Test Layout Math with parent
+    Rect {
+        width: parent.width / 2
+        height: parent.height / 2
+        color: red
+    }
+
+    // Test Array Access in Loop
+    for (idx in items) {
+        Text {
+            // Note: 'idx' here is the string "A" etc in For-Each loop logic.
+            // If we wanted numeric index, we'd need a range loop which isn't implemented.
+            // But let's test if we can access a global property with index inside a loop?
+            // "items[0]"
+            text: items[0]
+        }
+    }
+}
+
+App {
+    ExpressionTest {}
+}

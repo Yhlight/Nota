@@ -64,6 +64,18 @@ public:
     void accept(ASTVisitor& visitor) override;
 };
 
+class ConditionalNode : public ComponentNode {
+public:
+    std::shared_ptr<ExpressionNode> condition;
+    std::vector<std::shared_ptr<ASTNode>> thenBranch;
+    std::vector<std::shared_ptr<ASTNode>> elseBranch;
+
+    ConditionalNode(std::shared_ptr<ExpressionNode> condition)
+        : ComponentNode("If"), condition(condition) {}
+
+    void accept(ASTVisitor& visitor) override;
+};
+
 class ImportNode : public ASTNode {
 public:
     std::string path;
@@ -91,6 +103,7 @@ public:
     virtual void visit(LiteralNode& node) = 0;
     virtual void visit(ReferenceNode& node) = 0;
     virtual void visit(BinaryExpressionNode& node) = 0;
+    virtual void visit(ConditionalNode& node) = 0;
 };
 
 inline void LiteralNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
@@ -98,5 +111,6 @@ inline void ReferenceNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void BinaryExpressionNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void PropertyNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ComponentNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void ConditionalNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ImportNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ProgramNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }

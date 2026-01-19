@@ -34,24 +34,8 @@ void SemanticAnalyzer::visit(ProgramNode& node) {
 }
 
 void SemanticAnalyzer::visit(ImportNode& node) {
-    // Load module
-    // path is string literal.
-    // e.g. "ui.nota"
-    // Remove quotes if present? Parser provides value token which usually has quotes stripped if we did it right.
-    // Lexer::readString: strips quotes?
-    // Let's check Lexer.
-    // Lexer::readString: "if (peek() == '"') advance(); // consume closing " "
-    // But it accumulates characters inside.
-    // It seems it does NOT include the surrounding quotes in the token value unless I misread.
-    // Let's verify Lexer::readString in src/lexer.cpp via read_file.
-
-    // Assuming filename is clean.
     try {
         auto importedRoot = Compiler::parseFile(node.path);
-
-        // Register exported components from imported module
-        // For simplicity, we register ALL top-level Item definitions found in the imported file.
-        // We handle aliasing.
 
         std::string prefix = "";
         if (!node.alias.empty()) {
@@ -61,7 +45,6 @@ void SemanticAnalyzer::visit(ImportNode& node) {
         for (auto& stmt : importedRoot->statements) {
              if (auto comp = std::dynamic_pointer_cast<ComponentNode>(stmt)) {
                 if (comp->type == "Item" && !comp->name.empty()) {
-                    // Register with prefix
                     registry.registerComponent(prefix + comp->name, comp);
                 }
             }
@@ -73,21 +56,19 @@ void SemanticAnalyzer::visit(ImportNode& node) {
 }
 
 void SemanticAnalyzer::visit(ComponentNode& node) {
-    // No-op for now
 }
 
 void SemanticAnalyzer::visit(PropertyNode& node) {
-    // No-op
 }
 
 void SemanticAnalyzer::visit(LiteralNode& node) {
-    // No-op
 }
 
 void SemanticAnalyzer::visit(ReferenceNode& node) {
-    // No-op
 }
 
 void SemanticAnalyzer::visit(BinaryExpressionNode& node) {
-    // No-op
+}
+
+void SemanticAnalyzer::visit(ConditionalNode& node) {
 }

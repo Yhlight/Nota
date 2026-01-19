@@ -1,0 +1,9 @@
+Item Button {
+    width: 100
+    height: 40
+    color: blue
+    Text {
+        text: "Click Me"
+        color: white
+    }
+}

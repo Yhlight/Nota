@@ -23,6 +23,9 @@ private:
     std::shared_ptr<ComponentNode> parseComponent();
     std::shared_ptr<PropertyNode> parseProperty();
 
+    // Logic
+    std::shared_ptr<ComponentNode> parseIf();
+
     // Expression Parsing
     std::shared_ptr<ExpressionNode> parseExpression();
     std::shared_ptr<ExpressionNode> parseTerm();

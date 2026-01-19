@@ -29,6 +29,7 @@ public:
     void visit(LiteralNode& node) override;
     void visit(ReferenceNode& node) override;
     void visit(BinaryExpressionNode& node) override;
+    void visit(ConditionalNode& node) override;
 
 private:
     ComponentRegistry& registry;

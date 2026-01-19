@@ -3,6 +3,102 @@
 #include <iostream>
 #include <memory>
 
+std::shared_ptr<ComponentNode> Parser::parseIf() {
+    consume(TokenType::KEYWORD_IF, "Expect 'if'");
+    // Parentheses around condition are optional in Nota.md example: "if (isFlag)"
+    // But lexer might see LPAREN.
+    // If we support optional parens, check peek().
+    bool hasParen = match(TokenType::LPAREN);
+    auto condition = parseExpression();
+    if (hasParen) consume(TokenType::RPAREN, "Expect ')' after condition");
+
+    auto node = std::make_shared<ConditionalNode>(condition);
+
+    consume(TokenType::LBRACE, "Expect '{' start of if-block");
+    while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
+        // We only expect Components inside for now (or nested ifs)
+        // Nota.md example: "if (isFlag) { Rect { } } else { Button { } }"
+        // It doesn't explicitly allow properties here, but it's consistent if we allow them?
+        // But ComponentNode structure usually implies children are mixed.
+        // Let's reuse parseComponent body logic? Or manual loop?
+        // Reusing logic is hard without refactoring.
+        // Let's do manual loop similar to parseComponent but push to thenBranch.
+        // Wait, ConditionalNode needs to store ASTNodes.
+        Token t = peek();
+        if (t.type == TokenType::IDENTIFIER) {
+             // Check if it's a component or property?
+             // Usually just components in conditional render blocks.
+             // If property, where does it apply? To the parent?
+             // "Rect { if(x) { color: red } }" -> Conditional Property Application.
+             // Yes, Nota likely supports this.
+             // For simplicity, let's allow what parseComponent allows.
+             if (peek(1).type == TokenType::COLON) {
+                 node->thenBranch.push_back(parseProperty());
+             } else if (peek(1).type == TokenType::LBRACE) {
+                 node->thenBranch.push_back(parseComponent());
+             } else if (peek(1).type == TokenType::DOT) {
+                 // Dotted logic
+                 int lookahead = 1;
+                 while (peek(lookahead).type == TokenType::DOT) {
+                     lookahead++;
+                     if (peek(lookahead).type == TokenType::IDENTIFIER) lookahead++; else break;
+                 }
+                 if (peek(lookahead).type == TokenType::COLON) node->thenBranch.push_back(parseProperty());
+                 else if (peek(lookahead).type == TokenType::LBRACE) node->thenBranch.push_back(parseComponent());
+                 else throw std::runtime_error("Unexpected token after dotted identifier");
+             } else {
+                 throw std::runtime_error("Unexpected token after identifier " + t.value);
+             }
+        } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
+            node->thenBranch.push_back(parseComponent());
+        } else if (t.type == TokenType::KEYWORD_IF) {
+            node->thenBranch.push_back(parseIf());
+        } else if (t.type == TokenType::SEMICOLON) {
+            advance();
+        } else {
+             throw std::runtime_error("Unexpected token in if-block: " + t.value);
+        }
+    }
+    consume(TokenType::RBRACE, "Expect '}' end of if-block");
+
+    if (match(TokenType::KEYWORD_ELSE)) {
+        consume(TokenType::LBRACE, "Expect '{' start of else-block");
+        while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
+            // Copy paste logic for else branch (refactor later)
+            Token t = peek();
+            if (t.type == TokenType::IDENTIFIER) {
+                 if (peek(1).type == TokenType::COLON) {
+                     node->elseBranch.push_back(parseProperty());
+                 } else if (peek(1).type == TokenType::LBRACE) {
+                     node->elseBranch.push_back(parseComponent());
+                 } else if (peek(1).type == TokenType::DOT) {
+                     int lookahead = 1;
+                     while (peek(lookahead).type == TokenType::DOT) {
+                         lookahead++;
+                         if (peek(lookahead).type == TokenType::IDENTIFIER) lookahead++; else break;
+                     }
+                     if (peek(lookahead).type == TokenType::COLON) node->elseBranch.push_back(parseProperty());
+                     else if (peek(lookahead).type == TokenType::LBRACE) node->elseBranch.push_back(parseComponent());
+                     else throw std::runtime_error("Unexpected token after dotted identifier");
+                 } else {
+                     throw std::runtime_error("Unexpected token after identifier " + t.value);
+                 }
+            } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
+                node->elseBranch.push_back(parseComponent());
+            } else if (t.type == TokenType::KEYWORD_IF) {
+                node->elseBranch.push_back(parseIf());
+            } else if (t.type == TokenType::SEMICOLON) {
+                advance();
+            } else {
+                 throw std::runtime_error("Unexpected token in else-block: " + t.value);
+            }
+        }
+        consume(TokenType::RBRACE, "Expect '}' end of else-block");
+    }
+
+    return node;
+}
+
 Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens), pos(0) {}
 
 Token Parser::peek(int offset) const {
@@ -136,6 +232,8 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
             } else {
                  throw std::runtime_error("Unexpected token after identifier " + t.value);
             }
+        } else if (t.type == TokenType::KEYWORD_IF) {
+            node->children.push_back(parseIf());
         } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
             node->children.push_back(parseComponent());
         } else if (t.type == TokenType::KEYWORD_PROPERTY) {

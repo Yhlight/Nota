@@ -57,10 +57,13 @@ std::string CodeGen::mapComponentToTag(const std::string& type) {
     return "div";
 }
 
-std::string CodeGen::mapPropertyToCSS(const std::string& name) {
+std::string CodeGen::mapPropertyToCSS(const std::string& name, bool isTextComponent) {
     if (name == "spacing") return "gap";
     if (name == "radius") return "border-radius";
-    if (name == "color") return "background-color";
+    if (name == "color") {
+        if (isTextComponent) return "color";
+        return "background-color";
+    }
     // x and y are handled separately in logic usually, but here we map them to left/top
     if (name == "x") return "left";
     if (name == "y") return "top";
@@ -77,6 +80,7 @@ public:
     void visit(ProgramNode&) override {}
     void visit(ImportNode&) override {}
     void visit(ComponentNode&) override {}
+    void visit(ConditionalNode&) override {}
     void visit(PropertyNode&) override {}
 
     void visit(LiteralNode& node) override {
@@ -125,7 +129,7 @@ std::string CodeGen::evaluateExpression(ASTNode& node) {
     return ""; // Placeholder, logic moved to generateStyleAttribute
 }
 
-void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties) {
+void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties, bool isTextComponent) {
     std::stringstream styleStream;
     std::unordered_map<std::string, std::string> styleMap;
 
@@ -135,7 +139,7 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
                 if (prop->name == "text" || prop->name == "id") continue;
                 if (prop->name == "onClick" || prop->name == "onHover") continue; // Skip events in styles
 
-                std::string cssName = mapPropertyToCSS(prop->name);
+                std::string cssName = mapPropertyToCSS(prop->name, isTextComponent);
 
                 // Evaluate value expression
                 ExpressionStringVisitor eval;
@@ -288,7 +292,8 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
 
     instanceProps.insert(instanceProps.end(), parentOverrides.begin(), parentOverrides.end());
 
-    generateStyleAttribute(defProps, instanceProps);
+    bool isText = (node.type == "Text");
+    generateStyleAttribute(defProps, instanceProps, isText);
     generateEvents(defProps, instanceProps);
 
     html << ">";
@@ -327,6 +332,8 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         for (auto& child : definition->children) {
             if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
                 visitComponent(*comp, childOverrides); // Pass down
+            } else if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
+                visit(*cond);
             }
         }
         indentLevel--;
@@ -335,7 +342,7 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
 
     bool hasInstanceChildren = false;
     for (auto& child : node.children) {
-        if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
+        if (std::dynamic_pointer_cast<ComponentNode>(child) || std::dynamic_pointer_cast<ConditionalNode>(child)) {
             hasInstanceChildren = true;
             break;
         }
@@ -347,6 +354,8 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         for (auto& child : node.children) {
             if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
                 visitComponent(*comp, childOverrides);
+            } else if (auto cond = std::dynamic_pointer_cast<ConditionalNode>(child)) {
+                visit(*cond);
             }
         }
         indentLevel--;
@@ -354,6 +363,43 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
     }
 
     html << "</" << tag << ">\n";
+}
+
+void CodeGen::visit(ConditionalNode& node) {
+    static int ifCount = 0;
+    std::string id = "nota-if-" + std::to_string(++ifCount);
+
+    html << "<div id=\"" << id << "\" style=\"display: contents;\">\n";
+
+    std::string thenId = id + "-then";
+    std::string elseId = id + "-else";
+
+    html << "<div id=\"" << thenId << "\">\n";
+    indentLevel++;
+    for (auto& child : node.thenBranch) {
+        child->accept(*this);
+    }
+    indentLevel--;
+    html << "</div>\n";
+
+    if (!node.elseBranch.empty()) {
+        html << "<div id=\"" << elseId << "\" style=\"display: none;\">\n";
+        indentLevel++;
+        for (auto& child : node.elseBranch) {
+            child->accept(*this);
+        }
+        indentLevel--;
+        html << "</div>\n";
+    }
+
+    html << "</div>\n";
+
+    if (auto ref = std::dynamic_pointer_cast<ReferenceNode>(node.condition)) {
+        html << "<script>\n";
+        html << "  // Logic for if (" << ref->name << ")\n";
+        html << "  // Requires runtime property system.\n";
+        html << "</script>\n";
+    }
 }
 
 void CodeGen::visit(PropertyNode& node) { }

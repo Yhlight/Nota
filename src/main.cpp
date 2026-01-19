@@ -67,6 +67,31 @@ public:
         node.right->accept(*this);
         std::cout << ")";
     }
+
+    void visit(ConditionalNode& node) override {
+        printIndent();
+        std::cout << "If (";
+        node.condition->accept(*this);
+        std::cout << ") {\n";
+        indent++;
+        for (auto& child : node.thenBranch) {
+            child->accept(*this);
+        }
+        indent--;
+        printIndent();
+        std::cout << "}";
+        if (!node.elseBranch.empty()) {
+            std::cout << " Else {\n";
+            indent++;
+            for (auto& child : node.elseBranch) {
+                child->accept(*this);
+            }
+            indent--;
+            printIndent();
+            std::cout << "}";
+        }
+        std::cout << "\n";
+    }
 };
 
 int main(int argc, char* argv[]) {

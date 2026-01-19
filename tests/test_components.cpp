@@ -20,8 +20,6 @@ TEST_F(ComponentTest, DefineAndInstantiate) {
     Parser parser(lexer.tokenize());
     auto nodes = parser.parseAll();
 
-    // First is null (definition), Second is App
-    // Actually parseAll returns only non-nulls.
     ASSERT_EQ(nodes.size(), 1);
     auto& app = nodes[0];
     EXPECT_EQ(app->type, "App");
@@ -36,14 +34,15 @@ TEST_F(ComponentTest, DefineAndInstantiate) {
     EXPECT_EQ(box->properties.size(), 3);
 
     // Check override/values
-    // Note: order depends on implementation (append or overwrite)
-    // We appended x.
-
     bool foundWidth = false;
     bool foundX = false;
+
+    // Need Evaluator to check values now
+    Evaluator eval;
+
     for (const auto& p : box->properties) {
-        if (p.name == "width" && p.value == "50") foundWidth = true;
-        if (p.name == "x" && p.value == "10") foundX = true;
+        if (p.name == "width" && eval.evaluate(*p.value) == "50") foundWidth = true;
+        if (p.name == "x" && eval.evaluate(*p.value) == "10") foundX = true;
     }
     EXPECT_TRUE(foundWidth);
     EXPECT_TRUE(foundX);
@@ -65,10 +64,12 @@ TEST_F(ComponentTest, PropertyOverride) {
     // Should have only 1 color property, value blue
     int colorCount = 0;
     std::string colorVal;
+    Evaluator eval;
+
     for (const auto& p : box->properties) {
         if (p.name == "color") {
             colorCount++;
-            colorVal = p.value;
+            colorVal = eval.evaluate(*p.value);
         }
     }
 

@@ -4,13 +4,41 @@
 #include <ostream>
 
 enum class TokenType {
+    // Basic
     Identifier,
     Number,
     String,
+
+    // Symbols
     LBrace,     // {
     RBrace,     // }
+    LParen,     // (
+    RParen,     // )
     Colon,      // :
     Semicolon,  // ;
+    Dot,        // .
+    Comma,      // ,
+
+    // Operators
+    Plus,       // +
+    Minus,      // -
+    Star,       // *
+    Slash,      // /
+    Bang,       // !
+    Equal,      // = (Assignment? or just for property?) currently property uses :
+    EqualEqual, // ==
+    BangEqual,  // !=
+    Less,       // <
+    LessEqual,  // <=
+    Greater,    // >
+    GreaterEqual, // >=
+    AmpAmp,     // &&
+    PipePipe,   // ||
+
+    // Keywords
+    If, Else, True, False,
+    Import, Package, Export, As,
+
     EndOfFile,
     Unknown
 };

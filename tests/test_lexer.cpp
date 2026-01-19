@@ -45,3 +45,35 @@ TEST(LexerTest, Strings) {
     EXPECT_EQ(tokens[2].type, TokenType::String);
     EXPECT_EQ(tokens[2].value, "Hello World"); // Quotes stripped
 }
+
+TEST(LexerTest, Operators) {
+    std::string input = "+ - * / == != < > <= >= && || !";
+    Lexer lexer(input);
+    auto tokens = lexer.tokenize();
+
+    std::vector<TokenType> expected = {
+        TokenType::Plus, TokenType::Minus, TokenType::Star, TokenType::Slash,
+        TokenType::EqualEqual, TokenType::BangEqual,
+        TokenType::Less, TokenType::Greater, TokenType::LessEqual, TokenType::GreaterEqual,
+        TokenType::AmpAmp, TokenType::PipePipe, TokenType::Bang,
+        TokenType::EndOfFile
+    };
+
+    ASSERT_EQ(tokens.size(), expected.size());
+    for (size_t i = 0; i < expected.size(); ++i) {
+        EXPECT_EQ(tokens[i].type, expected[i]) << "Mismatch at index " << i;
+    }
+}
+
+TEST(LexerTest, Keywords) {
+    std::string input = "if else true false import package";
+    Lexer lexer(input);
+    auto tokens = lexer.tokenize();
+
+    EXPECT_EQ(tokens[0].type, TokenType::If);
+    EXPECT_EQ(tokens[1].type, TokenType::Else);
+    EXPECT_EQ(tokens[2].type, TokenType::True);
+    EXPECT_EQ(tokens[3].type, TokenType::False);
+    EXPECT_EQ(tokens[4].type, TokenType::Import);
+    EXPECT_EQ(tokens[5].type, TokenType::Package);
+}

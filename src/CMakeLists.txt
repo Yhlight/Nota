@@ -4,6 +4,7 @@ add_library(nota_lib
     codegen.cpp
     sema.cpp
     compiler.cpp
+    utils.cpp
 )
 
 add_executable(nota

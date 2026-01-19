@@ -1,4 +1,5 @@
 #include "codegen.h"
+#include "utils.h"
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -71,6 +72,7 @@ class ExpressionStringVisitor : public ASTVisitor {
 public:
     std::stringstream ss;
     std::string propertyName; // Context for adding units
+    bool allowUnits = true;   // State to control unit appending
 
     void visit(ProgramNode&) override {}
     void visit(ImportNode&) override {}
@@ -80,7 +82,7 @@ public:
     void visit(LiteralNode& node) override {
         std::string v = node.token.value;
         if (node.token.type == TokenType::NUMBER_LITERAL) {
-            if (v.find('%') == std::string::npos) {
+            if (allowUnits && v.find('%') == std::string::npos) {
                  if (propertyName == "width" || propertyName == "height" ||
                      propertyName == "padding" || propertyName == "spacing" ||
                      propertyName == "radius" || propertyName == "x" || propertyName == "y" ||
@@ -98,9 +100,23 @@ public:
 
     void visit(BinaryExpressionNode& node) override {
         ss << "calc(";
-        node.left->accept(*this);
+        node.left->accept(*this); // Left operand keeps current unit mode
+
         ss << " " << node.op.value << " ";
+
+        // If operation is * or /, right operand usually scalar (no units)
+        // e.g. 100px * 2. 100px / 2.
+        // But 2 * 100px is also valid? My heuristic assumes left is dimension.
+        // For simplicity: if * or /, disable units for right side.
+        // This fixes `calc(100px * 2px)` -> `calc(100px * 2)`.
+
+        bool prevUnits = allowUnits;
+        if (node.op.type == TokenType::STAR || node.op.type == TokenType::SLASH) {
+            allowUnits = false;
+        }
         node.right->accept(*this);
+        allowUnits = prevUnits;
+
         ss << ")";
     }
 };
@@ -183,7 +199,7 @@ void CodeGen::generateEvents(const std::vector<std::shared_ptr<ASTNode>>& proper
     processProps(overrideProperties);
 
     for (const auto& pair : eventMap) {
-        html << " " << pair.first << "=\"" << pair.second << "\"";
+        html << " " << pair.first << "=\"" << Utils::escapeHTML(pair.second) << "\"";
     }
 }
 
@@ -215,7 +231,7 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
                  ExpressionStringVisitor eval;
                  prop->value->accept(eval);
                  myId = eval.ss.str();
-                 html << " id=\"" << myId << "\"";
+                 html << " id=\"" << Utils::escapeHTML(myId) << "\"";
              }
         }
     }
@@ -227,7 +243,7 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
                      ExpressionStringVisitor eval;
                      prop->value->accept(eval);
                      myId = eval.ss.str();
-                     html << " id=\"" << myId << "\"";
+                     html << " id=\"" << Utils::escapeHTML(myId) << "\"";
                  }
             }
         }

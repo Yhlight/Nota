@@ -242,7 +242,12 @@ std::shared_ptr<ExpressionNode> Parser::parseBlock() {
             braceDepth--;
             if (braceDepth == 0) break;
         }
-        code += t.value + " ";
+
+        if (t.type == TokenType::STRING_LITERAL) {
+            code += "\"" + t.value + "\" "; // Re-add quotes for strings
+        } else {
+            code += t.value + " ";
+        }
     }
 
     Token codeToken{TokenType::STRING_LITERAL, code, 0, 0};

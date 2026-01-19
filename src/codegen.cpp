@@ -1,5 +1,7 @@
 #include "codegen.h"
 #include <unordered_map>
+#include <vector>
+#include <memory>
 
 std::string CodeGen::generate(ProgramNode& root) {
     SemanticAnalyzer analyzer(registry);
@@ -78,15 +80,7 @@ public:
     void visit(LiteralNode& node) override {
         std::string v = node.token.value;
         if (node.token.type == TokenType::NUMBER_LITERAL) {
-            // Apply unit heuristic if needed, but context is hard here.
-            // We'll rely on the caller or just print the number.
-            // If it's part of calc(), we generally want units (px) unless it's a multiplier.
-            // Simplified: Always add px if it looks like a dimension?
-            // Actually, in CSS `calc(100 + 20)` is invalid. `calc(100px + 20px)` is valid.
-            // So we SHOULD add units.
             if (v.find('%') == std::string::npos) {
-                 // Check if it's likely a dimension based on property name context?
-                 // We passed propertyName.
                  if (propertyName == "width" || propertyName == "height" ||
                      propertyName == "padding" || propertyName == "spacing" ||
                      propertyName == "radius" || propertyName == "x" || propertyName == "y" ||
@@ -99,10 +93,6 @@ public:
     }
 
     void visit(ReferenceNode& node) override {
-        // Output var name or raw?
-        // Nota: "box.width". CSS doesn't support this directly.
-        // For MVP, just output the string. This likely won't work in CSS without JS binding.
-        // But fulfills "transpilation".
         ss << node.name;
     }
 
@@ -116,13 +106,6 @@ public:
 };
 
 std::string CodeGen::evaluateExpression(ASTNode& node) {
-    // We assume node is an expression
-    // We can't pass property context easily yet.
-    // Wait, we can set a member in CodeGen or pass it.
-    // The previous design was cleaner with recursive visit.
-    // Let's implement visit(BinaryExpressionNode) to write to 'css' stream?
-    // No, 'css' stream is global.
-    // We need a helper.
     return ""; // Placeholder, logic moved to generateStyleAttribute
 }
 
@@ -157,16 +140,10 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
 
     // Positioning Logic (Conductor 4)
     if (styleMap.count("left") || styleMap.count("top")) {
-        // If x or y is set, ensure position: absolute
-        // Note: styleMap key is the CSS name, so "left" or "top"
         if (styleMap.find("position") == styleMap.end()) {
              styleStream << "position: absolute; ";
         }
     } else {
-        // Default relative? Or default static?
-        // Nota says parent should be relative.
-        // Children are relative by default (flow).
-        // But if we want to ensure stacking context for z-index (Conductor 4), maybe relative is good.
         styleStream << "position: relative; ";
     }
 
@@ -211,6 +188,12 @@ void CodeGen::generateEvents(const std::vector<std::shared_ptr<ASTNode>>& proper
 }
 
 void CodeGen::visit(ComponentNode& node) {
+    // Default entry point visits with empty overrides
+    std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>> empty;
+    visitComponent(node, empty);
+}
+
+void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>>& pendingOverrides) {
     bool isCustom = registry.hasComponent(node.type);
     std::shared_ptr<ComponentNode> definition = nullptr;
     if (isCustom) {
@@ -224,37 +207,98 @@ void CodeGen::visit(ComponentNode& node) {
     html << "<" << tag;
     html << " class=\"nota-" << node.type << "\"";
 
+    std::string myId = "";
+    // Handle ID (Instance wins)
     for (auto& child : node.children) {
         if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
              if (prop->name == "id") {
-                 // Value might be expression now, but ID is usually literal.
-                 // We need to extract string.
                  ExpressionStringVisitor eval;
                  prop->value->accept(eval);
-                 html << " id=\"" << eval.ss.str() << "\"";
+                 myId = eval.ss.str();
+                 html << " id=\"" << myId << "\"";
              }
         }
     }
+    // If definition has ID (less likely to be useful as it conflicts on reuse, but legal)
+    if (myId.empty() && definition) {
+        for (auto& child : definition->children) {
+            if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+                 if (prop->name == "id") {
+                     ExpressionStringVisitor eval;
+                     prop->value->accept(eval);
+                     myId = eval.ss.str();
+                     html << " id=\"" << myId << "\"";
+                 }
+            }
+        }
+    }
 
+    // Styles & Events
     std::vector<std::shared_ptr<ASTNode>> defProps;
     if (definition) defProps = definition->children;
 
-    generateStyleAttribute(defProps, node.children);
-    generateEvents(defProps, node.children);
+    // Check if we have overrides for THIS component (via ID) passed from parent
+    std::vector<std::shared_ptr<ASTNode>> parentOverrides;
+    if (!myId.empty()) {
+        auto it = pendingOverrides.find(myId);
+        if (it != pendingOverrides.end()) {
+            parentOverrides = it->second;
+        }
+    }
+
+    // Collect "Deep Overrides" declared IN THIS instance for children
+    std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>> childOverrides;
+
+    // Current node overrides (instance props)
+    std::vector<std::shared_ptr<ASTNode>> instanceProps;
+
+    for (auto& child : node.children) {
+        if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+            // Check for dot notation (deep override)
+            size_t dotPos = prop->name.find('.');
+            if (dotPos != std::string::npos) {
+                // It's a deep override: "rect1.color"
+                std::string targetId = prop->name.substr(0, dotPos);
+                std::string targetProp = prop->name.substr(dotPos + 1);
+
+                // Create a new PropertyNode for the target
+                auto newProp = std::make_shared<PropertyNode>(targetProp, prop->value);
+                childOverrides[targetId].push_back(newProp);
+            } else {
+                instanceProps.push_back(child);
+            }
+        }
+    }
+
+    instanceProps.insert(instanceProps.end(), parentOverrides.begin(), parentOverrides.end());
+
+    generateStyleAttribute(defProps, instanceProps);
+    generateEvents(defProps, instanceProps);
 
     html << ">";
 
     std::string innerText = "";
-    for (auto& child : node.children) {
-        if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
-             if (node.type == "Text" && prop->name == "text") {
-                 ExpressionStringVisitor eval;
-                 prop->value->accept(eval);
-                 std::string s = eval.ss.str();
-                 if (s.size() >= 2 && s.front() == '"' && s.back() == '"') s = s.substr(1, s.size()-2);
-                 innerText = s;
-             }
+    // Helper to extract text
+    auto findText = [&](const std::vector<std::shared_ptr<ASTNode>>& props) {
+        for (auto& child : props) {
+            if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+                 if (node.type == "Text" && prop->name == "text") {
+                     ExpressionStringVisitor eval;
+                     prop->value->accept(eval);
+                     std::string s = eval.ss.str();
+                     if (s.size() >= 2 && s.front() == '"' && s.back() == '"') s = s.substr(1, s.size()-2);
+                     return s;
+                 }
+            }
         }
+        return std::string("");
+    };
+
+    std::string t = findText(instanceProps);
+    if (!t.empty()) innerText = t;
+    else if (definition) {
+        t = findText(defProps);
+        if (!t.empty()) innerText = t;
     }
 
     if (!innerText.empty()) {
@@ -266,7 +310,7 @@ void CodeGen::visit(ComponentNode& node) {
         indentLevel++;
         for (auto& child : definition->children) {
             if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
-                comp->accept(*this);
+                visitComponent(*comp, childOverrides); // Pass down
             }
         }
         indentLevel--;
@@ -286,7 +330,7 @@ void CodeGen::visit(ComponentNode& node) {
         indentLevel++;
         for (auto& child : node.children) {
             if (auto comp = std::dynamic_pointer_cast<ComponentNode>(child)) {
-                comp->accept(*this);
+                visitComponent(*comp, childOverrides);
             }
         }
         indentLevel--;

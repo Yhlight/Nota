@@ -117,3 +117,39 @@ TEST(CodeGenTest, ConditionalRenderingFalse) {
     EXPECT_EQ(html.find("background-color: red"), std::string::npos);
     EXPECT_NE(html.find("background-color: blue"), std::string::npos);
 }
+
+TEST(CodeGenTest, CalcGeneration) {
+    std::string input = "Rect { width: 100% - 20px }";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    CodeGen codegen;
+    std::string html = codegen.generateHTML(*nodes[0]);
+
+    // Expect calc(100% - 20px)
+    EXPECT_NE(html.find("width: calc(100% - 20px)"), std::string::npos);
+}
+
+TEST(CodeGenTest, EventHandling) {
+    std::string input = "Button { onClick: \"alert('Hi')\"; onHover: \"console.log('Hover')\" }";
+    Lexer lexer(input);
+    Parser parser(lexer.tokenize());
+    auto nodes = parser.parseAll();
+
+    CodeGen codegen;
+    std::string html = codegen.generateHTML(*nodes[0]);
+
+    // Check attributes
+    EXPECT_NE(html.find("onclick=\"alert('Hi')\""), std::string::npos);
+    EXPECT_NE(html.find("onmouseenter=\"console.log('Hover')\""), std::string::npos);
+
+    // Check that these are NOT in style
+    size_t stylePos = html.find("style=\"");
+    if (stylePos != std::string::npos) {
+        size_t styleEnd = html.find("\"", stylePos + 7);
+        std::string styleContent = html.substr(stylePos, styleEnd - stylePos);
+        EXPECT_EQ(styleContent.find("onClick"), std::string::npos);
+        EXPECT_EQ(styleContent.find("onHover"), std::string::npos);
+    }
+}

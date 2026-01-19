@@ -13,30 +13,95 @@ std::string Evaluator::visitBinaryExpr(BinaryExpr& expr) {
     std::string left = evaluate(*expr.left);
     std::string right = evaluate(*expr.right);
 
+    // Check if either side is already a calc() or complex string?
+    // For now, let's try to parse as number+unit.
+
     try {
-        size_t idxL, idxR;
-        double l = std::stod(left, &idxL);
-        double r = std::stod(right, &idxR);
+        size_t idxL = 0, idxR = 0;
+        double l = 0, r = 0;
+
+        bool leftIsNum = false, rightIsNum = false;
+
+        try { l = std::stod(left, &idxL); leftIsNum = true; } catch(...) {}
+        try { r = std::stod(right, &idxR); rightIsNum = true; } catch(...) {}
+
+        if (!leftIsNum || !rightIsNum) throw std::runtime_error("Not numbers");
 
         std::string unitL = left.substr(idxL);
         std::string unitR = right.substr(idxR);
 
-        double res = 0;
-        if (expr.op.type == TokenType::Plus) res = l + r;
-        else if (expr.op.type == TokenType::Minus) res = l - r;
-        else if (expr.op.type == TokenType::Star) res = l * r;
-        else if (expr.op.type == TokenType::Slash) res = (r != 0) ? l / r : 0;
+        // Handle multiplication/division (usually one scalar)
+        if (expr.op.type == TokenType::Star) {
+            if (!unitL.empty() && !unitR.empty()) throw std::runtime_error("Complex unit math"); // px * px
+            double res = l * r;
+            return std::to_string(res) + (unitL.empty() ? unitR : unitL); // Remove trailing zeros? std::to_string keeps them.
+        }
+        if (expr.op.type == TokenType::Slash) {
+            if (!unitR.empty()) throw std::runtime_error("Div by unit"); // px / px is scalar, but px / % is hard.
+            double res = (r != 0) ? l / r : 0;
+            return std::to_string(res) + unitL;
+        }
 
-        std::string unit = unitL.empty() ? unitR : unitL;
+        // Addition/Subtraction
+        if (unitL == unitR || (unitL.empty() && unitR.empty())) {
+             double res = 0;
+             if (expr.op.type == TokenType::Plus) res = l + r;
+             else if (expr.op.type == TokenType::Minus) res = l - r;
 
-        std::stringstream ss;
-        ss << res << unit;
-        return ss.str();
+             // Remove trailing zeros for cleanliness
+             std::string resStr = std::to_string(res);
+             resStr.erase(resStr.find_last_not_of('0') + 1, std::string::npos);
+             if (resStr.back() == '.') resStr.pop_back();
+
+             return resStr + unitL;
+        }
+
+        // Mixed units (e.g. 100% - 20px)
+        throw std::runtime_error("Mixed units");
 
     } catch (...) {
-        if (expr.op.type == TokenType::Plus) {
-            return left + right;
-        } else if (expr.op.type == TokenType::EqualEqual) {
+        // Fallback to calc() or string concatenation
+        if (expr.op.type == TokenType::Plus || expr.op.type == TokenType::Minus ||
+            expr.op.type == TokenType::Star || expr.op.type == TokenType::Slash) {
+
+            // Check if it's string concatenation (strings)
+            // If strictly logic, we might want calc.
+            // But if one is "solid", it's probably CSS value concat.
+            // Heuristic: if contains units (px, %, em, etc) or calc, use calc.
+            // If contains alpha chars that are not units, use concat (except calc).
+
+            // Simple heuristic: If operator is + and it looks like string concat?
+            // "1px" + "solid" -> "1px solid" (Evaluator currently does this via exception catch block below?)
+            // Actually, my previous code did: `if (expr.op.type == TokenType::Plus) return left + right;`
+            // That merged "1px" and "solid" into "1pxsolid" (no space).
+            // But parser handles space for "1px solid".
+            // So if we are here, it's explicit `+` in source. `width: 10 + 20`.
+            // If `width: 100% - 20px`, we want `calc(100% - 20px)`.
+
+            // If op is Plus, and it looks like strings (no digits?), concat.
+            // But `100%` has digits.
+
+            // Let's assume arithmetic operators +, -, *, / implies CALC if not simple math.
+            // UNLESS it is string literal?
+            // Parse strings.
+            bool isStrL = left.size() >= 2 && left.front() == '"' && left.back() == '"'; // LiteralExpr stores raw value? No, strips quotes usually?
+            // Lexer `readString` strips quotes?
+            // Lexer: `advance(); // Skip "` ... `value += advance();` ... `advance(); // Skip closing "`
+            // So LiteralExpr value does NOT have quotes.
+
+            // If it's not a number, it's a string/identifier.
+            // If we have `calc(100% - 20px)`, we return it.
+
+            std::string opStr;
+            if (expr.op.type == TokenType::Plus) opStr = "+";
+            else if (expr.op.type == TokenType::Minus) opStr = "-";
+            else if (expr.op.type == TokenType::Star) opStr = "*";
+            else if (expr.op.type == TokenType::Slash) opStr = "/";
+
+            return "calc(" + left + " " + opStr + " " + right + ")";
+        }
+
+        if (expr.op.type == TokenType::EqualEqual) {
              return (left == right) ? "true" : "false";
         } else if (expr.op.type == TokenType::BangEqual) {
              return (left != right) ? "true" : "false";
@@ -60,71 +125,106 @@ static std::string toCssClass(const std::string& type) {
     return "nota-" + lowerType;
 }
 
-static std::string generateInlineStyle(const ComponentNode& node) {
-    std::stringstream ss;
-    bool hasStyle = false;
+struct PropOutput {
+    std::string css;
+    std::string attr;
+    std::string content;
+};
+
+static PropOutput processProperties(const ComponentNode& node) {
+    PropOutput out;
+    std::stringstream cssSS;
+    std::stringstream attrSS;
     Evaluator evaluator;
 
+    // Check for explicit position property first to determine default behavior
+    bool hasExplicitPosition = false;
     for (const auto& prop : node.properties) {
-        if (prop.name == "text") continue; // handled in content
-
-        // Skip id for style
-        if (prop.name == "id") continue;
-
-        if (!hasStyle) {
-            ss << "style=\"";
-            hasStyle = true;
+        if (prop.name == "position") {
+            hasExplicitPosition = true;
+            break;
         }
+    }
 
-        std::string cssName = prop.name;
-        // Evaluate the expression
+    // Default absolute positioning for x/y/position handling
+    bool needsAbsPos = false;
+
+    for (const auto& prop : node.properties) {
+        std::string name = prop.name;
         std::string value = evaluator.evaluate(*prop.value);
 
-        // Positioning logic
-        if (cssName == "x") {
-            cssName = "left";
-            if (!hasStyle || ss.str().find("position: absolute") == std::string::npos) {
-                ss << "position: absolute; ";
-            }
-        } else if (cssName == "y") {
-            cssName = "top";
-            if (!hasStyle || ss.str().find("position: absolute") == std::string::npos) {
-                ss << "position: absolute; ";
-            }
-        } else if (cssName == "position") {
-            if (value == "center") {
-                ss << "left: 50%; top: 50%; transform: translate(-50%, -50%); position: absolute; ";
-                continue;
-            } else if (value == "left top" || value == "top left") {
-                ss << "left: 0; top: 0; position: absolute; ";
-                continue;
-            }
+        if (name == "text") {
+            out.content = value;
             continue;
         }
 
-        // Simple mapping
-        if (cssName == "color") cssName = "background-color";
-        if (cssName == "radius") cssName = "border-radius";
-        if (cssName == "spacing") cssName = "gap";
+        if (name == "id") {
+            attrSS << " id=\"" << value << "\"";
+            continue;
+        }
 
-        // Handle units
+        if (name == "onClick") {
+            // Simple JS injection. In real world, escape quotes!
+            attrSS << " onclick=\"" << value << "\"";
+            continue;
+        }
+
+        if (name == "onHover") {
+             attrSS << " onmouseenter=\"" << value << "\"";
+             continue;
+        }
+
+        // CSS Properties
+
+        // Positioning sugar
+        if (name == "x") {
+            name = "left";
+            needsAbsPos = true;
+        } else if (name == "y") {
+            name = "top";
+            needsAbsPos = true;
+        } else if (name == "position") {
+            // Handle "left top", "center"
+             if (value == "center") {
+                cssSS << "left: 50%; top: 50%; transform: translate(-50%, -50%); position: absolute; ";
+                continue;
+            } else if (value == "left top" || value == "top left") {
+                cssSS << "left: 0; top: 0; position: absolute; ";
+                continue;
+            }
+            // If just "absolute" or "relative", pass through
+            if (value == "absolute") needsAbsPos = false; // Already set
+        }
+
+        // Mappings
+        if (name == "color") name = "background-color";
+        if (name == "radius") name = "border-radius";
+        if (name == "spacing") name = "gap";
+
+        // Units
+        // Check if value is just number
         bool isNumber = !value.empty() && std::all_of(value.begin(), value.end(), [](char c){
             return isdigit(c) || c == '.';
         });
 
-        if (isNumber && value.find('.') != std::string::npos) {
-             value += "px";
-        } else if (isNumber) {
+        if (isNumber) {
              value += "px";
         }
 
-        ss << cssName << ": " << value << "; ";
+        cssSS << name << ": " << value << "; ";
     }
 
-    if (hasStyle) {
-        ss << "\"";
+    if (needsAbsPos && !hasExplicitPosition) {
+        // Only add if not already present?
+        // Simple check
+        if (cssSS.str().find("position:") == std::string::npos) {
+             cssSS << "position: absolute; ";
+        }
     }
-    return ss.str();
+
+    out.css = cssSS.str();
+    out.attr = attrSS.str();
+    return out;
 }
 
 std::string CodeGen::generateHTML(const Node& root) {
@@ -140,24 +240,18 @@ std::string CodeGen::generateHTML(const Node& root) {
             tag = "span";
         }
 
-        ss << "<" << tag << " class=\"" << cssClass << "\"";
+        auto props = processProperties(*comp);
 
-        std::string style = generateInlineStyle(*comp);
-        if (!style.empty()) {
-            ss << " " << style;
+        ss << "<" << tag << " class=\"" << cssClass << "\"" << props.attr;
+
+        if (!props.css.empty()) {
+            ss << " style=\"" << props.css << "\"";
         }
 
         ss << ">";
 
-        // For Text component
         if (comp->type == "Text") {
-            for (const auto& prop : comp->properties) {
-                if (prop.name == "text") {
-                    // Evaluate and output
-                    Evaluator eval;
-                    ss << eval.evaluate(*prop.value);
-                }
-            }
+            ss << props.content;
         }
 
         for (const auto& child : comp->children) {

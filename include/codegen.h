@@ -37,7 +37,7 @@ private:
     void indent(std::stringstream& ss);
     std::string mapComponentToTag(const std::string& type);
     std::string mapPropertyToCSS(const std::string& name, bool isTextComponent);
-    void generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties, bool isTextComponent);
+    void generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties, bool isTextComponent, const std::string& componentId);
     void generateEvents(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties);
     std::string evaluateExpression(ASTNode& node);
 

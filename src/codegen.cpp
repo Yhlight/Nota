@@ -156,6 +156,20 @@ public:
                 return;
             }
         }
+
+        // CSS Variable Transformation: id.prop -> var(--id-prop)
+        // Only if it looks like id.prop (simple dot)
+        size_t dotPos = node.name.find('.');
+        if (dotPos != std::string::npos) {
+            std::string id = node.name.substr(0, dotPos);
+            std::string prop = node.name.substr(dotPos + 1);
+            // Replace dots with hyphens for variable name
+            // But we need to keep id distinct.
+            // Assumption: IDs are valid CSS identifiers.
+            ss << "var(--" << id << "-" << prop << ")";
+            return;
+        }
+
         ss << node.name;
     }
 
@@ -225,7 +239,7 @@ std::string CodeGen::evaluateExpression(ASTNode& node) {
     return ""; // Placeholder, logic moved to generateStyleAttribute
 }
 
-void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties, bool isTextComponent) {
+void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>& properties, const std::vector<std::shared_ptr<ASTNode>>& overrideProperties, bool isTextComponent, const std::string& componentId) {
     std::stringstream styleStream;
     std::unordered_map<std::string, std::string> styleMap;
     std::unordered_map<std::string, std::string> attrMap;
@@ -323,6 +337,16 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
         }
     } else {
         styleStream << "position: relative; ";
+    }
+
+    // Inject CSS variables for referencing
+    if (!componentId.empty()) {
+        for (const auto& pair : styleMap) {
+            // Only export standard properties
+            if (pair.first == "width" || pair.first == "height" || pair.first == "left" || pair.first == "top") {
+                styleStream << "--" << componentId << "-" << pair.first << ": " << pair.second << "; ";
+            }
+        }
     }
 
     for (const auto& pair : styleMap) {
@@ -508,7 +532,7 @@ void CodeGen::visitComponentWithDirectOverrides(ComponentNode& node, const std::
     if (definition) defProps = definition->children;
 
     bool isText = (node.type == "Text");
-    generateStyleAttribute(defProps, instanceProps, isText);
+    generateStyleAttribute(defProps, instanceProps, isText, myId);
     generateEvents(defProps, instanceProps);
 
     html << ">";

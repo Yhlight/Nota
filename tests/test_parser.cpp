@@ -121,3 +121,28 @@ TEST(ParserTest, BinaryExpression) {
     ASSERT_NE(expr, nullptr);
     EXPECT_EQ(expr->op.type, TokenType::PLUS);
 }
+
+TEST(ParserTest, StructDefinition) {
+    // Struct Point { double x; }
+    std::vector<Token> tokens = {
+        {TokenType::KEYWORD_STRUCT, "Struct", 1, 1},
+        {TokenType::IDENTIFIER, "Point", 1, 8},
+        {TokenType::LBRACE, "{", 1, 14},
+        {TokenType::IDENTIFIER, "double", 1, 16},
+        {TokenType::IDENTIFIER, "x", 1, 23},
+        {TokenType::SEMICOLON, ";", 1, 24},
+        {TokenType::RBRACE, "}", 1, 26},
+        {TokenType::EOF_TOKEN, "", 1, 27}
+    };
+
+    Parser parser(tokens);
+    auto root = parser.parse();
+
+    ASSERT_EQ(root->statements.size(), 1);
+    auto strct = std::dynamic_pointer_cast<StructDefinitionNode>(root->statements[0]);
+    ASSERT_NE(strct, nullptr);
+    EXPECT_EQ(strct->name, "Point");
+    ASSERT_EQ(strct->fields.size(), 1);
+    EXPECT_EQ(strct->fields[0].type, "double");
+    EXPECT_EQ(strct->fields[0].name, "x");
+}

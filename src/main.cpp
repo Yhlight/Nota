@@ -92,6 +92,33 @@ public:
         }
         std::cout << "\n";
     }
+
+    void visit(StructDefinitionNode& node) override {
+        printIndent();
+        std::cout << "Struct " << node.name << " {\n";
+        indent++;
+        for (auto& field : node.fields) {
+            printIndent();
+            std::cout << field.type << " " << field.name;
+            if (field.defaultValue) {
+                std::cout << " = ";
+                field.defaultValue->accept(*this);
+            }
+            std::cout << ";\n";
+        }
+        indent--;
+        printIndent();
+        std::cout << "}\n";
+    }
+
+    void visit(StructInstantiationNode& node) override {
+        std::cout << node.structName << "(";
+        for (size_t i = 0; i < node.arguments.size(); ++i) {
+            if (i > 0) std::cout << ", ";
+            node.arguments[i]->accept(*this);
+        }
+        std::cout << ")";
+    }
 };
 
 int main(int argc, char* argv[]) {

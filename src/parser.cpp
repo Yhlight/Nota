@@ -38,6 +38,18 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
             name += "." + part.value;
         }
 
+        if (peek().type == TokenType::LPAREN) {
+            consume(TokenType::LPAREN, "Expect '('");
+            auto node = std::make_shared<StructInstantiationNode>(name);
+            if (peek().type != TokenType::RPAREN) {
+                do {
+                    node->arguments.push_back(parseExpression());
+                } while (match(TokenType::COMMA));
+            }
+            consume(TokenType::RPAREN, "Expect ')'");
+            return node;
+        }
+
         if (isDotted) {
              return std::make_shared<ReferenceNode>(name);
         }
@@ -179,9 +191,15 @@ std::shared_ptr<ProgramNode> Parser::parse() {
         Token t = peek();
         if (t.type == TokenType::KEYWORD_IMPORT) {
             program->statements.push_back(parseImport());
+        } else if (t.type == TokenType::KEYWORD_STRUCT) {
+            program->statements.push_back(parseStruct());
         } else if (t.type == TokenType::KEYWORD_EXPORT) {
             advance();
-            program->statements.push_back(parseComponent());
+            if (peek().type == TokenType::KEYWORD_STRUCT) {
+                program->statements.push_back(parseStruct());
+            } else {
+                program->statements.push_back(parseComponent());
+            }
         } else if (t.type >= TokenType::KEYWORD_ITEM && t.type <= TokenType::KEYWORD_TEXT) {
             program->statements.push_back(parseComponent());
         } else if (t.type == TokenType::IDENTIFIER) {
@@ -300,6 +318,34 @@ std::shared_ptr<ComponentNode> Parser::parseComponent() {
     }
 
     consume(TokenType::RBRACE, "Expect '}' after component body");
+    return node;
+}
+
+std::shared_ptr<StructDefinitionNode> Parser::parseStruct() {
+    consume(TokenType::KEYWORD_STRUCT, "Expect 'Struct'");
+    std::string name = consume(TokenType::IDENTIFIER, "Expect struct name").value;
+    auto node = std::make_shared<StructDefinitionNode>(name);
+
+    consume(TokenType::LBRACE, "Expect '{'");
+
+    while (peek().type != TokenType::RBRACE && peek().type != TokenType::EOF_TOKEN) {
+        if (peek().type == TokenType::IDENTIFIER) {
+             Token type = advance();
+             Token name = consume(TokenType::IDENTIFIER, "Expect field name");
+
+             std::shared_ptr<ExpressionNode> defaultVal = nullptr;
+             if (match(TokenType::EQUAL) || match(TokenType::COLON)) {
+                 defaultVal = parseExpression();
+             }
+
+             consume(TokenType::SEMICOLON, "Expect ';'");
+             node->fields.push_back({type.value, name.value, defaultVal});
+        } else {
+             throw std::runtime_error("Unexpected token in Struct definition: " + peek().value);
+        }
+    }
+
+    consume(TokenType::RBRACE, "Expect '}'");
     return node;
 }
 

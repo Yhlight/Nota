@@ -72,3 +72,12 @@ void SemanticAnalyzer::visit(BinaryExpressionNode& node) {
 
 void SemanticAnalyzer::visit(ConditionalNode& node) {
 }
+
+void SemanticAnalyzer::visit(StructDefinitionNode& node) {
+}
+
+void SemanticAnalyzer::visit(StructInstantiationNode& node) {
+    for (auto& arg : node.arguments) {
+        arg->accept(*this);
+    }
+}

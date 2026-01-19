@@ -131,6 +131,18 @@ public:
 
         ss << ")";
     }
+
+    void visit(StructDefinitionNode& node) override {}
+
+    void visit(StructInstantiationNode& node) override {
+        // Output as JS instantiation: new Name(args)
+        ss << "new " << node.structName << "(";
+        for (size_t i = 0; i < node.arguments.size(); ++i) {
+            if (i > 0) ss << ", ";
+            node.arguments[i]->accept(*this);
+        }
+        ss << ")";
+    }
 };
 
 std::string CodeGen::evaluateExpression(ASTNode& node) {
@@ -450,6 +462,24 @@ void CodeGen::visit(ConditionalNode& node) {
     }
 }
 
+void CodeGen::visit(StructDefinitionNode& node) {
+    html << "<script>\n";
+    html << "class " << node.name << " {\n";
+    html << "  constructor(";
+    for (size_t i = 0; i < node.fields.size(); ++i) {
+        if (i > 0) html << ", ";
+        html << node.fields[i].name;
+    }
+    html << ") {\n";
+    for (auto& field : node.fields) {
+        html << "    this." << field.name << " = " << field.name << ";\n";
+    }
+    html << "  }\n";
+    html << "}\n";
+    html << "</script>\n";
+}
+
+void CodeGen::visit(StructInstantiationNode& node) { }
 void CodeGen::visit(PropertyNode& node) { }
 void CodeGen::visit(LiteralNode& node) { }
 void CodeGen::visit(ReferenceNode& node) { }

@@ -22,6 +22,7 @@ private:
     std::shared_ptr<ImportNode> parseImport();
     std::shared_ptr<ComponentNode> parseComponent();
     std::shared_ptr<PropertyNode> parseProperty();
+    std::shared_ptr<StructDefinitionNode> parseStruct();
 
     // Logic
     std::shared_ptr<ComponentNode> parseIf();

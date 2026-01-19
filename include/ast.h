@@ -42,10 +42,21 @@ public:
     void accept(ASTVisitor& visitor) override;
 };
 
+class StructInstantiationNode : public ExpressionNode {
+public:
+    std::string structName;
+    std::vector<std::shared_ptr<ExpressionNode>> arguments; // For positional: Color(1, 2, 3)
+    // For named: Color { r: 1, ... } -> maybe treat as properties?
+    // Let's support positional for now as per AST.
+
+    StructInstantiationNode(const std::string& name) : structName(name) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 class PropertyNode : public ASTNode {
 public:
     std::string name;
-    std::shared_ptr<ExpressionNode> value; // Changed from ASTNode to ExpressionNode
+    std::shared_ptr<ExpressionNode> value;
 
     PropertyNode(const std::string& name, std::shared_ptr<ExpressionNode> value)
         : name(name), value(value) {}
@@ -73,6 +84,21 @@ public:
     ConditionalNode(std::shared_ptr<ExpressionNode> condition)
         : ComponentNode("If"), condition(condition) {}
 
+    void accept(ASTVisitor& visitor) override;
+};
+
+class StructDefinitionNode : public ASTNode {
+public:
+    std::string name;
+    // Simple field representation: type, name
+    struct Field {
+        std::string type;
+        std::string name;
+        std::shared_ptr<ExpressionNode> defaultValue;
+    };
+    std::vector<Field> fields;
+
+    StructDefinitionNode(const std::string& name) : name(name) {}
     void accept(ASTVisitor& visitor) override;
 };
 
@@ -104,13 +130,17 @@ public:
     virtual void visit(ReferenceNode& node) = 0;
     virtual void visit(BinaryExpressionNode& node) = 0;
     virtual void visit(ConditionalNode& node) = 0;
+    virtual void visit(StructDefinitionNode& node) = 0;
+    virtual void visit(StructInstantiationNode& node) = 0;
 };
 
 inline void LiteralNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ReferenceNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void BinaryExpressionNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void StructInstantiationNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void PropertyNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ComponentNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ConditionalNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void StructDefinitionNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ImportNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ProgramNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }

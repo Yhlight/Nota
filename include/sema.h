@@ -30,6 +30,8 @@ public:
     void visit(ReferenceNode& node) override;
     void visit(BinaryExpressionNode& node) override;
     void visit(ConditionalNode& node) override;
+    void visit(StructDefinitionNode& node) override;
+    void visit(StructInstantiationNode& node) override;
 
 private:
     ComponentRegistry& registry;

@@ -5,11 +5,13 @@
 #include <sstream>
 #include <vector>
 #include <unordered_map>
+#include <set>
 
 class CodeGen : public ASTVisitor {
 public:
     std::stringstream html;
     std::stringstream css;
+    std::stringstream js; // For Runtime JS
     int indentLevel = 0;
     ComponentRegistry registry;
 

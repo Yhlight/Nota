@@ -4,14 +4,15 @@ Item Box {
     height: 100
     color: blue
 
-    // Test List and State Object Literal
     states: [
         State {
             name: "down"
+            when: ClickEvent
             color: red
         },
         State {
             name: "hov"
+            when: HoverEvent
             color: green
         }
     ]

@@ -26,8 +26,45 @@ std::string CodeGen::generate(ProgramNode& root) {
     html << "  </style>\n";
     html << "</head>\n";
 
+    js.str("");
+    js << "<script>\n";
+    js << "const ClickEvent = 'click';\n";
+    js << "const HoverEvent = 'mouseenter';\n";
+    js << "class NotaComponent {\n";
+    js << "  constructor(el, config) {\n";
+    js << "    this.el = el;\n";
+    js << "    this.config = config;\n";
+    js << "    this.setupEvents();\n";
+    js << "  }\n";
+    js << "  setupEvents() {\n";
+    js << "    if (this.config.states) {\n";
+    js << "      this.config.states.forEach(state => {\n";
+    js << "        if (state.when) {\n";
+    js << "          this.el.addEventListener(state.when, () => this.setState(state.name));\n";
+    js << "        }\n";
+    js << "      });\n";
+    js << "    }\n";
+    js << "  }\n";
+    js << "  setState(name) {\n";
+    js << "    const state = this.config.states.find(s => s.name === name);\n";
+    js << "    if (state) {\n";
+    js << "      // Apply styles from state\n";
+    js << "      // Prototype: supports simple color/width/height mapping\n";
+    js << "      for (const [key, val] of Object.entries(state)) {\n";
+    js << "        if (key === 'type' || key === 'name' || key === 'when') continue;\n";
+    js << "        // Simple mapping\n";
+    js << "        if (key === 'color') this.el.style.backgroundColor = val;\n";
+    js << "        else this.el.style[key] = val;\n";
+    js << "      }\n";
+    js << "    }\n";
+    js << "  }\n";
+    js << "}\n";
+    js << "const nota_elements = {};\n";
+    js << "</script>\n";
+
     root.accept(*this);
 
+    html << js.str();
     html << "</html>\n";
     return html.str();
 }
@@ -185,7 +222,7 @@ void CodeGen::generateStyleAttribute(const std::vector<std::shared_ptr<ASTNode>>
     auto processProps = [&](const std::vector<std::shared_ptr<ASTNode>>& props) {
         for (auto& child : props) {
             if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
-                if (prop->name == "text" || prop->name == "id") continue;
+                if (prop->name == "text" || prop->name == "id" || prop->name == "states") continue;
                 if (prop->name == "onClick" || prop->name == "onHover") continue; // Skip events in styles
 
                 std::string cssName = mapPropertyToCSS(prop->name, isTextComponent);
@@ -312,9 +349,12 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
     std::string tag = mapComponentToTag(node.type);
     if (isCustom) tag = "div";
 
-    indent(html);
-    html << "<" << tag;
-    html << " class=\"nota-" << node.type << "\"";
+    // 1. Resolve Overrides & Properties first
+
+    // Check if we have overrides for THIS component (via ID) passed from parent
+    // Problem: We need ID to find overrides. But ID might be IN overrides (chicken-egg).
+    // Assumption: ID is usually defined in the component or definition, not injected via override (though possible).
+    // For now, we resolve ID from definition/instance first.
 
     std::string myId = "";
     // Handle ID (Instance wins)
@@ -324,11 +364,11 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
                  ExpressionStringVisitor eval;
                  prop->value->accept(eval);
                  myId = eval.ss.str();
-                 html << " id=\"" << Utils::escapeHTML(myId) << "\"";
+                 break;
              }
         }
     }
-    // If definition has ID (less likely to be useful as it conflicts on reuse, but legal)
+    // If definition has ID
     if (myId.empty() && definition) {
         for (auto& child : definition->children) {
             if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
@@ -336,17 +376,12 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
                      ExpressionStringVisitor eval;
                      prop->value->accept(eval);
                      myId = eval.ss.str();
-                     html << " id=\"" << Utils::escapeHTML(myId) << "\"";
+                     break;
                  }
             }
         }
     }
 
-    // Styles & Events
-    std::vector<std::shared_ptr<ASTNode>> defProps;
-    if (definition) defProps = definition->children;
-
-    // Check if we have overrides for THIS component (via ID) passed from parent
     std::vector<std::shared_ptr<ASTNode>> parentOverrides;
     if (!myId.empty()) {
         auto it = pendingOverrides.find(myId);
@@ -355,10 +390,7 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
         }
     }
 
-    // Collect "Deep Overrides" declared IN THIS instance for children
     std::unordered_map<std::string, std::vector<std::shared_ptr<ASTNode>>> childOverrides;
-
-    // Current node overrides (instance props)
     std::vector<std::shared_ptr<ASTNode>> instanceProps;
 
     for (auto& child : node.children) {
@@ -366,11 +398,8 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
             // Check for dot notation (deep override)
             size_t dotPos = prop->name.find('.');
             if (dotPos != std::string::npos) {
-                // It's a deep override: "rect1.color"
                 std::string targetId = prop->name.substr(0, dotPos);
                 std::string targetProp = prop->name.substr(dotPos + 1);
-
-                // Create a new PropertyNode for the target
                 auto newProp = std::make_shared<PropertyNode>(targetProp, prop->value);
                 childOverrides[targetId].push_back(newProp);
             } else {
@@ -378,8 +407,41 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
             }
         }
     }
-
     instanceProps.insert(instanceProps.end(), parentOverrides.begin(), parentOverrides.end());
+
+    // 2. Detect States
+    bool hasStates = false;
+    std::shared_ptr<PropertyNode> statesProp = nullptr;
+
+    auto checkStates = [&](const std::vector<std::shared_ptr<ASTNode>>& nodes) {
+        for (auto& child : nodes) {
+            if (auto prop = std::dynamic_pointer_cast<PropertyNode>(child)) {
+                if (prop->name == "states") { hasStates = true; statesProp = prop; break; }
+            }
+        }
+    };
+    checkStates(instanceProps);
+    if (!hasStates && definition) {
+        checkStates(definition->children);
+    }
+
+    // 3. Auto-generate ID if needed
+    if (myId.empty() && hasStates) {
+        static int compCount = 0;
+        myId = "nota-comp-" + std::to_string(++compCount);
+    }
+
+    // 4. Generate HTML
+    indent(html);
+    html << "<" << tag;
+    html << " class=\"nota-" << node.type << "\"";
+
+    if (!myId.empty()) {
+        html << " id=\"" << Utils::escapeHTML(myId) << "\"";
+    }
+
+    std::vector<std::shared_ptr<ASTNode>> defProps;
+    if (definition) defProps = definition->children;
 
     bool isText = (node.type == "Text");
     generateStyleAttribute(defProps, instanceProps, isText);
@@ -452,6 +514,17 @@ void CodeGen::visitComponent(ComponentNode& node, const std::unordered_map<std::
     }
 
     html << "</" << tag << ">\n";
+
+    if (hasStates && !myId.empty()) {
+        js << "<script>\n";
+        js << "nota_elements['" << myId << "'] = new NotaComponent(document.getElementById('" << myId << "'), {\n";
+        js << "  states: ";
+        ExpressionStringVisitor eval;
+        statesProp->value->accept(eval);
+        js << eval.ss.str();
+        js << "\n});\n";
+        js << "</script>\n";
+    }
 }
 
 void CodeGen::visit(ConditionalNode& node) {

@@ -10,17 +10,34 @@ if [ ! -f output_state.html ]; then
     exit 1
 fi
 
-echo "Verifying State Objects..."
+echo "Verifying State Runtime..."
 
-# Check if states property is generated (currently in style attribute as prototype behavior)
-# Expecting: states: [{ type: "State", name: down, color: red }, ... ];
-# Note: Values are currently unquoted due to CSS visitor context. This is known limitation for now.
+# Check that 'states' is NOT in the style attribute (it was before)
+if grep -q "style=.*states:" output_state.html; then
+    echo "Error: 'states' property should not be in CSS style attribute"
+    grep "style=" output_state.html
+    exit 1
+fi
 
-if ! grep -q "states: \[{ type: \"State\", name: down, color: red }, { type: \"State\", name: hov, color: green }\]" output_state.html; then
-    echo "Error: State list not found in output"
+# Check for Runtime JS Injection
+if ! grep -q "class NotaComponent" output_state.html; then
+    echo "Error: Runtime JS class NotaComponent not found"
+    exit 1
+fi
+
+# Check for Component Registration script
+if ! grep -q "nota_elements\['mainBox'\] = new NotaComponent" output_state.html; then
+    echo "Error: Component registration JS not found"
+    exit 1
+fi
+
+# Check for State Configuration in JS
+# Note: Spacing might vary in generated output
+if ! grep -q "states: \[{ type: \"State\", name: down, when: ClickEvent, color: red }, { type: \"State\", name: hov, when: HoverEvent, color: green }\]" output_state.html; then
+    echo "Error: State configuration JS not found or incorrect"
     cat output_state.html
     exit 1
 fi
 
-echo "State Test Passed!"
+echo "State Runtime Test Passed!"
 rm output_state.html

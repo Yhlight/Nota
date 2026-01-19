@@ -256,7 +256,9 @@ std::shared_ptr<ProgramNode> Parser::parse() {
 
     while (peek().type != TokenType::EOF_TOKEN) {
         Token t = peek();
-        if (t.type == TokenType::KEYWORD_IMPORT) {
+        if (t.type == TokenType::KEYWORD_PACKAGE) {
+            program->statements.push_back(parsePackage());
+        } else if (t.type == TokenType::KEYWORD_IMPORT) {
             program->statements.push_back(parseImport());
         } else if (t.type == TokenType::KEYWORD_STRUCT) {
             program->statements.push_back(parseStruct());
@@ -307,6 +309,16 @@ std::shared_ptr<ImportNode> Parser::parseImport() {
     }
 
     return std::make_shared<ImportNode>(path, alias);
+}
+
+std::shared_ptr<PackageNode> Parser::parsePackage() {
+    consume(TokenType::KEYWORD_PACKAGE, "Expect 'package'");
+    std::string name = consume(TokenType::IDENTIFIER, "Expect package name").value;
+    while (match(TokenType::DOT)) {
+        name += "." + consume(TokenType::IDENTIFIER, "Expect identifier after '.'").value;
+    }
+    consume(TokenType::SEMICOLON, "Expect ';'");
+    return std::make_shared<PackageNode>(name);
 }
 
 std::shared_ptr<ComponentNode> Parser::parseComponent() {

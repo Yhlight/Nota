@@ -1,0 +1,1 @@
+package tests.modules.pkg; Item Button { width: 100; height: 30; color: blue; }

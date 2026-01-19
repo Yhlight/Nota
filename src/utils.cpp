@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <sstream>
+#include <algorithm>
 
 namespace Utils {
 
@@ -15,6 +16,17 @@ std::string escapeHTML(const std::string& str) {
         }
     }
     return ss.str();
+}
+
+std::string resolveImportPath(const std::string& path) {
+    // If path ends with .nota, it's a file path
+    if (path.size() >= 5 && path.substr(path.size() - 5) == ".nota") {
+        return path;
+    }
+    // Otherwise, assume it's a dotted module path: A.B.C -> A/B/C.nota
+    std::string resolved = path;
+    std::replace(resolved.begin(), resolved.end(), '.', '/');
+    return resolved + ".nota";
 }
 
 }

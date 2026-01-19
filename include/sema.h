@@ -23,6 +23,7 @@ public:
 
     void visit(ProgramNode& node) override;
     void visit(ImportNode& node) override;
+    void visit(PackageNode& node) override;
     void visit(ComponentNode& node) override;
     void visit(PropertyNode& node) override;
     // Updated visitor methods for new AST

@@ -1,0 +1,8 @@
+// Import using package notation
+import tests.modules.pkg.Button as UI;
+
+App {
+    UI.Button {
+        text: "Package Import"
+    }
+}

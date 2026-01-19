@@ -26,6 +26,7 @@ enum class TokenType {
     KEYWORD_ELSE,
     KEYWORD_DELEGATE,
     KEYWORD_FOR,
+    KEYWORD_PACKAGE,
 
     // Literals
     STRING_LITERAL,

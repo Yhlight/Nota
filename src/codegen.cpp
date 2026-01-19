@@ -1,5 +1,6 @@
 #include "codegen.h"
 #include "utils.h"
+#include "runtime.h"
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -27,40 +28,7 @@ std::string CodeGen::generate(ProgramNode& root) {
     html << "</head>\n";
 
     js.str("");
-    js << "<script>\n";
-    js << "const ClickEvent = 'click';\n";
-    js << "const HoverEvent = 'mouseenter';\n";
-    js << "class NotaComponent {\n";
-    js << "  constructor(el, config) {\n";
-    js << "    this.el = el;\n";
-    js << "    this.config = config;\n";
-    js << "    this.setupEvents();\n";
-    js << "  }\n";
-    js << "  setupEvents() {\n";
-    js << "    if (this.config.states) {\n";
-    js << "      this.config.states.forEach(state => {\n";
-    js << "        if (state.when) {\n";
-    js << "          this.el.addEventListener(state.when, () => this.setState(state.name));\n";
-    js << "        }\n";
-    js << "      });\n";
-    js << "    }\n";
-    js << "  }\n";
-    js << "  setState(name) {\n";
-    js << "    const state = this.config.states.find(s => s.name === name);\n";
-    js << "    if (state) {\n";
-    js << "      // Apply styles from state\n";
-    js << "      // Prototype: supports simple color/width/height mapping\n";
-    js << "      for (const [key, val] of Object.entries(state)) {\n";
-    js << "        if (key === 'type' || key === 'name' || key === 'when') continue;\n";
-    js << "        // Simple mapping\n";
-    js << "        if (key === 'color') this.el.style.backgroundColor = val;\n";
-    js << "        else this.el.style[key] = val;\n";
-    js << "      }\n";
-    js << "    }\n";
-    js << "  }\n";
-    js << "}\n";
-    js << "const nota_elements = {};\n";
-    js << "</script>\n";
+    js << NOTA_RUNTIME_JS;
 
     root.accept(*this);
 
@@ -84,8 +52,8 @@ void CodeGen::visit(ProgramNode& node) {
     }
 }
 
-void CodeGen::visit(ImportNode& node) {
-}
+void CodeGen::visit(ImportNode& node) {}
+void CodeGen::visit(PackageNode& node) {}
 
 std::string CodeGen::mapComponentToTag(const std::string& type) {
     if (type == "App") return "body";
@@ -118,6 +86,7 @@ public:
 
     void visit(ProgramNode&) override {}
     void visit(ImportNode&) override {}
+    void visit(PackageNode&) override {}
     void visit(ConditionalNode&) override {}
     void visit(PropertyNode&) override {}
 

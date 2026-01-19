@@ -30,6 +30,11 @@ public:
         std::cout << "\n";
     }
 
+    void visit(PackageNode& node) override {
+        printIndent();
+        std::cout << "Package: " << node.name << "\n";
+    }
+
     void visit(ComponentNode& node) override {
         printIndent();
         std::cout << "Component: " << node.type;

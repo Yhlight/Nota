@@ -91,6 +91,7 @@ Token Lexer::readIdentifierOrKeyword() {
         {"else", TokenType::KEYWORD_ELSE},
         {"delegate", TokenType::KEYWORD_DELEGATE},
         {"for", TokenType::KEYWORD_FOR},
+        {"package", TokenType::KEYWORD_PACKAGE},
     };
 
     auto it = keywords.find(text);

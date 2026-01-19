@@ -1,5 +1,6 @@
 #include "sema.h"
 #include "compiler.h"
+#include "utils.h"
 #include <iostream>
 
 void ComponentRegistry::registerComponent(const std::string& name, std::shared_ptr<ComponentNode> definition) {
@@ -35,7 +36,8 @@ void SemanticAnalyzer::visit(ProgramNode& node) {
 
 void SemanticAnalyzer::visit(ImportNode& node) {
     try {
-        auto importedRoot = Compiler::parseFile(node.path);
+        std::string resolvedPath = Utils::resolveImportPath(node.path);
+        auto importedRoot = Compiler::parseFile(resolvedPath);
 
         std::string prefix = "";
         if (!node.alias.empty()) {
@@ -53,6 +55,12 @@ void SemanticAnalyzer::visit(ImportNode& node) {
     } catch (const std::exception& e) {
         std::cerr << "Warning: Failed to import " << node.path << ": " << e.what() << "\n";
     }
+}
+
+void SemanticAnalyzer::visit(PackageNode& node) {
+    // Current behavior: Do nothing.
+    // In a full implementation, this would enforce namespace rules.
+    // For prototype, we assume Imports handle naming.
 }
 
 void SemanticAnalyzer::visit(ComponentNode& node) {

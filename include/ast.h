@@ -139,6 +139,14 @@ public:
     void accept(ASTVisitor& visitor) override;
 };
 
+class PackageNode : public ASTNode {
+public:
+    std::string name; // e.g., "UI" or "UI.Core"
+
+    PackageNode(const std::string& name) : name(name) {}
+    void accept(ASTVisitor& visitor) override;
+};
+
 class ProgramNode : public ASTNode {
 public:
     std::vector<std::shared_ptr<ASTNode>> statements;
@@ -151,6 +159,7 @@ public:
     virtual ~ASTVisitor() = default;
     virtual void visit(ProgramNode& node) = 0;
     virtual void visit(ImportNode& node) = 0;
+    virtual void visit(PackageNode& node) = 0;
     virtual void visit(ComponentNode& node) = 0;
     virtual void visit(PropertyNode& node) = 0;
     virtual void visit(LiteralNode& node) = 0;
@@ -174,6 +183,7 @@ inline void ComponentNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ConditionalNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void StructDefinitionNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ImportNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
+inline void PackageNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ProgramNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void DelegateNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }
 inline void ForNode::accept(ASTVisitor& visitor) { visitor.visit(*this); }

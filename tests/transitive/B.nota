@@ -1,0 +1,5 @@
+import "tests/transitive/C.nota";
+
+export Item MidBox {
+    DeepRect {}
+}

@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <set>
 
 class ComponentRegistry {
 public:
@@ -20,6 +21,8 @@ public:
     SemanticAnalyzer(ComponentRegistry& registry) : registry(registry) {}
 
     void analyze(ProgramNode& root);
+    // For recursion with cycle detection
+    void analyze(ProgramNode& root, std::set<std::string>& visitedPaths);
 
     void visit(ProgramNode& node) override;
     void visit(ImportNode& node) override;
@@ -39,4 +42,5 @@ public:
 
 private:
     ComponentRegistry& registry;
+    std::set<std::string> visitedPaths;
 };

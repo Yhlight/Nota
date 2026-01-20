@@ -1,0 +1,5 @@
+export Item DeepRect {
+    width: 999
+    height: 999
+    color: green
+}

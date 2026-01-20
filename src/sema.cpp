@@ -20,7 +20,22 @@ bool ComponentRegistry::hasComponent(const std::string& name) const {
 }
 
 void SemanticAnalyzer::analyze(ProgramNode& root) {
+    std::set<std::string> visited;
+    analyze(root, visited);
+}
+
+void SemanticAnalyzer::analyze(ProgramNode& root, std::set<std::string>& visited) {
+    this->visitedPaths = visited;
     root.accept(*this);
+    // Note: 'visitedPaths' is a copy or reference?
+    // We update the member, but recursion passes reference.
+    // Actually, 'visit(ImportNode)' uses 'this->visitedPaths' member?
+    // We should make sure we share the state.
+    // Simple way: 'visitedPaths' is a member. When calling recursively, we pass it down?
+    // But 'visit' methods are fixed signature.
+    // So we must store state in the object.
+    // 'this->visitedPaths' stores current stack of imports? Or all visited?
+    // Usually 'visited' means "already processed".
 }
 
 void SemanticAnalyzer::visit(ProgramNode& node) {
@@ -37,7 +52,20 @@ void SemanticAnalyzer::visit(ProgramNode& node) {
 void SemanticAnalyzer::visit(ImportNode& node) {
     try {
         std::string resolvedPath = Utils::resolveImportPath(node.path);
+
+        // Cycle detection / Double inclusion prevention
+        if (visitedPaths.count(resolvedPath)) {
+            // Already visited, skipping to avoid cycles/re-processing
+            return;
+        }
+        visitedPaths.insert(resolvedPath);
+
         auto importedRoot = Compiler::parseFile(resolvedPath);
+
+        // Recursively analyze imported file to populate registry with its imports
+        // Use a new analyzer sharing registry and visited paths
+        SemanticAnalyzer recursiveAnalyzer(registry);
+        recursiveAnalyzer.analyze(*importedRoot, visitedPaths);
 
         std::string prefix = "";
         if (!node.alias.empty()) {
@@ -50,17 +78,6 @@ void SemanticAnalyzer::visit(ImportNode& node) {
                     break;
                 }
             }
-
-            // Fallback to filename if no package (and no alias)
-            // if (prefix.empty()) {
-            //    std::string filename = resolvedPath.substr(resolvedPath.find_last_of("/\\") + 1);
-            //    size_t lastDot = filename.find_last_of('.');
-            //    if (lastDot != std::string::npos) filename = filename.substr(0, lastDot);
-            //    prefix = filename + ".";
-            // }
-            // Nota.md says file import -> filename is namespace.
-            // But if package is present, package is namespace.
-            // The logic above implements package priority.
         }
 
         for (auto& stmt : importedRoot->statements) {

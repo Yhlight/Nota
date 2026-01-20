@@ -1,0 +1,13 @@
+Item Box {
+    width: 100
+    height: 100
+    // This is a single line comment
+    color: #ff0000
+    /* This is a
+       multi-line comment */
+    property string hex: "#F0F0F0"
+}
+
+App {
+    Box {}
+}
